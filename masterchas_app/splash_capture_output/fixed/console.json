@@ -1,0 +1,14 @@
+[
+  {
+    "level": "DEBUG",
+    "message": "http://localhost:6210/flutter_bootstrap.js 0:2477 \"Injecting \\u003Cscript> tag. Using callback.\"",
+    "source": "console-api",
+    "timestamp": 1782042361833
+  },
+  {
+    "level": "DEBUG",
+    "message": "http://localhost:6210/flutter_bootstrap.js 0:2477 \"Injecting \\u003Cscript> tag. Using callback.\"",
+    "source": "console-api",
+    "timestamp": 1782042375663
+  }
+]
