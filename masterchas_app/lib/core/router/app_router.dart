@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_flow_config.dart';
+import '../../core/providers/splash_completed_provider.dart';
 import '../../features/onboarding/presentation/client_onboarding_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
@@ -14,8 +16,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
-      final auth = ref.read(authProvider);
       final location = state.matchedLocation;
+      final splashDone = ref.read(splashCompletedProvider);
+
+      if (!splashDone && location != '/splash') {
+        return '/splash';
+      }
+
+      if (!AppFlowConfig.postSplashFlowEnabled) {
+        if (location != '/splash') return '/splash';
+        return null;
+      }
+
+      if (AppFlowConfig.splashGoesToHome && !AppFlowConfig.requireAuthForHome) {
+        if (location == '/splash' || location == '/') return null;
+      }
+
+      final auth = ref.read(authProvider);
 
       if (location == '/splash' ||
           location == '/role' ||
@@ -37,7 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      if (location == '/') {
+      if (location == '/' && !AppFlowConfig.splashGoesToHome) {
         return '/role';
       }
 
@@ -90,6 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 
   ref.listen(authProvider, (_, __) => router.refresh());
+  ref.listen(splashCompletedProvider, (_, __) => router.refresh());
 
   return router;
 });

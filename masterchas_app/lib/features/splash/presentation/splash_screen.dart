@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/config/app_flow_config.dart';
+import '../../../core/providers/splash_completed_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// Exact green from splash reference image.
@@ -125,9 +127,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     if (!mounted || _navigationStarted) return;
 
+    if (!AppFlowConfig.postSplashFlowEnabled) return;
+
     await _exitController.forward();
     if (!mounted || _navigationStarted) return;
     _navigationStarted = true;
+
+    ref.read(splashCompletedProvider.notifier).complete();
+
+    if (AppFlowConfig.splashGoesToHome) {
+      context.go('/');
+      return;
+    }
 
     final isAuthenticated = ref.read(authProvider).isAuthenticated;
     context.go(isAuthenticated ? '/' : '/role');

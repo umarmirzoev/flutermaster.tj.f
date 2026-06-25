@@ -16,7 +16,7 @@ class AppBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static const _items = [
-    _NavItem(label: 'Главная', icon: LucideIcons.home),
+    _NavItem(label: 'Главная', icon: LucideIcons.house),
     _NavItem(label: 'Услуги', icon: LucideIcons.wrench),
     _NavItem(label: 'Мастера', icon: LucideIcons.users),
     _NavItem(label: 'Магазин', icon: LucideIcons.shopping_bag),
