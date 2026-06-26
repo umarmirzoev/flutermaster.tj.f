@@ -7,16 +7,8 @@ import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../data/shop_data.dart';
-
-String shopMoney(int v) {
-  final str = v.toString();
-  final buf = StringBuffer();
-  for (var i = 0; i < str.length; i++) {
-    if (i > 0 && (str.length - i) % 3 == 0) buf.write(' ');
-    buf.write(str[i]);
-  }
-  return buf.toString();
-}
+import '../state/shop_state.dart';
+import 'shop_profile.dart';
 
 class ShopPage extends ConsumerStatefulWidget {
   const ShopPage({super.key});
@@ -29,12 +21,8 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   int _cat = 0;
   int _nav = 0;
   String _query = '';
-  final Map<int, int> _cart = {}; // product index -> qty
-  final Set<int> _fav = {};
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
-
-  int get _cartCount => _cart.values.fold(0, (a, b) => a + b);
 
   @override
   void dispose() {
@@ -43,7 +31,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     super.dispose();
   }
 
-  void _toggleFav(int idx) => setState(() => _fav.contains(idx) ? _fav.remove(idx) : _fav.add(idx));
+  void _toggleFav(int idx) => ref.read(shopFavoritesProvider.notifier).toggle(idx);
 
   void _toTop() {
     if (_scrollCtrl.hasClients) {
@@ -73,7 +61,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   }
 
   void _add(int productIndex, ShopL10n l) {
-    setState(() => _cart.update(productIndex, (v) => v + 1, ifAbsent: () => 1));
+    ref.read(shopCartProvider.notifier).add(productIndex);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -109,6 +97,9 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     final p = HomePalette.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final fav = ref.watch(shopFavoritesProvider);
+    final cartCount = ref.watch(shopCartProvider).values.fold(0, (a, b) => a + b);
+
     final hits = _filtered(ProductBadge.hit);
     final news = _filtered(ProductBadge.isNew);
     final searching = _query.trim().isNotEmpty;
@@ -141,9 +132,9 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                   _TopBar(
                     l: l,
                     p: p,
-                    cartCount: _cartCount,
+                    cartCount: cartCount,
                     controller: _searchCtrl,
-                    onCart: () => _openCart(l, p, locale),
+                    onCart: () => _openCart(l, locale),
                     onChanged: (v) => setState(() => _query = v),
                     onClear: () => setState(() {
                       _query = '';
@@ -157,7 +148,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                             l: l,
                             p: p,
                             locale: locale,
-                            fav: _fav,
+                            fav: fav,
                             onAdd: (i) => _add(i, l),
                             onFav: _toggleFav,
                             onOpen: _openProduct,
@@ -169,13 +160,13 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                             l: l,
                             p: p,
                             locale: locale,
-                            fav: _fav,
+                            fav: fav,
                             onAdd: (i) => _add(i, l),
                             onFav: _toggleFav,
                             onOpen: _openProduct,
                           )
                         : _nav == 2
-                        ? _ProfilePlaceholder(l: l, p: p)
+                        ? ShopProfilePage(onOpenProduct: _openProduct)
                         : ListView(
                             controller: _scrollCtrl,
                             padding: const EdgeInsets.only(bottom: 24),
@@ -217,7 +208,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                                   l: l,
                                   p: p,
                                   locale: locale,
-                                  fav: _fav,
+                                  fav: fav,
                                   onAdd: (i) => _add(i, l),
                                   onFav: _toggleFav,
                                   onOpen: _openProduct,
@@ -239,7 +230,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                                   l: l,
                                   p: p,
                                   locale: locale,
-                                  fav: _fav,
+                                  fav: fav,
                                   onAdd: (i) => _add(i, l),
                                   onFav: _toggleFav,
                                   onOpen: _openProduct,
@@ -278,9 +269,6 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           l: l,
           p: p,
           locale: locale,
-          fav: _fav,
-          onAdd: (i) => _add(i, l),
-          onFav: _toggleFav,
           onOpen: _openProduct,
         ),
       ),
@@ -303,25 +291,12 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     );
   }
 
-  void _openCart(ShopL10n l, HomePalette p, AppLocale locale) {
+  void _openCart(ShopL10n l, AppLocale locale) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CartSheet(
-        l: l,
-        locale: locale,
-        cart: Map.of(_cart),
-        onChange: (idx, qty) {
-          setState(() {
-            if (qty <= 0) {
-              _cart.remove(idx);
-            } else {
-              _cart[idx] = qty;
-            }
-          });
-        },
-      ),
+      builder: (_) => _CartSheet(l: l, locale: locale),
     );
   }
 }
@@ -1283,39 +1258,20 @@ class _ShopBottomNav extends StatelessWidget {
 
 // ─── Cart sheet ─────────────────────────────────────────────────────────────
 
-class _CartSheet extends StatefulWidget {
-  const _CartSheet({required this.l, required this.locale, required this.cart, required this.onChange});
+class _CartSheet extends ConsumerWidget {
+  const _CartSheet({required this.l, required this.locale});
 
   final ShopL10n l;
   final AppLocale locale;
-  final Map<int, int> cart;
-  final void Function(int idx, int qty) onChange;
+
+  void _set(WidgetRef ref, int idx, int qty) => ref.read(shopCartProvider.notifier).setQty(idx, qty);
 
   @override
-  State<_CartSheet> createState() => _CartSheetState();
-}
-
-class _CartSheetState extends State<_CartSheet> {
-  late final Map<int, int> _cart = Map.of(widget.cart);
-
-  int get _total => _cart.entries.fold(0, (a, e) => a + shopProducts[e.key].price * e.value);
-
-  void _set(int idx, int qty) {
-    setState(() {
-      if (qty <= 0) {
-        _cart.remove(idx);
-      } else {
-        _cart[idx] = qty;
-      }
-    });
-    widget.onChange(idx, qty);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = widget.l;
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
-    final entries = _cart.entries.toList();
+    final cart = ref.watch(shopCartProvider);
+    final entries = cart.entries.toList();
+    final total = entries.fold(0, (a, e) => a + shopProducts[e.key].price * e.value);
 
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
@@ -1389,7 +1345,7 @@ class _CartSheetState extends State<_CartSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  prod.name(widget.locale),
+                                  prod.name(locale),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
@@ -1402,7 +1358,7 @@ class _CartSheetState extends State<_CartSheet> {
                               ],
                             ),
                           ),
-                          _qtyBtn(LucideIcons.minus, p, () => _set(idx, qty - 1)),
+                          _qtyBtn(LucideIcons.minus, p, () => _set(ref, idx, qty - 1)),
                           SizedBox(
                             width: 28,
                             child: Text(
@@ -1411,7 +1367,7 @@ class _CartSheetState extends State<_CartSheet> {
                               style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
                             ),
                           ),
-                          _qtyBtn(LucideIcons.plus, p, () => _set(idx, qty + 1)),
+                          _qtyBtn(LucideIcons.plus, p, () => _set(ref, idx, qty + 1)),
                         ],
                       ),
                     );
@@ -1432,7 +1388,7 @@ class _CartSheetState extends State<_CartSheet> {
                       Text(l.total, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
                       const Spacer(),
                       Text(
-                        '${shopMoney(_total)} ${l.priceUnit}',
+                        '${shopMoney(total)} ${l.priceUnit}',
                         style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
                       ),
                     ],
@@ -1445,6 +1401,20 @@ class _CartSheetState extends State<_CartSheet> {
                       onPressed: entries.isEmpty
                           ? null
                           : () {
+                              final discount = entries.fold(0, (a, e) {
+                                final pr = shopProducts[e.key];
+                                return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
+                              });
+                              ref.read(shopOrdersProvider.notifier).add(
+                                    ShopOrder(
+                                      date: DateTime.now(),
+                                      items: Map<int, int>.from(cart),
+                                      total: total,
+                                      discount: discount,
+                                      bonus: (total * 0.01).round(),
+                                    ),
+                                  );
+                              ref.read(shopCartProvider.notifier).clear();
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1788,46 +1758,15 @@ class _TileListView extends StatelessWidget {
   }
 }
 
-// ─── Profile placeholder ──────────────────────────────────────────────────────
-
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder({required this.l, required this.p});
-
-  final ShopL10n l;
-  final HomePalette p;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(color: brandGreen.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: const Icon(LucideIcons.user, size: 34, color: brandGreen),
-          ),
-          const SizedBox(height: 14),
-          Text(l.profileSoon, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── "See all" page ─────────────────────────────────────────────────────────
 
-class _AllProductsPage extends StatefulWidget {
+class _AllProductsPage extends ConsumerWidget {
   const _AllProductsPage({
     required this.title,
     required this.products,
     required this.l,
     required this.p,
     required this.locale,
-    required this.fav,
-    required this.onAdd,
-    required this.onFav,
     required this.onOpen,
   });
 
@@ -1836,20 +1775,11 @@ class _AllProductsPage extends StatefulWidget {
   final ShopL10n l;
   final HomePalette p;
   final AppLocale locale;
-  final Set<int> fav;
-  final ValueChanged<int> onAdd;
-  final ValueChanged<int> onFav;
   final ValueChanged<ShopProduct> onOpen;
 
   @override
-  State<_AllProductsPage> createState() => _AllProductsPageState();
-}
-
-class _AllProductsPageState extends State<_AllProductsPage> {
-  @override
-  Widget build(BuildContext context) {
-    final p = widget.p;
-    final l = widget.l;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fav = ref.watch(shopFavoritesProvider);
     return ColoredBox(
       color: p.shellBg,
       child: Center(
@@ -1888,7 +1818,7 @@ class _AllProductsPageState extends State<_AllProductsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            widget.title,
+                            title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
@@ -1900,23 +1830,31 @@ class _AllProductsPageState extends State<_AllProductsPage> {
                   Expanded(
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-                      itemCount: widget.products.length,
+                      itemCount: products.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (_, i) {
-                        final prod = widget.products[i];
+                        final prod = products[i];
                         final idx = shopProducts.indexOf(prod);
                         return _ProductTile(
                           prod: prod,
                           l: l,
                           p: p,
-                          locale: widget.locale,
-                          isFav: widget.fav.contains(idx),
-                          onAdd: () => widget.onAdd(idx),
-                          onFav: () {
-                            widget.onFav(idx);
-                            setState(() {});
+                          locale: locale,
+                          isFav: fav.contains(idx),
+                          onAdd: () {
+                            ref.read(shopCartProvider.notifier).add(idx);
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(SnackBar(
+                                backgroundColor: brandGreen,
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(milliseconds: 1100),
+                                content: Text(l.addedToCart,
+                                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                              ));
                           },
-                          onOpen: () => widget.onOpen(prod),
+                          onFav: () => ref.read(shopFavoritesProvider.notifier).toggle(idx),
+                          onOpen: () => onOpen(prod),
                         );
                       },
                     ),
@@ -1933,7 +1871,7 @@ class _AllProductsPageState extends State<_AllProductsPage> {
 
 // ─── Product detail page ──────────────────────────────────────────────────────
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends ConsumerWidget {
   const ProductDetailPage({
     super.key,
     required this.product,
@@ -1950,7 +1888,7 @@ class ProductDetailPage extends StatelessWidget {
   final ValueChanged<ShopProduct> onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
     final index = shopProducts.indexOf(product);
     final discount = product.discountPercent;
@@ -1965,7 +1903,16 @@ class ProductDetailPage extends StatelessWidget {
     final related = [...similar, ...more].take(6).toList();
 
     void buy() {
-      onAdd(index);
+      final disc = product.oldPrice > product.price ? product.oldPrice - product.price : 0;
+      ref.read(shopOrdersProvider.notifier).add(
+            ShopOrder(
+              date: DateTime.now(),
+              items: {index: 1},
+              total: product.price,
+              discount: disc,
+              bonus: (product.price * 0.01).round(),
+            ),
+          );
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

@@ -3,6 +3,17 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/l10n/app_locale.dart';
 
+/// Formats an integer with thin spaces as thousands separators (e.g. 5 990).
+String shopMoney(int v) {
+  final str = v.toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < str.length; i++) {
+    if (i > 0 && (str.length - i) % 3 == 0) buf.write(' ');
+    buf.write(str[i]);
+  }
+  return buf.toString();
+}
+
 enum ProductBadge { none, hit, isNew }
 
 class ShopProduct {

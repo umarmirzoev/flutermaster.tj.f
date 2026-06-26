@@ -13,6 +13,7 @@ import 'package:masterchas_app/features/masters/presentation/masters_page.dart';
 import 'package:masterchas_app/features/services/data/services_catalog.dart';
 import 'package:masterchas_app/features/services/presentation/category_detail_page.dart';
 import 'package:masterchas_app/features/shop/presentation/shop_page.dart';
+import 'package:masterchas_app/features/profile/presentation/profile_page.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -291,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 _ServicesPage(s: s, p: p, locale: locale),
                 _PlaceholderPage(icon: LucideIcons.message_circle, title: s.navChats, p: p),
-                _PlaceholderPage(icon: LucideIcons.user, title: s.navProfile, p: p),
+                const ProfilePage(),
               ],
             ),
             floatingActionButton: SizedBox(
