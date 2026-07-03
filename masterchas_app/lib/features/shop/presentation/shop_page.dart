@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/providers/catalog_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../data/shop_data.dart';
 import '../state/shop_state.dart';
@@ -23,6 +24,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   String _query = '';
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  List<ShopProduct> _catalog = shopProducts;
 
   @override
   void dispose() {
@@ -55,7 +57,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   List<ShopProduct> _search() {
     final q = _query.trim().toLowerCase();
     return [
-      for (final p in shopProducts)
+      for (final p in _catalog)
         if (p.ru.toLowerCase().contains(q) || p.en.toLowerCase().contains(q)) p,
     ];
   }
@@ -85,17 +87,17 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
   List<ShopProduct> _filtered(ProductBadge badge) {
     return [
-      for (var i = 0; i < shopProducts.length; i++)
-        if (shopProducts[i].badge == badge && (_cat == 0 || shopProducts[i].categoryIndex == _cat)) shopProducts[i],
+      for (var i = 0; i < _catalog.length; i++)
+        if (_catalog[i].badge == badge && (_cat == 0 || _catalog[i].categoryIndex == _cat)) _catalog[i],
     ];
   }
 
   @override
   Widget build(BuildContext context) {
+    _catalog = ref.watch(shopCatalogProvider);
     final locale = ref.watch(localeProvider);
     final l = ShopL10n.of(locale);
     final p = HomePalette.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final fav = ref.watch(shopFavoritesProvider);
     final cartCount = ref.watch(shopCartProvider).values.fold(0, (a, b) => a + b);
@@ -104,158 +106,138 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     final news = _filtered(ProductBadge.isNew);
     final searching = _query.trim().isNotEmpty;
     final results = searching ? _search() : const <ShopProduct>[];
-    final deals = [for (final pr in shopProducts) if (pr.discountPercent > 0) pr];
+    final deals = [for (final pr in _catalog) if (pr.discountPercent > 0) pr];
 
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(
-            color: p.pageBg,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  _TopBar(
-                    l: l,
-                    p: p,
-                    cartCount: cartCount,
-                    controller: _searchCtrl,
-                    onCart: () => _openCart(l, locale),
-                    onChanged: (v) => setState(() => _query = v),
-                    onClear: () => setState(() {
-                      _query = '';
-                      _searchCtrl.clear();
-                    }),
-                  ),
-                  Expanded(
-                    child: searching
-                        ? _SearchResults(
-                            results: results,
-                            l: l,
-                            p: p,
-                            locale: locale,
-                            fav: fav,
-                            onAdd: (i) => _add(i, l),
-                            onFav: _toggleFav,
-                            onOpen: _openProduct,
-                          )
-                        : _nav == 1
-                        ? _TileListView(
-                            title: l.dealsTitle,
-                            products: deals,
-                            l: l,
-                            p: p,
-                            locale: locale,
-                            fav: fav,
-                            onAdd: (i) => _add(i, l),
-                            onFav: _toggleFav,
-                            onOpen: _openProduct,
-                          )
-                        : _nav == 2
-                        ? ShopProfilePage(onOpenProduct: _openProduct)
-                        : ListView(
-                            controller: _scrollCtrl,
-                            padding: const EdgeInsets.only(bottom: 24),
-                            children: [
-                              const SizedBox(height: 8),
-                              _Categories(
-                                l: l,
-                                p: p,
-                                selected: _cat,
-                                onSelect: (i) => setState(() => _cat = i),
-                              ),
-                              const SizedBox(height: 16),
-                              _Promos(
-                                l: l,
-                                p: p,
-                                onTap: (i) {
-                                  if (i == 0) {
-                                    setState(() => _cat = 1);
-                                    _toTop();
-                                  } else if (i == 2) {
-                                    setState(() => _cat = 4);
-                                    _toTop();
-                                  } else {
-                                    _toast(l.promoSubs[1]);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              if (hits.isNotEmpty) ...[
-                                _SectionHeader(
-                                  title: l.bestSellers,
-                                  action: l.seeAll,
-                                  p: p,
-                                  onAction: () => _openAll(l.bestSellers, hits, l, p, locale),
-                                ),
-                                const SizedBox(height: 12),
-                                _ProductRow(
-                                  products: hits,
-                                  l: l,
-                                  p: p,
-                                  locale: locale,
-                                  fav: fav,
-                                  onAdd: (i) => _add(i, l),
-                                  onFav: _toggleFav,
-                                  onOpen: _openProduct,
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                              _Brands(l: l, p: p, onTap: (name) => _toast(name)),
-                              const SizedBox(height: 20),
-                              if (news.isNotEmpty) ...[
-                                _SectionHeader(
-                                  title: l.recommended,
-                                  action: l.seeAll,
-                                  p: p,
-                                  onAction: () => _openAll(l.recommended, news, l, p, locale),
-                                ),
-                                const SizedBox(height: 12),
-                                _ProductRow(
-                                  products: news,
-                                  l: l,
-                                  p: p,
-                                  locale: locale,
-                                  fav: fav,
-                                  onAdd: (i) => _add(i, l),
-                                  onFav: _toggleFav,
-                                  onOpen: _openProduct,
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                              _Advantages(l: l, p: p),
-                              const SizedBox(height: 18),
-                              _Newsletter(l: l, p: p),
-                              const SizedBox(height: 18),
-                              _Footer(l: l),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            bottomNavigationBar: _ShopBottomNav(
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _TopBar(
               l: l,
               p: p,
-              current: _nav,
-              onTap: (i) => setState(() => _nav = i),
+              cartCount: cartCount,
+              controller: _searchCtrl,
+              onCart: () => _openCart(l, locale),
+              onChanged: (v) => setState(() => _query = v),
+              onClear: () => setState(() {
+                _query = '';
+                _searchCtrl.clear();
+              }),
             ),
-          ),
+            Expanded(
+              child: searching
+                  ? _SearchResults(
+                      results: results,
+                      l: l,
+                      p: p,
+                      locale: locale,
+                      fav: fav,
+                      onAdd: (i) => _add(i, l),
+                      onFav: _toggleFav,
+                      onOpen: _openProduct,
+                    )
+                  : _nav == 1
+                  ? _TileListView(
+                      title: l.dealsTitle,
+                      products: deals,
+                      l: l,
+                      p: p,
+                      locale: locale,
+                      fav: fav,
+                      onAdd: (i) => _add(i, l),
+                      onFav: _toggleFav,
+                      onOpen: _openProduct,
+                    )
+                  : _nav == 2
+                  ? ShopProfilePage(onOpenProduct: _openProduct)
+                  : ListView(
+                      controller: _scrollCtrl,
+                      padding: const EdgeInsets.only(bottom: 24),
+                      children: [
+                        const SizedBox(height: 8),
+                        _Categories(
+                          l: l,
+                          p: p,
+                          selected: _cat,
+                          onSelect: (i) => setState(() => _cat = i),
+                        ),
+                        const SizedBox(height: 16),
+                        _Promos(
+                          l: l,
+                          p: p,
+                          onTap: (i) {
+                            if (i == 0) {
+                              setState(() => _cat = 1);
+                              _toTop();
+                            } else if (i == 2) {
+                              setState(() => _cat = 4);
+                              _toTop();
+                            } else {
+                              _toast(l.promoSubs[1]);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        if (hits.isNotEmpty) ...[
+                          _SectionHeader(
+                            title: l.bestSellers,
+                            action: l.seeAll,
+                            p: p,
+                            onAction: () => _openAll(l.bestSellers, hits, l, p, locale),
+                          ),
+                          const SizedBox(height: 12),
+                          _ProductRow(
+                            products: hits,
+                            l: l,
+                            p: p,
+                            locale: locale,
+                            fav: fav,
+                            onAdd: (i) => _add(i, l),
+                            onFav: _toggleFav,
+                            onOpen: _openProduct,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        _Brands(l: l, p: p, onTap: (name) => _toast(name)),
+                        const SizedBox(height: 20),
+                        if (news.isNotEmpty) ...[
+                          _SectionHeader(
+                            title: l.recommended,
+                            action: l.seeAll,
+                            p: p,
+                            onAction: () => _openAll(l.recommended, news, l, p, locale),
+                          ),
+                          const SizedBox(height: 12),
+                          _ProductRow(
+                            products: news,
+                            l: l,
+                            p: p,
+                            locale: locale,
+                            fav: fav,
+                            onAdd: (i) => _add(i, l),
+                            onFav: _toggleFav,
+                            onOpen: _openProduct,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        _Advantages(l: l, p: p),
+                        const SizedBox(height: 18),
+                        _Newsletter(l: l, p: p),
+                        const SizedBox(height: 18),
+                        _Footer(l: l),
+                      ],
+                    ),
+            ),
+          ],
         ),
+      ),
+      bottomNavigationBar: _ShopBottomNav(
+        l: l,
+        p: p,
+        current: _nav,
+        onTap: (i) => setState(() => _nav = i),
       ),
     );
   }
@@ -669,7 +651,7 @@ class _SectionHeader extends StatelessWidget {
 
 // ─── Product row + card ───────────────────────────────────────────────────────
 
-class _ProductRow extends StatelessWidget {
+class _ProductRow extends ConsumerWidget {
   const _ProductRow({
     required this.products,
     required this.l,
@@ -691,9 +673,10 @@ class _ProductRow extends StatelessWidget {
   final ValueChanged<ShopProduct> onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(shopCatalogProvider);
     return SizedBox(
-      height: 262,
+      height: 278,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -701,7 +684,7 @@ class _ProductRow extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) {
           final prod = products[i];
-          final globalIndex = shopProducts.indexOf(prod);
+          final globalIndex = catalog.indexOf(prod);
           return _ProductCard(
             prod: prod,
             l: l,
@@ -766,7 +749,7 @@ class _ProductCard extends StatelessWidget {
                   width: double.infinity,
                   color: Colors.white,
                   padding: const EdgeInsets.all(10),
-                  child: Image.asset(prod.image, fit: BoxFit.contain),
+                  child: buildShopProductImage(prod, fit: BoxFit.contain),
                 ),
                 Positioned(
                   left: 8,
@@ -1224,28 +1207,33 @@ class _ShopBottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 58,
+          height: 64,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (i) {
               final on = i == current;
               final c = on ? brandGreen : p.muted;
-              return InkWell(
-                onTap: () => onTap(i),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(items[i].$1, size: 20, color: c),
-                    const SizedBox(height: 3),
-                    Text(
-                      items[i].$2,
-                      style: GoogleFonts.inter(
-                        fontSize: 9,
-                        fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                        color: c,
+              return Expanded(
+                child: InkWell(
+                  onTap: () => onTap(i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(items[i].$1, size: 22, color: c),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          items[i].$2,
+                          maxLines: 1,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                            color: c,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }),
@@ -1270,8 +1258,9 @@ class _CartSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
     final cart = ref.watch(shopCartProvider);
+    final catalog = ref.watch(shopCatalogProvider);
     final entries = cart.entries.toList();
-    final total = entries.fold(0, (a, e) => a + shopProducts[e.key].price * e.value);
+    final total = entries.fold<int>(0, (a, e) => a + catalog[e.key].price * e.value);
 
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
@@ -1322,7 +1311,7 @@ class _CartSheet extends ConsumerWidget {
                   itemBuilder: (_, i) {
                     final idx = entries[i].key;
                     final qty = entries[i].value;
-                    final prod = shopProducts[idx];
+                    final prod = catalog[idx];
                     return Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -1337,7 +1326,7 @@ class _CartSheet extends ConsumerWidget {
                             height: 52,
                             color: Colors.white,
                             padding: const EdgeInsets.all(4),
-                            child: Image.asset(prod.image, fit: BoxFit.contain),
+                            child: buildShopProductImage(prod, fit: BoxFit.contain),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1401,8 +1390,8 @@ class _CartSheet extends ConsumerWidget {
                       onPressed: entries.isEmpty
                           ? null
                           : () {
-                              final discount = entries.fold(0, (a, e) {
-                                final pr = shopProducts[e.key];
+                              final discount = entries.fold<int>(0, (a, e) {
+                                final pr = catalog[e.key];
                                 return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
                               });
                               ref.read(shopOrdersProvider.notifier).add(
@@ -1512,7 +1501,7 @@ class _ProductTile extends StatelessWidget {
                   height: 84,
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.all(6),
-                  child: Image.asset(prod.image, fit: BoxFit.contain),
+                  child: buildShopProductImage(prod, fit: BoxFit.contain),
                 ),
                 if (discount > 0)
                   Positioned(
@@ -1633,7 +1622,7 @@ class _ProductTile extends StatelessWidget {
 
 // ─── Search results ───────────────────────────────────────────────────────────
 
-class _SearchResults extends StatelessWidget {
+class _SearchResults extends ConsumerWidget {
   const _SearchResults({
     required this.results,
     required this.l,
@@ -1655,7 +1644,8 @@ class _SearchResults extends StatelessWidget {
   final ValueChanged<ShopProduct> onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(shopCatalogProvider);
     if (results.isEmpty) {
       return Center(
         child: Column(
@@ -1674,7 +1664,7 @@ class _SearchResults extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final prod = results[i];
-        final idx = shopProducts.indexOf(prod);
+        final idx = catalog.indexOf(prod);
         return _ProductTile(
           prod: prod,
           l: l,
@@ -1692,7 +1682,7 @@ class _SearchResults extends StatelessWidget {
 
 // ─── Tile list (deals / generic) ──────────────────────────────────────────────
 
-class _TileListView extends StatelessWidget {
+class _TileListView extends ConsumerWidget {
   const _TileListView({
     required this.title,
     required this.products,
@@ -1716,7 +1706,8 @@ class _TileListView extends StatelessWidget {
   final ValueChanged<ShopProduct> onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(shopCatalogProvider);
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
       itemCount: products.length + 1,
@@ -1742,7 +1733,7 @@ class _TileListView extends StatelessWidget {
           );
         }
         final prod = products[i - 1];
-        final idx = shopProducts.indexOf(prod);
+        final idx = catalog.indexOf(prod);
         return _ProductTile(
           prod: prod,
           l: l,
@@ -1779,90 +1770,82 @@ class _AllProductsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = HomePalette.of(context);
     final fav = ref.watch(shopFavoritesProvider);
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          decoration: BoxDecoration(color: p.pageBg),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: SafeArea(
-              bottom: false,
-              child: Column(
+    final catalog = ref.watch(shopCatalogProvider);
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
+              decoration: BoxDecoration(
+                color: p.cardBg,
+                border: Border(bottom: BorderSide(color: p.border)),
+              ),
+              child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
-                    decoration: BoxDecoration(
-                      color: p.cardBg,
-                      border: Border(bottom: BorderSide(color: p.border)),
-                    ),
-                    child: Row(
-                      children: [
-                        Material(
-                          color: p.pageBg,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            onTap: () => Navigator.of(context).maybePop(),
-                            customBorder: const CircleBorder(),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
-                              child: Icon(LucideIcons.arrow_left, size: 17, color: p.text),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
-                          ),
-                        ),
-                      ],
+                  Material(
+                    color: p.pageBg,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
+                        child: Icon(LucideIcons.arrow_left, size: 17, color: p.text),
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-                      itemCount: products.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) {
-                        final prod = products[i];
-                        final idx = shopProducts.indexOf(prod);
-                        return _ProductTile(
-                          prod: prod,
-                          l: l,
-                          p: p,
-                          locale: locale,
-                          isFav: fav.contains(idx),
-                          onAdd: () {
-                            ref.read(shopCartProvider.notifier).add(idx);
-                            ScaffoldMessenger.of(context)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(SnackBar(
-                                backgroundColor: brandGreen,
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(milliseconds: 1100),
-                                content: Text(l.addedToCart,
-                                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
-                              ));
-                          },
-                          onFav: () => ref.read(shopFavoritesProvider.notifier).toggle(idx),
-                          onOpen: () => onOpen(prod),
-                        );
-                      },
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                itemCount: products.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, i) {
+                  final prod = products[i];
+                  final idx = catalog.indexOf(prod);
+                  return _ProductTile(
+                    prod: prod,
+                    l: l,
+                    p: p,
+                    locale: locale,
+                    isFav: fav.contains(idx),
+                    onAdd: () {
+                      ref.read(shopCartProvider.notifier).add(idx);
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(SnackBar(
+                          backgroundColor: brandGreen,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(milliseconds: 1100),
+                          content: Text(l.addedToCart,
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ));
+                    },
+                    onFav: () => ref.read(shopFavoritesProvider.notifier).toggle(idx),
+                    onOpen: () => onOpen(prod),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1890,14 +1873,15 @@ class ProductDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
-    final index = shopProducts.indexOf(product);
+    final catalog = ref.watch(shopCatalogProvider);
+    final index = catalog.indexOf(product);
     final discount = product.discountPercent;
     final similar = [
-      for (final pr in shopProducts)
+      for (final pr in catalog)
         if (pr != product && pr.categoryIndex == product.categoryIndex) pr,
     ];
     final more = [
-      for (final pr in shopProducts)
+      for (final pr in catalog)
         if (pr != product && pr.categoryIndex != product.categoryIndex) pr,
     ];
     final related = [...similar, ...more].take(6).toList();
@@ -1927,17 +1911,9 @@ class ProductDetailPage extends ConsumerWidget {
         );
     }
 
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(color: p.pageBg),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: ListView(
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: ListView(
               padding: EdgeInsets.zero,
               children: [
                 _DetailHeader(product: product, p: p, discount: discount, l: l),
@@ -2124,9 +2100,6 @@ class ProductDetailPage extends ConsumerWidget {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -2166,7 +2139,7 @@ class _DetailHeader extends StatelessWidget {
           width: double.infinity,
           color: Colors.white,
           padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
-          child: Image.asset(product.image, fit: BoxFit.contain),
+          child: buildShopProductImage(product, fit: BoxFit.contain),
         ),
         Positioned(
           left: 12,
@@ -2273,7 +2246,7 @@ class _SimilarCard extends StatelessWidget {
               width: double.infinity,
               color: Colors.white,
               padding: const EdgeInsets.all(8),
-              child: Image.asset(prod.image, fit: BoxFit.contain),
+                            child: buildShopProductImage(prod, fit: BoxFit.contain),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),

@@ -1,18 +1,31 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/home_strings.dart';
+import '../../../core/network/api_result.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
+import '../../orders/data/orders_repository.dart';
+import '../../orders/models/api_order.dart';
+import '../../orders/utils/address_validator.dart';
+import '../../orders/providers/orders_provider.dart';
+import '../../services/data/services_catalog.dart';
 import '../data/masters_data.dart';
 
 class BookingPage extends ConsumerStatefulWidget {
-  const BookingPage({super.key, required this.master, this.serviceName});
+  const BookingPage({
+    super.key,
+    required this.master,
+    this.serviceName,
+    this.servicePrice,
+  });
 
   final MasterItem master;
   final String? serviceName;
+  final double? servicePrice;
 
   @override
   ConsumerState<BookingPage> createState() => _BookingPageState();
@@ -28,6 +41,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _timeIndex = 2;
   final _addressCtrl = TextEditingController();
   final _commentCtrl = TextEditingController();
+  bool _isSubmitting = false;
+  String? _error;
 
   @override
   void initState() {
@@ -43,7 +58,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     super.dispose();
   }
 
-  bool get _canConfirm => _addressCtrl.text.trim().isNotEmpty;
+  bool get _canConfirm =>
+      !_isSubmitting &&
+      _addressCtrl.text.trim().isNotEmpty &&
+      AddressValidator.isValid(_addressCtrl.text);
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +121,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         _SectionTitle(s.addressTitle, p),
                         const SizedBox(height: 10),
                         _AddressField(controller: _addressCtrl, s: s, p: p, onChanged: () => setState(() {})),
+                        if (_addressCtrl.text.trim().isNotEmpty &&
+                            !AddressValidator.isValid(_addressCtrl.text)) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            AddressValidator.invalidMessage,
+                            style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade700),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         _SectionTitle(s.commentTitle, p),
                         const SizedBox(height: 10),
@@ -125,23 +151,122 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     );
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
+    if (!_canConfirm) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
+
     final s = HomeStrings.of(ref.read(localeProvider));
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _SuccessSheet(
-        s: s,
-        master: widget.master,
-        date: _days[_dayIndex],
-        time: _times[_timeIndex],
-        address: _addressCtrl.text.trim(),
-        onClose: () {
-          Navigator.pop(ctx);
-          Navigator.of(context).maybePop();
-        },
-      ),
-    );
+    final defaultService = defaultServiceForMaster(widget.master);
+    final serviceName = widget.serviceName ??
+        defaultService?.ru ??
+        widget.master.categories.first;
+    final repo = ref.read(ordersRepositoryProvider);
+    final address = _addressCtrl.text.trim();
+
+    if (!AddressValidator.isValid(address)) {
+      setState(() {
+        _isSubmitting = false;
+        _error = AddressValidator.invalidMessage;
+      });
+      return;
+    }
+
+    try {
+      final resolved = await repo.resolveServiceByTitle(serviceName);
+      if (resolved == null || resolved.id.isEmpty) {
+        throw Exception('Услуга «$serviceName» не найдена на сервере');
+      }
+
+      double price = widget.servicePrice ??
+          defaultService?.priceAvg.toDouble() ??
+          widget.master.priceMin.toDouble();
+      if (widget.servicePrice == null) {
+        for (final cat in serviceCatalog) {
+          for (final item in cat.services) {
+            if (item.ru == serviceName) {
+              price = item.priceAvg.toDouble();
+              break;
+            }
+          }
+        }
+      }
+
+      final date = _days[_dayIndex];
+      final time = _times[_timeIndex];
+      final result = await repo.createOrder(
+        serviceId: resolved.id,
+        title: resolved.title,
+        description: _commentCtrl.text.trim().isEmpty
+            ? 'Заказ мастеру ${widget.master.fullName}'
+            : _commentCtrl.text.trim(),
+        address: address,
+        price: price,
+        masterPhone: widget.master.phone,
+        scheduledDate: date,
+        scheduledTime: '$time:00',
+      );
+
+      if (result is! ApiSuccess<ApiOrder>) {
+        final message = switch (result) {
+          ApiError<ApiOrder>(:final message) => message,
+          _ => result.toString(),
+        };
+        throw Exception(message);
+      }
+
+      final order = result.data;
+      ref.invalidate(clientOrdersProvider);
+
+      if (!mounted) return;
+
+      if (order.isCancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              order.statusCode == 7 || order.statusCode == 8
+                  ? AddressValidator.invalidMessage
+                  : 'Заказ отменён сервером',
+            ),
+          ),
+        );
+        return;
+      }
+
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _SuccessSheet(
+          s: s,
+          master: widget.master,
+          date: date,
+          time: time,
+          address: _addressCtrl.text.trim(),
+          onClose: () {
+            Navigator.pop(ctx);
+            Navigator.of(context).maybePop();
+          },
+        ),
+      );
+    } catch (e, st) {
+      debugPrint('BOOKING ERROR: $e');
+      debugPrint('BOOKING STACK: $st');
+      if (mounted) {
+        final message = e.toString().replaceFirst('Exception: ', '');
+        setState(() => _error = message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 8),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 }
 
@@ -205,7 +330,9 @@ class _MasterSummary extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.asset(m.image, width: 52, height: 52, fit: BoxFit.cover),
+            child: m.imageBytes != null
+                ? Image.memory(m.imageBytes!, width: 52, height: 52, fit: BoxFit.cover)
+                : Image.asset(m.image, width: 52, height: 52, fit: BoxFit.cover),
           ),
           const SizedBox(width: 12),
           Expanded(

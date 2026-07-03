@@ -7,7 +7,9 @@ import '../../../core/l10n/app_locale.dart';
 import '../../../core/l10n/home_strings.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
+import '../../../core/providers/catalog_provider.dart';
 import '../data/masters_data.dart';
+import 'ai_master_picker_sheet.dart';
 import 'master_detail_page.dart';
 
 class MastersPage extends ConsumerStatefulWidget {
@@ -36,96 +38,76 @@ class _MastersPageState extends ConsumerState<MastersPage> {
     final locale = ref.watch(localeProvider);
     final s = HomeStrings.of(locale);
     final p = HomePalette.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final allMasters = ref.watch(mastersCatalogProvider);
     final list = _filter == null
-        ? masters
-        : masters.where((m) => m.categories.contains(_filter)).toList();
+        ? allMasters
+        : allMasters.where((m) => m.categories.contains(_filter)).toList();
 
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(
-            color: p.pageBg,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: SafeArea(
-              child: Column(
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _Header(s: s, p: p),
+            _FilterChips(
+              s: s,
+              p: p,
+              locale: locale,
+              selected: _filter,
+              onSelect: (v) => setState(() => _filter = v),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  _Header(s: s, p: p),
-                  _FilterChips(
-                    s: s,
-                    p: p,
-                    locale: locale,
-                    selected: _filter,
-                    onSelect: (v) => setState(() => _filter = v),
-                  ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      children: [
-                        _AiPickCard(s: s, p: p),
-                        const SizedBox(height: 16),
-                        if (list.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 60),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  Icon(LucideIcons.users, size: 44, color: p.muted),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    s.nothingFoundMasters,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: p.muted,
-                                    ),
-                                  ),
-                                ],
+                  _AiPickCard(s: s, p: p, onPick: () => showAiMasterPickerSheet(context)),
+                  const SizedBox(height: 16),
+                  if (list.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(LucideIcons.users, size: 44, color: p.muted),
+                            const SizedBox(height: 12),
+                            Text(
+                              s.nothingFoundMasters,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: p.muted,
                               ),
                             ),
-                          )
-                        else
-                          ...list.map(
-                            (m) => Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _MasterListCard(
-                                m: m,
-                                s: s,
-                                p: p,
-                                locale: locale,
-                                isFav: _favorites.contains(m.fullName),
-                                onFav: () => setState(() {
-                                  if (!_favorites.add(m.fullName)) {
-                                    _favorites.remove(m.fullName);
-                                  }
-                                }),
-                                onOpen: () => _openDetail(m),
-                                onCall: () => _showCall(m, s),
-                              ),
-                            ),
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ...list.map(
+                      (m) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _MasterListCard(
+                          m: m,
+                          s: s,
+                          p: p,
+                          locale: locale,
+                          isFav: _favorites.contains(m.fullName),
+                          onFav: () => setState(() {
+                            if (!_favorites.add(m.fullName)) {
+                              _favorites.remove(m.fullName);
+                            }
+                          }),
+                          onOpen: () => _openDetail(m),
+                          onCall: () => _showCall(m, s),
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -345,10 +327,11 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _AiPickCard extends StatelessWidget {
-  const _AiPickCard({required this.s, required this.p});
+  const _AiPickCard({required this.s, required this.p, required this.onPick});
 
   final HomeStrings s;
   final HomePalette p;
+  final VoidCallback onPick;
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +383,7 @@ class _AiPickCard extends StatelessWidget {
                 SizedBox(
                   height: 40,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: onPick,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandGreen,
                       foregroundColor: Colors.white,
@@ -541,7 +524,10 @@ class _Photo extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          if (m.imageBytes != null)
+            Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
+          else
+            Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
           if (m.isOnline)
             Positioned(
               left: 8,
@@ -611,12 +597,13 @@ class _Info extends StatelessWidget {
                   Flexible(
                     child: Text(
                       m.fullName,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: p.text,
+                        height: 1.15,
                       ),
                     ),
                   ),
@@ -792,7 +779,7 @@ class _ChatBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 38,
+      height: 44,
       child: ElevatedButton.icon(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
@@ -800,6 +787,7 @@ class _ChatBtn extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 14),
+          visualDensity: VisualDensity.compact,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         icon: const Icon(LucideIcons.message_circle, size: 15),
@@ -821,7 +809,7 @@ class _CallBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 38,
+      height: 44,
       child: OutlinedButton.icon(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(

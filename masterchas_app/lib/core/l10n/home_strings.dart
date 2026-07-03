@@ -116,6 +116,32 @@ class HomeStrings {
     required this.aiPickTitle,
     required this.aiPickSub,
     required this.aiPickBtn,
+    required this.aiModalTitle,
+    required this.aiModalSub,
+    required this.aiDescribeLabel,
+    required this.aiDescribeHint,
+    required this.aiDescribeHelper,
+    required this.aiDistrictLabel,
+    required this.aiDistrictHint,
+    required this.aiDistrictAny,
+    required this.aiUrgencyLabel,
+    required this.aiUrgencyNormal,
+    required this.aiUrgencyUrgent,
+    required this.aiBudgetLabel,
+    required this.aiBudgetHint,
+    required this.aiThinking,
+    required this.aiResultTitle,
+    required this.aiResultCategoryLabel,
+    required this.aiResultServiceLabel,
+    required this.aiProductMayNeed,
+    required this.aiResultSummary,
+    required this.aiMastersByCategory,
+    required this.aiBadgeBestChoice,
+    required this.aiBadgeHighRating,
+    required this.aiWorksInCategory,
+    required this.aiChangeRequest,
+    required this.aiAllCategoryMasters,
+    required this.aiEnterProblem,
     required this.expWord,
     required this.yearsShort,
     required this.completedWord,
@@ -255,6 +281,32 @@ class HomeStrings {
   final String aiPickTitle;
   final String aiPickSub;
   final String aiPickBtn;
+  final String aiModalTitle;
+  final String aiModalSub;
+  final String aiDescribeLabel;
+  final String aiDescribeHint;
+  final String aiDescribeHelper;
+  final String aiDistrictLabel;
+  final String aiDistrictHint;
+  final String aiDistrictAny;
+  final String aiUrgencyLabel;
+  final String aiUrgencyNormal;
+  final String aiUrgencyUrgent;
+  final String aiBudgetLabel;
+  final String aiBudgetHint;
+  final String aiThinking;
+  final String aiResultTitle;
+  final String aiResultCategoryLabel;
+  final String aiResultServiceLabel;
+  final String aiProductMayNeed;
+  final String aiResultSummary;
+  final String aiMastersByCategory;
+  final String aiBadgeBestChoice;
+  final String aiBadgeHighRating;
+  final String aiWorksInCategory;
+  final String aiChangeRequest;
+  final String aiAllCategoryMasters;
+  final String aiEnterProblem;
   final String expWord;
   final String yearsShort;
   final String completedWord;
@@ -280,6 +332,8 @@ class HomeStrings {
   final List<String> monthsShort; // Jan-first
 
   static HomeStrings of(AppLocale locale) => _map[locale]!;
+
+  String aiSummaryFor(String category) => aiResultSummary.replaceAll('{category}', category);
 
   static const _map = {
     AppLocale.ru: HomeStrings(
@@ -338,7 +392,7 @@ class HomeStrings {
       aiStepGet: 'Получите\n3 мастера',
       aiStepCompare: 'Сравните\nцены и отзывы',
       aiBigBtn: 'Подобрать\nмастера',
-      statMastersLabel: 'проверенных\nмастера',
+      statMastersLabel: 'проверенных\nмастеров',
       statOrdersLabel: 'успешных\nзаказов',
       statClientsLabel: 'довольных\nклиентов',
       statResponseLabel: 'средний\nотклик',
@@ -397,6 +451,32 @@ class HomeStrings {
       aiPickTitle: 'Найдём идеального мастера\nпод вашу задачу',
       aiPickSub: 'Опишите работу — и мы подберём\nлучших специалистов рядом',
       aiPickBtn: 'Подобрать мастера',
+      aiModalTitle: 'AI подбор мастера',
+      aiModalSub: 'Анализ проблемы и подбор мастеров по категории',
+      aiDescribeLabel: 'Опишите проблему',
+      aiDescribeHint: 'Например: не работает розетка, течет кран, искрит проводка...',
+      aiDescribeHelper: 'По тексту определим категорию и покажем мастеров именно этой специализации',
+      aiDistrictLabel: 'Район',
+      aiDistrictHint: 'Выберите район',
+      aiDistrictAny: 'Любой район',
+      aiUrgencyLabel: 'Срочность',
+      aiUrgencyNormal: 'Обычная',
+      aiUrgencyUrgent: 'Срочная',
+      aiBudgetLabel: 'Бюджет',
+      aiBudgetHint: 'Необязательно',
+      aiThinking: 'ИИ подбирает подходящего по вашему запросу...',
+      aiResultTitle: 'Результат анализа',
+      aiResultCategoryLabel: 'Категория',
+      aiResultServiceLabel: 'Услуга',
+      aiProductMayNeed: 'Может понадобиться товар',
+      aiResultSummary: 'По описанию проблема относится к категории «{category}».',
+      aiMastersByCategory: 'Мастера по категории',
+      aiBadgeBestChoice: 'Лучший выбор',
+      aiBadgeHighRating: 'Высокий рейтинг',
+      aiWorksInCategory: 'Работает по категории',
+      aiChangeRequest: 'Изменить запрос',
+      aiAllCategoryMasters: 'Все мастера категории',
+      aiEnterProblem: 'Опишите проблему',
       expWord: 'Опыт',
       yearsShort: 'лет',
       completedWord: 'Выполнено заказов',
@@ -536,6 +616,32 @@ class HomeStrings {
       aiPickTitle: 'We\'ll find the perfect\nmaster for your task',
       aiPickSub: 'Describe the job — and we\'ll pick\nthe best specialists near you',
       aiPickBtn: 'Match a master',
+      aiModalTitle: 'AI master matching',
+      aiModalSub: 'Problem analysis and masters by category',
+      aiDescribeLabel: 'Describe the problem',
+      aiDescribeHint: 'E.g.: outlet not working, leaking faucet, sparking wiring...',
+      aiDescribeHelper: 'We will detect the category and show specialists for it',
+      aiDistrictLabel: 'District',
+      aiDistrictHint: 'Choose district',
+      aiDistrictAny: 'Any district',
+      aiUrgencyLabel: 'Urgency',
+      aiUrgencyNormal: 'Normal',
+      aiUrgencyUrgent: 'Urgent',
+      aiBudgetLabel: 'Budget',
+      aiBudgetHint: 'Optional',
+      aiThinking: 'AI is finding the best match for your request...',
+      aiResultTitle: 'Analysis result',
+      aiResultCategoryLabel: 'Category',
+      aiResultServiceLabel: 'Service',
+      aiProductMayNeed: 'Product may be needed',
+      aiResultSummary: 'Based on your description, this is a «{category}» issue.',
+      aiMastersByCategory: 'Masters in category',
+      aiBadgeBestChoice: 'Best match',
+      aiBadgeHighRating: 'High rating',
+      aiWorksInCategory: 'Works in category',
+      aiChangeRequest: 'Change request',
+      aiAllCategoryMasters: 'All masters in category',
+      aiEnterProblem: 'Describe the problem',
       expWord: 'Exp.',
       yearsShort: 'yrs',
       completedWord: 'Completed orders',
@@ -675,6 +781,32 @@ class HomeStrings {
       aiPickTitle: 'Устои беҳтаринро барои\nвазифаи шумо меёбем',
       aiPickSub: 'Корро тавсиф кунед — мо беҳтарин\nмутахассисонро дар наздикӣ интихоб мекунем',
       aiPickBtn: 'Усторо интихоб кардан',
+      aiModalTitle: 'Интихоби усто бо ИИ',
+      aiModalSub: 'Таҳлили мушкилот ва интихоби устоҳо аз рӯи категория',
+      aiDescribeLabel: 'Мушкилотро тавсиф кунед',
+      aiDescribeHint: 'Масалан: розетка кор намекунад, кран мечакад, сим дурӯғ мезанад...',
+      aiDescribeHelper: 'Аз рӯи матн категорияро муайян мекунем ва устоҳои ҳамин ихтисосро нишон медиҳем',
+      aiDistrictLabel: 'Ноҳия',
+      aiDistrictHint: 'Ноҳияро интихоб кунед',
+      aiDistrictAny: 'Ҳар ноҳия',
+      aiUrgencyLabel: 'Фаврӣ',
+      aiUrgencyNormal: 'Одатӣ',
+      aiUrgencyUrgent: 'Фаврӣ',
+      aiBudgetLabel: 'Бюджет',
+      aiBudgetHint: 'Ихтиёрӣ',
+      aiThinking: 'ИИ устои мувофиқро барои дархости шумо интихоб мекунад...',
+      aiResultTitle: 'Натиҷаи таҳлил',
+      aiResultCategoryLabel: 'Категория',
+      aiResultServiceLabel: 'Хизматрасонӣ',
+      aiProductMayNeed: 'Маҳсул лозим шуда метавонад',
+      aiResultSummary: 'Аз рӯи тавсиф, мушкилот ба категорияи «{category}» тааллуқ дорад.',
+      aiMastersByCategory: 'Устоҳо аз рӯи категория',
+      aiBadgeBestChoice: 'Интихоби беҳтарин',
+      aiBadgeHighRating: 'Рейтинги баланд',
+      aiWorksInCategory: 'Дар категория кор мекунад',
+      aiChangeRequest: 'Дархостро тағйир додан',
+      aiAllCategoryMasters: 'Ҳама устоҳои категория',
+      aiEnterProblem: 'Мушкилотро тавсиф кунед',
       expWord: 'Таҷриба',
       yearsShort: 'сол',
       completedWord: 'Фармоишҳои иҷрошуда',
@@ -814,6 +946,32 @@ class HomeStrings {
       aiPickTitle: '为您的任务\n找到理想师傅',
       aiPickSub: '描述工作内容——\n我们为您匹配身边最佳专家',
       aiPickBtn: '匹配师傅',
+      aiModalTitle: 'AI智能匹配师傅',
+      aiModalSub: '分析问题并按类别匹配师傅',
+      aiDescribeLabel: '描述问题',
+      aiDescribeHint: '例如：插座不工作、水龙头漏水、电线打火...',
+      aiDescribeHelper: '根据文字识别类别并显示该专业的师傅',
+      aiDistrictLabel: '区域',
+      aiDistrictHint: '选择区域',
+      aiDistrictAny: '任意区域',
+      aiUrgencyLabel: '紧急程度',
+      aiUrgencyNormal: '普通',
+      aiUrgencyUrgent: '紧急',
+      aiBudgetLabel: '预算',
+      aiBudgetHint: '可选',
+      aiThinking: 'AI正在根据您的请求匹配合适的师傅...',
+      aiResultTitle: '分析结果',
+      aiResultCategoryLabel: '类别',
+      aiResultServiceLabel: '服务',
+      aiProductMayNeed: '可能需要购买材料',
+      aiResultSummary: '根据描述，问题属于「{category}」类别。',
+      aiMastersByCategory: '该类别的师傅',
+      aiBadgeBestChoice: '最佳选择',
+      aiBadgeHighRating: '高评分',
+      aiWorksInCategory: '从事该类别工作',
+      aiChangeRequest: '修改请求',
+      aiAllCategoryMasters: '查看该类全部师傅',
+      aiEnterProblem: '请描述问题',
       expWord: '经验',
       yearsShort: '年',
       completedWord: '已完成订单',

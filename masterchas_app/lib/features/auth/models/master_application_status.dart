@@ -1,0 +1,4 @@
+enum MasterApplicationStatus {
+  pending,
+  approved,
+}

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -55,10 +57,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   late final List<SplashIconConfig> _icons;
   bool _navigationStarted = false;
+  Timer? _safetyTimer;
 
   @override
   void initState() {
     super.initState();
+
+    _safetyTimer = Timer(const Duration(seconds: 7), () {
+      if (mounted) _finishSplash();
+    });
 
     _textController = AnimationController(
       vsync: this,
@@ -109,39 +116,62 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     });
 
     _textController.forward();
-    _startBootstrap();
+    unawaited(_startBootstrap());
   }
 
-  Future<void> _startBootstrap() async {
-    final authFuture = ref.read(authProvider.notifier).tryAutoLogin();
-    final iconsFuture = Future<void>.delayed(_iconsStart).then((_) async {
-      if (mounted) await _iconsController.forward();
-    });
-    final minDurationFuture = Future<void>.delayed(_minSplashDuration);
-
-    await Future.wait<Object?>([
-      authFuture,
-      iconsFuture,
-      minDurationFuture,
-    ]);
-
-    if (!mounted || _navigationStarted) return;
-
-    if (!AppFlowConfig.postSplashFlowEnabled) return;
-
-    await _exitController.forward();
-    if (!mounted || _navigationStarted) return;
+  void _finishSplash() {
+    if (_navigationStarted || !AppFlowConfig.postSplashFlowEnabled) return;
     _navigationStarted = true;
+    _safetyTimer?.cancel();
 
     ref.read(splashCompletedProvider.notifier).complete();
 
-    if (AppFlowConfig.splashGoesToHome) {
-      context.go('/');
-      return;
+    if (!mounted) return;
+
+    final destination = AppFlowConfig.splashGoesToHome
+        ? '/'
+        : (ref.read(authProvider).isAuthenticated
+            ? (ref.read(authProvider).isMaster
+                ? '/master/cabinet/orders'
+                : '/')
+            : '/role');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(destination);
+    });
+  }
+
+  Future<void> _startBootstrap() async {
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .initializeAuth(restoreSession: true)
+          .timeout(const Duration(seconds: 3));
+    } catch (_) {
+      // Auth init must never block leaving splash (e.g. secure storage on web).
     }
 
-    final isAuthenticated = ref.read(authProvider).isAuthenticated;
-    context.go(isAuthenticated ? '/' : '/role');
+    unawaited(
+      Future<void>.delayed(_iconsStart).then((_) async {
+        if (mounted) await _iconsController.forward();
+      }),
+    );
+
+    await Future<void>.delayed(_minSplashDuration);
+
+    if (!mounted) return;
+
+    final auth = ref.read(authProvider);
+    final destination = auth.isAuthenticated
+        ? (auth.isMaster ? '/master/cabinet/orders' : '/')
+        : (AppFlowConfig.splashGoesToHome ? '/' : '/role');
+
+    unawaited(_exitController.forward());
+    _navigationStarted = true;
+    _safetyTimer?.cancel();
+    ref.read(splashCompletedProvider.notifier).complete();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(destination);
+    });
   }
 
   List<SplashIconConfig> _buildIconConfigs() {
@@ -224,6 +254,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   void dispose() {
+    _safetyTimer?.cancel();
     _textController.dispose();
     _iconsController.dispose();
     _dotsController.dispose();

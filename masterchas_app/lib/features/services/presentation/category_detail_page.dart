@@ -23,37 +23,27 @@ class CategoryDetailPage extends StatelessWidget {
     final p = HomePalette.of(context);
     final s = HomeStrings.of(locale);
 
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(color: p.pageBg),
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _Header(category: category, locale: locale, s: s, p: p)),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  sliver: SliverList.separated(
-                    itemCount: category.services.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, i) => _ServiceRow(
-                      service: category.services[i],
-                      categoryRu: category.ru,
-                      accent: category.color,
-                      locale: locale,
-                      s: s,
-                      p: p,
-                    ),
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _Header(category: category, locale: locale, s: s, p: p)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            sliver: SliverList.separated(
+              itemCount: category.services.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => _ServiceRow(
+                service: category.services[i],
+                categoryRu: category.ru,
+                accent: category.color,
+                locale: locale,
+                s: s,
+                p: p,
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -248,7 +238,7 @@ class _ServiceRow extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            height: 38,
+            height: 44,
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
@@ -261,6 +251,8 @@ class _ServiceRow extends StatelessWidget {
                 backgroundColor: brandGreen,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                visualDensity: VisualDensity.compact,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(LucideIcons.plus, size: 16),

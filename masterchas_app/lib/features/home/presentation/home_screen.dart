@@ -4,15 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:masterchas_app/core/l10n/app_locale.dart';
 import 'package:masterchas_app/core/l10n/home_strings.dart';
+import 'package:masterchas_app/core/providers/home_tab_provider.dart';
 import 'package:masterchas_app/core/providers/locale_provider.dart';
 import 'package:masterchas_app/core/providers/theme_mode_provider.dart';
 import 'package:masterchas_app/features/home/presentation/home_palette.dart';
 import 'package:masterchas_app/features/masters/data/masters_data.dart';
+import 'package:masterchas_app/features/masters/presentation/ai_master_picker_sheet.dart';
 import 'package:masterchas_app/features/masters/presentation/master_detail_page.dart';
 import 'package:masterchas_app/features/masters/presentation/masters_page.dart';
 import 'package:masterchas_app/features/services/data/services_catalog.dart';
 import 'package:masterchas_app/features/services/presentation/category_detail_page.dart';
 import 'package:masterchas_app/features/shop/presentation/shop_page.dart';
+import 'package:masterchas_app/features/chat/presentation/chats_list_page.dart';
 import 'package:masterchas_app/features/profile/presentation/profile_page.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -24,6 +27,25 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _nav = 0;
+  final _homeSearchController = TextEditingController();
+  String _homeQuery = '';
+
+  @override
+  void dispose() {
+    _homeSearchController.dispose();
+    super.dispose();
+  }
+
+  void _openCategory(ServiceCategory cat) {
+    final locale = ref.read(localeProvider);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CategoryDetailPage(category: cat, locale: locale),
+      ),
+    );
+  }
+
+  void _openServicesTab() => setState(() => _nav = 1);
 
   TextStyle _s(
     HomePalette p, {
@@ -222,36 +244,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(homeTabProvider, (previous, next) {
+      if (next != _nav) setState(() => _nav = next);
+    });
+
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
     final s = HomeStrings.of(locale);
     final p = HomePalette.of(context);
     final isDark = themeMode == ThemeMode.dark;
+    final topInset = MediaQuery.paddingOf(context).top;
 
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(
-            color: p.pageBg,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: IndexedStack(
-              index: _nav,
-              children: [
-                ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 108),
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: IndexedStack(
+        index: _nav,
+        children: [
+          ListView(
+            padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 108),
                   children: [
                     _TopBar(
                       s: s,
@@ -261,13 +271,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onThemeToggle: () => ref.read(themeModeProvider.notifier).toggle(),
                     ),
                     const SizedBox(height: 12),
-                    _SearchBar(s: s, p: p),
+                    _SearchBar(
+                      s: s,
+                      p: p,
+                      controller: _homeSearchController,
+                      onChanged: (v) => setState(() => _homeQuery = v),
+                      onClear: () {
+                        _homeSearchController.clear();
+                        setState(() => _homeQuery = '');
+                      },
+                    ),
                     const SizedBox(height: 12),
+                    if (_homeQuery.trim().isNotEmpty)
+                      _HomeSearchResults(
+                        query: _homeQuery,
+                        s: s,
+                        p: p,
+                        locale: locale,
+                        onCategory: _openCategory,
+                        onShowAllServices: _openServicesTab,
+                      )
+                    else ...[
                     _TrustRow(s: s, p: p),
                     const SizedBox(height: 12),
                     _PromoRow(s: s, p: p),
                     const SizedBox(height: 18),
-                    _Categories(s: s, p: p),
+                    _Categories(
+                      s: s,
+                      p: p,
+                      locale: locale,
+                      onCategory: _openCategory,
+                      onShowAll: _openServicesTab,
+                    ),
                     const SizedBox(height: 16),
                     _DiscountBanner(s: s, p: p),
                     const SizedBox(height: 18),
@@ -277,7 +312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 22),
                     _ClientReviews(s: s, p: p),
                     const SizedBox(height: 22),
-                    _AiBigBanner(s: s, p: p),
+                    _AiBigBanner(s: s, p: p, onPick: () => showAiMasterPickerSheet(context)),
                     const SizedBox(height: 16),
                     _StatsRow(s: s, p: p),
                     const SizedBox(height: 22),
@@ -288,33 +323,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _DiscountBanner2(s: s, p: p),
                     const SizedBox(height: 18),
                     _AllToolsCard(s: s, p: p),
+                    ],
                   ],
                 ),
                 _ServicesPage(s: s, p: p, locale: locale),
-                _PlaceholderPage(icon: LucideIcons.message_circle, title: s.navChats, p: p),
-                const ProfilePage(),
-              ],
-            ),
-            floatingActionButton: SizedBox(
-              width: 56,
-              height: 56,
-              child: FloatingActionButton(
-                onPressed: () => _showActionSheet(s),
-                backgroundColor: brandGreen,
-                elevation: 4,
-                shape: const CircleBorder(),
-                child: const Icon(LucideIcons.plus, color: Colors.white, size: 28),
-              ),
-            ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-            bottomNavigationBar: _BottomNav(
-              s: s,
-              p: p,
-              current: _nav,
-              onTap: (i) => setState(() => _nav = i),
-            ),
-          ),
+                _ChatsTabPage(p: p),
+          const ProfilePage(),
+        ],
+      ),
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: FloatingActionButton(
+          onPressed: () => _showActionSheet(s),
+          backgroundColor: brandGreen,
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(LucideIcons.plus, color: Colors.white, size: 28),
         ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _BottomNav(
+        s: s,
+        p: p,
+        current: _nav,
+        onTap: (i) => setState(() => _nav = i),
       ),
     );
   }
@@ -391,13 +424,23 @@ class _IconBtn extends StatelessWidget {
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.s, required this.p});
+  const _SearchBar({
+    required this.s,
+    required this.p,
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
 
   final HomeStrings s;
   final HomePalette p;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
+    final hasQuery = controller.text.isNotEmpty;
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -411,21 +454,314 @@ class _SearchBar extends StatelessWidget {
           const Icon(LucideIcons.search, color: brandGreen, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              s.searchPlaceholder,
-              style: GoogleFonts.inter(fontSize: 13, color: p.muted),
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              cursorColor: brandGreen,
+              style: GoogleFonts.inter(fontSize: 13, color: p.text),
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: s.searchPlaceholder,
+                hintStyle: GoogleFonts.inter(fontSize: 13, color: p.muted),
+              ),
             ),
           ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: brandGreen,
-              borderRadius: BorderRadius.circular(10),
+          if (hasQuery)
+            GestureDetector(
+              onTap: onClear,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(LucideIcons.x, size: 17, color: p.muted),
+              ),
+            )
+          else
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: brandGreen,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(LucideIcons.sliders_horizontal, color: Colors.white, size: 16),
             ),
-            child: const Icon(LucideIcons.sliders_horizontal, color: Colors.white, size: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeSearchResults extends StatelessWidget {
+  const _HomeSearchResults({
+    required this.query,
+    required this.s,
+    required this.p,
+    required this.locale,
+    required this.onCategory,
+    required this.onShowAllServices,
+  });
+
+  final String query;
+  final HomeStrings s;
+  final HomePalette p;
+  final AppLocale locale;
+  final ValueChanged<ServiceCategory> onCategory;
+  final VoidCallback onShowAllServices;
+
+  bool _nameHas(String ru, String tj, String en, String q) =>
+      ru.toLowerCase().contains(q) ||
+      tj.toLowerCase().contains(q) ||
+      en.toLowerCase().contains(q);
+
+  @override
+  Widget build(BuildContext context) {
+    final q = query.trim().toLowerCase();
+
+    final matchedCats = serviceCatalog.where((c) => _nameHas(c.ru, c.tj, c.en, q)).toList();
+
+    final matchedServices = <(ServiceCategory, ServiceItem)>[];
+    for (final cat in serviceCatalog) {
+      for (final svc in cat.services) {
+        if (_nameHas(svc.ru, svc.tj, svc.en, q)) {
+          matchedServices.add((cat, svc));
+        }
+      }
+    }
+
+    final matchedMasters = masters.where((m) {
+      if (m.fullName.toLowerCase().contains(q)) return true;
+      if (m.bio.toLowerCase().contains(q)) return true;
+      if (m.profession(locale).toLowerCase().contains(q)) return true;
+      return m.categories.any((c) => localizedCategory(c, locale).toLowerCase().contains(q));
+    }).toList();
+
+    final nothingFound =
+        matchedCats.isEmpty && matchedServices.isEmpty && matchedMasters.isEmpty;
+
+    if (nothingFound) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 32, bottom: 24),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(LucideIcons.search_x, size: 40, color: p.muted),
+              const SizedBox(height: 10),
+              Text(
+                '«$query»',
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (matchedCats.isNotEmpty) ...[
+          Text(
+            s.categories,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+          ),
+          const SizedBox(height: 10),
+          ...matchedCats.map(
+            (cat) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _HomeSearchCategoryRow(
+                cat: cat,
+                locale: locale,
+                p: p,
+                onTap: () => onCategory(cat),
+              ),
+            ),
           ),
         ],
+        if (matchedServices.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            s.navServices,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+          ),
+          const SizedBox(height: 10),
+          ...matchedServices.map(
+            (pair) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _ServiceResultRow(
+                cat: pair.$1,
+                svc: pair.$2,
+                s: s,
+                p: p,
+                locale: locale,
+                onTap: () => onCategory(pair.$1),
+              ),
+            ),
+          ),
+        ],
+        if (matchedMasters.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            s.popularMasters,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+          ),
+          const SizedBox(height: 10),
+          ...matchedMasters.map(
+            (m) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _HomeSearchMasterRow(
+                master: m,
+                s: s,
+                p: p,
+                locale: locale,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: onShowAllServices,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              Text(
+                s.all,
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
+              ),
+              const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _HomeSearchCategoryRow extends StatelessWidget {
+  const _HomeSearchCategoryRow({
+    required this.cat,
+    required this.locale,
+    required this.p,
+    required this.onTap,
+  });
+
+  final ServiceCategory cat;
+  final AppLocale locale;
+  final HomePalette p;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: p.cardBg,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: p.border),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: cat.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(cat.icon, size: 20, color: cat.color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  cat.name(locale),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+                ),
+              ),
+              Icon(LucideIcons.chevron_right, size: 18, color: p.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeSearchMasterRow extends StatelessWidget {
+  const _HomeSearchMasterRow({
+    required this.master,
+    required this.s,
+    required this.p,
+    required this.locale,
+  });
+
+  final MasterItem master;
+  final HomeStrings s;
+  final HomePalette p;
+  final AppLocale locale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: p.cardBg,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: master)),
+          );
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: p.border),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(master.image, width: 44, height: 44, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      master.fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: p.text),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      master.profession(locale),
+                      style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(LucideIcons.star, size: 13, color: Color(0xFFFFC107)),
+                  const SizedBox(width: 3),
+                  Text(
+                    master.rating.toStringAsFixed(1),
+                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -447,7 +783,7 @@ class _TrustRow extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 72,
+      height: 80,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
@@ -455,7 +791,7 @@ class _TrustRow extends StatelessWidget {
         itemBuilder: (_, i) {
           final (icon, label) = items[i];
           return Container(
-            width: 118,
+            width: 128,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: p.cardBg,
@@ -477,6 +813,8 @@ class _TrustRow extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
@@ -506,7 +844,7 @@ class _PromoRow extends StatelessWidget {
       height: 150,
       child: Row(
         children: [
-          Expanded(child: _AiCard(s: s)),
+          Expanded(child: _AiCard(s: s, onTap: () => showAiMasterPickerSheet(context))),
           const SizedBox(width: 8),
           Expanded(child: _MasterCard(s: s, p: p)),
         ],
@@ -516,79 +854,87 @@ class _PromoRow extends StatelessWidget {
 }
 
 class _AiCard extends StatelessWidget {
-  const _AiCard({required this.s});
+  const _AiCard({required this.s, required this.onTap});
 
   final HomeStrings s;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        gradient: const RadialGradient(
-          center: Alignment(0.55, -0.1),
-          radius: 1.1,
-          colors: [Color(0xFF1C5743), Color(0xFF0C271D)],
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: _SparklePainter())),
-          Positioned(
-            right: -10,
-            top: 22,
-            bottom: 18,
-            child: Image.asset(
-              'assets/images/home_ai_robot.png',
-              fit: BoxFit.contain,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const RadialGradient(
+              center: Alignment(0.55, -0.1),
+              radius: 1.1,
+              colors: [Color(0xFF1C5743), Color(0xFF0C271D)],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: brandGreen,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    s.badgeNew,
-                    style: GoogleFonts.inter(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
+          child: Stack(
+            children: [
+              Positioned.fill(child: CustomPaint(painter: _SparklePainter())),
+              Positioned(
+                right: -10,
+                top: 22,
+                bottom: 18,
+                child: Image.asset(
+                  'assets/images/home_ai_robot.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: brandGreen,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        s.badgeNew,
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(
+                      s.aiTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.15,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      s.aiSubtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 9.5,
+                        color: Colors.white.withValues(alpha: 0.75),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  s.aiTitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.15,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  s.aiSubtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 9.5,
-                    color: Colors.white.withValues(alpha: 0.75),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const Positioned(right: 10, bottom: 10, child: _ArrowBtn(dark: true)),
+            ],
           ),
-          const Positioned(right: 10, bottom: 10, child: _ArrowBtn(dark: true)),
-        ],
+        ),
       ),
     );
   }
@@ -626,66 +972,79 @@ class _MasterCard extends StatelessWidget {
   final HomeStrings s;
   final HomePalette p;
 
+  void _openMasters(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const MastersPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () => _openMasters(context),
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: dark
-              ? const [Color(0xFF26312B), Color(0xFF1C2A22)]
-              : const [Color(0xFFF6FAF4), Color(0xFFD8ECD2)],
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: dark
+                  ? const [Color(0xFF26312B), Color(0xFF1C2A22)]
+                  : const [Color(0xFFF6FAF4), Color(0xFFD8ECD2)],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -8,
+                bottom: 0,
+                top: 6,
+                child: Image.asset(
+                  'assets/images/home_handyman.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.masterTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: p.text,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      s.masterSubtitle,
+                      style: GoogleFonts.inter(fontSize: 9.5, color: p.muted, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle),
+                  child: const Icon(LucideIcons.check, size: 13, color: Colors.white),
+                ),
+              ),
+              const Positioned(right: 10, bottom: 10, child: _ArrowBtn(dark: false)),
+            ],
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned(
-            right: -8,
-            bottom: 0,
-            top: 6,
-            child: Image.asset(
-              'assets/images/home_handyman.png',
-              fit: BoxFit.contain,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.masterTitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: p.text,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  s.masterSubtitle,
-                  style: GoogleFonts.inter(fontSize: 9.5, color: p.muted, height: 1.3),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            right: 10,
-            top: 10,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle),
-              child: const Icon(LucideIcons.check, size: 13, color: Colors.white),
-            ),
-          ),
-          const Positioned(right: 10, bottom: 10, child: _ArrowBtn(dark: false)),
-        ],
       ),
     );
   }
@@ -712,19 +1071,29 @@ class _ArrowBtn extends StatelessWidget {
 }
 
 class _Categories extends StatelessWidget {
-  const _Categories({required this.s, required this.p});
+  const _Categories({
+    required this.s,
+    required this.p,
+    required this.locale,
+    required this.onCategory,
+    required this.onShowAll,
+  });
 
   final HomeStrings s;
   final HomePalette p;
+  final AppLocale locale;
+  final ValueChanged<ServiceCategory> onCategory;
+  final VoidCallback onShowAll;
 
   @override
   Widget build(BuildContext context) {
-    final cats = [
-      (LucideIcons.zap, s.catElectrical, const Color(0xFFF59E0B)),
-      (LucideIcons.droplet, s.catPlumbing, const Color(0xFF3B82F6)),
-      (LucideIcons.paint_roller, s.catFinishing, brandGreen),
-      (LucideIcons.armchair, s.catFurniture, const Color(0xFF8B5CF6)),
-      (LucideIcons.ellipsis, s.catMore, p.muted),
+    final featured = serviceCatalog.take(4).toList();
+    final cats = <(IconData, String, Color, ServiceCategory?)>[
+      (LucideIcons.zap, s.catElectrical, const Color(0xFFF59E0B), featured[0]),
+      (LucideIcons.droplet, s.catPlumbing, const Color(0xFF3B82F6), featured[1]),
+      (LucideIcons.paint_roller, s.catFinishing, brandGreen, featured[2]),
+      (LucideIcons.armchair, s.catFurniture, const Color(0xFF8B5CF6), featured[3]),
+      (LucideIcons.ellipsis, s.catMore, p.muted, null),
     ];
 
     return Column(
@@ -736,16 +1105,24 @@ class _Categories extends StatelessWidget {
               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
             ),
             const Spacer(),
-            Text(
-              s.all,
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
+            GestureDetector(
+              onTap: onShowAll,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Text(
+                    s.all,
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
+                  ),
+                  const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
+                ],
+              ),
             ),
-            const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
           ],
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 72,
+          height: 88,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: cats.length,
@@ -758,27 +1135,34 @@ class _Categories extends StatelessWidget {
                 elevation: Theme.of(context).brightness == Brightness.light ? 1 : 0,
                 shadowColor: Colors.black.withValues(alpha: 0.08),
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    if (c.$4 != null) {
+                      onCategory(c.$4!);
+                    } else {
+                      onShowAll();
+                    }
+                  },
                   borderRadius: BorderRadius.circular(16),
                   child: SizedBox(
-                    width: 72,
-                    height: 72,
+                    width: 84,
+                    height: 84,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(c.$1, color: c.$3, size: 24),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 5),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
                             c.$2,
                             textAlign: TextAlign.center,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
-                              fontSize: 9.5,
+                              fontSize: 10,
                               fontWeight: FontWeight.w500,
                               color: p.text,
+                              height: 1.1,
                             ),
                           ),
                         ),
@@ -941,6 +1325,8 @@ class _HowItWorks extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -952,6 +1338,8 @@ class _HowItWorks extends StatelessWidget {
                   Text(
                     sub,
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(fontSize: 9, color: p.muted, height: 1.35),
                   ),
                 ],
@@ -986,23 +1374,25 @@ class _BottomNav extends StatelessWidget {
       (3, LucideIcons.user, s.navProfile),
     ];
 
-    return BottomAppBar(
-      color: p.cardBg,
-      elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      notchMargin: 6,
-      height: 64,
-      padding: EdgeInsets.zero,
-      shape: const CircularNotchedRectangle(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _item(items[0].$1, items[0].$2, items[0].$3),
-          _item(items[1].$1, items[1].$2, items[1].$3),
-          const SizedBox(width: 48),
-          _item(items[2].$1, items[2].$2, items[2].$3),
-          _item(items[3].$1, items[3].$2, items[3].$3),
-        ],
+    return SafeArea(
+      top: false,
+      child: BottomAppBar(
+        color: p.cardBg,
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        notchMargin: 6,
+        height: 72,
+        padding: EdgeInsets.zero,
+        shape: const CircularNotchedRectangle(),
+        child: Row(
+          children: [
+            Expanded(child: _item(items[0].$1, items[0].$2, items[0].$3)),
+            Expanded(child: _item(items[1].$1, items[1].$2, items[1].$3)),
+            const SizedBox(width: 52),
+            Expanded(child: _item(items[2].$1, items[2].$2, items[2].$3)),
+            Expanded(child: _item(items[3].$1, items[3].$2, items[3].$3)),
+          ],
+        ),
       ),
     );
   }
@@ -1012,20 +1402,23 @@ class _BottomNav extends StatelessWidget {
     final c = on ? brandGreen : p.muted;
     return InkWell(
       onTap: () => onTap(i),
-      child: SizedBox(
-        width: 56,
-        height: 48,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 19, color: c),
-            const SizedBox(height: 1),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 8.5,
-                fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                color: c,
+            Icon(icon, size: 22, color: c),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                  color: c,
+                ),
               ),
             ),
           ],
@@ -1101,7 +1494,7 @@ class _PopularMasters extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 300,
+          height: 340,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: list.length,
@@ -1144,17 +1537,18 @@ class _PopularMasterCard extends StatelessWidget {
         onTap: () => _open(context),
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          width: 210,
+          width: 220,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: p.border),
           ),
-          clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                height: 130,
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: SizedBox(
+                height: 125,
                 width: double.infinity,
                 child: Stack(
                   fit: StackFit.expand,
@@ -1229,6 +1623,7 @@ class _PopularMasterCard extends StatelessWidget {
                   ],
                 ),
               ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                 child: Column(
@@ -1236,9 +1631,9 @@ class _PopularMasterCard extends StatelessWidget {
                   children: [
                     Text(
                       m.fullName,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: p.text),
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text, height: 1.2),
                     ),
                     const SizedBox(height: 5),
                     Row(
@@ -1272,17 +1667,18 @@ class _PopularMasterCard extends StatelessWidget {
                       '${s.fromPrice} ${m.priceMin} ${s.priceUnit}',
                       style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: brandGreen),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
-                      height: 38,
+                      height: 44,
                       child: ElevatedButton.icon(
                         onPressed: () => _open(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: brandGreen,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding: EdgeInsets.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          visualDensity: VisualDensity.compact,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         icon: const Icon(LucideIcons.phone, size: 15),
@@ -1427,10 +1823,11 @@ class _ReviewCard extends StatelessWidget {
 // ─── AI big banner ────────────────────────────────────────────────────────────
 
 class _AiBigBanner extends StatelessWidget {
-  const _AiBigBanner({required this.s, required this.p});
+  const _AiBigBanner({required this.s, required this.p, required this.onPick});
 
   final HomeStrings s;
   final HomePalette p;
+  final VoidCallback onPick;
 
   @override
   Widget build(BuildContext context) {
@@ -1481,7 +1878,7 @@ class _AiBigBanner extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             children: [
               _aiStep(LucideIcons.pencil, s.aiStepDescribe, p),
@@ -1489,29 +1886,27 @@ class _AiBigBanner extends StatelessWidget {
               _aiStep(LucideIcons.users, s.aiStepGet, p),
               _aiArrow(p),
               _aiStep(LucideIcons.shield_check, s.aiStepCompare, p),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 3,
-                child: SizedBox(
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: brandGreen,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(
-                      s.aiBigBtn,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, height: 1.15),
-                    ),
-                  ),
-                ),
-              ),
             ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onPick,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandGreen,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                s.aiBigBtn,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, height: 1.2),
+              ),
+            ),
           ),
         ],
       ),
@@ -1569,7 +1964,7 @@ class _StatsRow extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 104,
+      height: 110,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: stats.length,
@@ -1577,7 +1972,7 @@ class _StatsRow extends StatelessWidget {
         itemBuilder: (_, i) {
           final (icon, value, label) = stats[i];
           return Container(
-            width: 116,
+            width: 128,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: p.cardBg,
@@ -1630,10 +2025,10 @@ class _ToolsShop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final products = <_ProductData>[
-      _ProductData(name: s.prodDrill, image: 'assets/images/tool_drill.png', price: 5990),
-      _ProductData(name: s.prodHammer, image: 'assets/images/tool_hammer.png', price: 590),
-      _ProductData(name: s.prodToolSet, image: 'assets/images/tool_set.png', price: 1990),
-      _ProductData(name: s.prodLevel, image: 'assets/images/tool_level.png', price: 180),
+      _ProductData(name: s.prodDrill, image: 'assets/images/tool_drill.png', price: 520),
+      _ProductData(name: s.prodHammer, image: 'assets/images/tool_hammer.png', price: 120),
+      _ProductData(name: s.prodToolSet, image: 'assets/images/tool_set.png', price: 290),
+      _ProductData(name: s.prodLevel, image: 'assets/images/tool_level.png', price: 85),
     ];
 
     return Column(
@@ -1641,7 +2036,7 @@ class _ToolsShop extends StatelessWidget {
         _SectionHeader(title: s.toolsShop, action: s.all, p: p),
         const SizedBox(height: 12),
         SizedBox(
-          height: 250,
+          height: 268,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
@@ -1684,7 +2079,7 @@ class _ProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 150,
+            height: 140,
             width: double.infinity,
             color: Colors.white,
             padding: const EdgeInsets.all(10),
@@ -1695,11 +2090,14 @@ class _ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  prod.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
+                SizedBox(
+                  height: 34,
+                  child: Text(
+                    prod.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -1755,7 +2153,7 @@ class _MoreFeatures extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 132,
+          height: 152,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: feats.length,
@@ -1763,7 +2161,7 @@ class _MoreFeatures extends StatelessWidget {
             itemBuilder: (_, i) {
               final (icon, title, sub) = feats[i];
               return Container(
-                width: 132,
+                width: 148,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: p.cardBg,
@@ -1785,14 +2183,16 @@ class _MoreFeatures extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: p.text),
+                      style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: p.text, height: 1.15),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       sub,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(fontSize: 9, color: p.muted, height: 1.2),
                     ),
                   ],
@@ -1950,11 +2350,11 @@ class _AllToolsCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 16,
+            spacing: 12,
             runSpacing: 10,
             children: items.map((label) {
               return SizedBox(
-                width: 150,
+                width: (MediaQuery.sizeOf(context).width - 64) / 2,
                 child: Row(
                   children: [
                     const Icon(LucideIcons.circle_check, size: 16, color: brandGreen),
@@ -1962,9 +2362,9 @@ class _AllToolsCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         label,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 11.5, color: p.text),
+                        style: GoogleFonts.inter(fontSize: 11, color: p.text, height: 1.2),
                       ),
                     ),
                   ],
@@ -2039,7 +2439,7 @@ class _ServicesPageState extends State<_ServicesPage> {
     final nothingFound = q.isNotEmpty && matchedCats.isEmpty && matchedServices.isEmpty;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 16, 16, 108),
       children: [
         Text(
           s.navServices,
@@ -2284,6 +2684,31 @@ class _ServiceCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ChatsTabPage extends ConsumerWidget {
+  const _ChatsTabPage({required this.p});
+
+  final HomePalette p;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Чаты',
+              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
+            ),
+          ),
+        ),
+        Expanded(child: ChatsListPage(p: p)),
+      ],
     );
   }
 }

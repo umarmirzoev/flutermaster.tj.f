@@ -6,10 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/theme_mode_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../shop/data/shop_data.dart';
 import '../../shop/state/shop_state.dart';
 import '../data/profile_l10n.dart';
+import 'edit_name_sheet.dart';
+import 'service_orders_page.dart';
 import 'profile_subpages.dart';
 
 class ProfileDashboard extends ConsumerWidget {
@@ -22,9 +25,6 @@ class ProfileDashboard extends ConsumerWidget {
   final double bottomPadding;
   final void Function(ShopProduct)? onOpenProduct;
 
-  static const phone = '+992 90 123 45 67';
-  static const name = 'Пользователь';
-
   void _push(BuildContext context, Widget page) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
@@ -35,6 +35,9 @@ class ProfileDashboard extends ConsumerWidget {
     final l = ProfileL10n.of(locale);
     final p = HomePalette.of(context);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final auth = ref.watch(authProvider);
+    final name = auth.displayName ?? 'Пользователь';
+    final phone = auth.phone ?? '—';
 
     final orders = ref.watch(shopOrdersProvider);
     final fav = ref.watch(shopFavoritesProvider);
@@ -57,6 +60,12 @@ class ProfileDashboard extends ConsumerWidget {
           phone: phone,
           onSettings: () => _languageSheet(context, ref, l),
           onCall: () => _push(context, const SupportPage()),
+          onEditAvatar: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => EditNameSheet(initialName: name),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -72,7 +81,7 @@ class ProfileDashboard extends ConsumerWidget {
                       value: '$ordersCount',
                       label: l.orders,
                       p: p,
-                      onTap: () => _push(context, const OrdersPage()),
+                      onTap: () => _push(context, const ServiceOrdersPage()),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -116,7 +125,7 @@ class ProfileDashboard extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    _MenuRow(icon: LucideIcons.history, label: l.orderHistory, p: p, onTap: () => _push(context, const OrdersPage())),
+                    _MenuRow(icon: LucideIcons.history, label: l.orderHistory, p: p, onTap: () => _push(context, const ServiceOrdersPage())),
                     _divider(p),
                     _MenuRow(
                       icon: LucideIcons.credit_card,
@@ -235,13 +244,21 @@ class ProfileDashboard extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.l, required this.name, required this.phone, required this.onSettings, required this.onCall});
+  const _Header({
+    required this.l,
+    required this.name,
+    required this.phone,
+    required this.onSettings,
+    required this.onCall,
+    required this.onEditAvatar,
+  });
 
   final ProfileL10n l;
   final String name;
   final String phone;
   final VoidCallback onSettings;
   final VoidCallback onCall;
+  final VoidCallback onEditAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -281,30 +298,33 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 18),
           Row(
             children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 84,
-                    height: 84,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.55)]),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 2),
+              GestureDetector(
+                onTap: onEditAvatar,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.55)]),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(initial, style: GoogleFonts.inter(fontSize: 34, fontWeight: FontWeight.w900, color: const Color(0xFF2E9E4F))),
                     ),
-                    alignment: Alignment.center,
-                    child: Text(initial, style: GoogleFonts.inter(fontSize: 34, fontWeight: FontWeight.w900, color: const Color(0xFF2E9E4F))),
-                  ),
-                  Positioned(
-                    right: 2,
-                    bottom: 2,
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(color: brandGreen, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
-                      child: const Icon(LucideIcons.pencil, size: 12, color: Colors.white),
+                    Positioned(
+                      right: 2,
+                      bottom: 2,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(color: brandGreen, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                        child: const Icon(LucideIcons.pencil, size: 12, color: Colors.white),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -315,39 +335,41 @@ class _Header extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(color: brandGreen.withValues(alpha: 0.12), shape: BoxShape.circle),
-                        child: const Icon(LucideIcons.user, size: 17, color: brandGreen),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(phone, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w800, color: const Color(0xFF1C1C1C))),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Container(width: 7, height: 7, decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle)),
-                                const SizedBox(width: 5),
-                                Text(l.online, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: brandGreen)),
-                              ],
-                            ),
-                          ],
+                      Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1C1C1C),
+                          height: 1.2,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: onCall,
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(color: brandGreen.withValues(alpha: 0.12), shape: BoxShape.circle),
-                          child: const Icon(LucideIcons.phone, size: 17, color: brandGreen),
+                      const SizedBox(height: 4),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          phone,
+                          maxLines: 1,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF6B7280),
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(width: 7, height: 7, decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle)),
+                          const SizedBox(width: 5),
+                          Text(l.online, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: brandGreen)),
+                        ],
                       ),
                     ],
                   ),
@@ -398,7 +420,7 @@ class _StatCard extends StatelessWidget {
                 child: Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: p.text)),
               ),
               const SizedBox(height: 2),
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10.5, color: p.muted)),
+              Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10, color: p.muted, height: 1.15)),
             ],
           ),
         ),
@@ -430,7 +452,7 @@ class _LevelCard extends StatelessWidget {
             children: [
               const Icon(LucideIcons.medal, size: 18, color: Color(0xFFC0C7D0)),
               const SizedBox(width: 6),
-              Expanded(child: Text(l.accountLevel, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white.withValues(alpha: 0.7)))),
+              Expanded(child: Text(l.accountLevel, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10, color: Colors.white.withValues(alpha: 0.7), height: 1.15))),
             ],
           ),
           const SizedBox(height: 6),
@@ -469,7 +491,7 @@ class _BonusCard extends StatelessWidget {
             children: [
               const Icon(LucideIcons.star, size: 18, color: Color(0xFFFFD54A)),
               const SizedBox(width: 6),
-              Expanded(child: Text(l.bonusesTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white.withValues(alpha: 0.85)))),
+              Expanded(child: Text(l.bonusesTitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10, color: Colors.white.withValues(alpha: 0.85), height: 1.15))),
             ],
           ),
           const SizedBox(height: 6),

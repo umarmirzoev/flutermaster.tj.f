@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/shop_data.dart';
+import '../../../core/providers/catalog_provider.dart';
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +91,7 @@ class ShopCartNotifier extends Notifier<Map<int, int>> {
   void clear() => state = {};
 
   int get count => state.values.fold(0, (a, b) => a + b);
-  int get total => state.entries.fold(0, (a, e) => a + shopProducts[e.key].price * e.value);
+  int get total => state.entries.fold(0, (a, e) => a + ref.read(shopCatalogProvider)[e.key].price * e.value);
 }
 
 // ─── Favorites ──────────────────────────────────────────────────────────────

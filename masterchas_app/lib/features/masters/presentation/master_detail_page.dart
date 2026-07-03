@@ -22,68 +22,46 @@ class MasterDetailPage extends ConsumerWidget {
     final s = HomeStrings.of(locale);
     final p = HomePalette.of(context);
     final m = master;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(
-            color: p.pageBg,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Scaffold(
-            backgroundColor: p.pageBg,
-            body: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _PhotoHeader(m: m, s: s, p: p)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _NameBlock(m: m, s: s, p: p, locale: locale),
-                        const SizedBox(height: 16),
-                        _StatsRow(m: m, s: s, p: p),
-                        const SizedBox(height: 18),
-                        _Section(title: s.aboutTitle, p: p, child: Text(
-                          m.bio,
-                          style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.5),
-                        )),
-                        const SizedBox(height: 18),
-                        _ServicesPrices(m: m, s: s, p: p, locale: locale),
-                        const SizedBox(height: 18),
-                        _Section(
-                          title: s.districtsTitle,
-                          p: p,
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: m.districts
-                                .map((d) => _Pill(label: d, icon: LucideIcons.map_pin, p: p))
-                                .toList(),
-                          ),
-                        ),
-                      ],
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _PhotoHeader(m: m, s: s, p: p)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _NameBlock(m: m, s: s, p: p, locale: locale),
+                  const SizedBox(height: 16),
+                  _StatsRow(m: m, s: s, p: p),
+                  const SizedBox(height: 18),
+                  _Section(title: s.aboutTitle, p: p, child: Text(
+                    m.bio,
+                    style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.5),
+                  )),
+                  const SizedBox(height: 18),
+                  _ServicesPrices(m: m, s: s, p: p, locale: locale),
+                  const SizedBox(height: 18),
+                  _Section(
+                    title: s.districtsTitle,
+                    p: p,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: m.districts
+                          .map((d) => _Pill(label: d, icon: LucideIcons.map_pin, p: p))
+                          .toList(),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            bottomNavigationBar: _BottomBar(m: m, s: s, p: p),
           ),
-        ),
+        ],
       ),
+      bottomNavigationBar: _BottomBar(m: m, s: s, p: p),
     );
   }
 }
@@ -102,7 +80,10 @@ class _PhotoHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          if (m.imageBytes != null)
+            Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
+          else
+            Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -442,7 +423,11 @@ class _ServicePriceRow extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => BookingPage(master: m, serviceName: svc.name(locale)),
+            builder: (_) => BookingPage(
+              master: m,
+              serviceName: svc.name(locale),
+              servicePrice: svc.priceAvg.toDouble(),
+            ),
           ),
         );
       },
@@ -557,8 +542,15 @@ class _BottomBar extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    final svc = defaultServiceForMaster(m);
                     Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => BookingPage(master: m)),
+                      MaterialPageRoute<void>(
+                        builder: (_) => BookingPage(
+                          master: m,
+                          serviceName: svc?.ru,
+                          servicePrice: svc?.priceAvg.toDouble(),
+                        ),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

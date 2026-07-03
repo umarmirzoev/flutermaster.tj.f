@@ -6,7 +6,7 @@ class AppFlowConfig {
   static const bool postSplashFlowEnabled = true;
 
   /// When `true`, splash goes directly to home instead of role selection.
-  static const bool splashGoesToHome = true;
+  static const bool splashGoesToHome = false;
 
   /// When `false`, home is available without signing in.
   static const bool requireAuthForHome = false;

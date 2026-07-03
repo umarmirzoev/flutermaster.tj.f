@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
@@ -21,6 +23,7 @@ class MasterItem {
     required this.completedOrders,
     required this.isTop,
     required this.isOnline,
+    this.imageBytes,
   });
 
   final String fullName;
@@ -37,6 +40,7 @@ class MasterItem {
   final int completedOrders;
   final bool isTop;
   final bool isOnline;
+  final Uint8List? imageBytes;
 
   /// Primary localized profession (first category).
   String profession(AppLocale locale) => localizedCategory(categories.first, locale);
@@ -348,6 +352,14 @@ const Map<String, String> _catalogAlias = {
   'Сварочные работы': 'Другие услуги',
   'Аварийные 24/7': 'Другие услуги',
 };
+
+/// First priced service shown for a master (for generic "Book" button).
+ServiceItem? defaultServiceForMaster(MasterItem master) {
+  for (final cat in masterServiceCategories(master)) {
+    if (cat.services.isNotEmpty) return cat.services.first;
+  }
+  return null;
+}
 
 /// Catalog categories (with services + somoni prices) offered by a master.
 List<ServiceCategory> masterServiceCategories(MasterItem m) {

@@ -15,16 +15,8 @@ class ProfileShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = HomePalette.of(context);
     return ColoredBox(
-      color: p.shellBg,
-      child: Center(
-        child: Container(
-          width: 390,
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height),
-          decoration: BoxDecoration(color: p.pageBg),
-          clipBehavior: Clip.antiAlias,
-          child: child,
-        ),
-      ),
+      color: p.pageBg,
+      child: child,
     );
   }
 }

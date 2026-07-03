@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/auth_provider.dart';
+import '../utils/phone_formatter.dart';
 
 const _authGreen = Color(0xFF57B55E);
 const _hintGrey = Color(0xFF9CA3AF);
@@ -23,6 +25,22 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneController = TextEditingController();
   bool _agreedToTerms = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSavedPhone();
+  }
+
+  Future<void> _restoreSavedPhone() async {
+    final saved = await ref.read(authProvider.notifier).readSavedPhone();
+    final digits = localDigitsFromPhone(saved);
+    if (!mounted || digits.isEmpty) return;
+
+    _phoneController.text = digits;
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -31,24 +49,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool get _canConfirm =>
-      _agreedToTerms && _phoneController.text.trim().length >= 9;
+      !_isSubmitting &&
+      _agreedToTerms &&
+      _phoneController.text.trim().length >= 9;
 
   Future<void> _signInAsGuest() async {
-    await ref.read(authProvider.notifier).signIn(token: 'guest-token');
+    await ref.read(authProvider.notifier).signInAsGuest();
     if (mounted) context.go('/');
   }
 
-  void _onConfirm() {
+  Future<void> _onConfirm() async {
     if (!_canConfirm) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Код отправлен на +992 ${_phoneController.text.trim()}',
-          style: GoogleFonts.inter(),
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .signInWithPhone(_phoneController.text.trim());
+      if (mounted) {
+        final role = GoRouterState.of(context).uri.queryParameters['role'] ?? 'Client';
+        context.push(
+          '/login/password',
+          extra: {
+            'phone': _phoneController.text.trim(),
+            'role': role,
+          },
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -75,16 +106,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _phoneController,
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Мы отправим СМС с кодом подтверждения.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: _bodyGrey,
-                  height: 1.4,
-                ),
-              ),
               const SizedBox(height: 22),
               _TermsCheckbox(
                 value: _agreedToTerms,
@@ -107,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   child: Text(
-                    'Подтвердить',
+                    _isSubmitting ? 'Вход...' : 'Подтвердить',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

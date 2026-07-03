@@ -1,4 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/l10n/app_locale.dart';
@@ -30,6 +32,7 @@ class ShopProduct {
     required this.categoryIndex,
     required this.descRu,
     required this.descEn,
+    this.imageBytes,
   });
 
   final String ru;
@@ -44,6 +47,7 @@ class ShopProduct {
   final int categoryIndex; // 1..7 (0 == "All")
   final String descRu;
   final String descEn;
+  final Uint8List? imageBytes;
 
   int get discountPercent => oldPrice > price ? (((oldPrice - price) / oldPrice) * 100).round() : 0;
 
@@ -58,73 +62,80 @@ class ShopProduct {
       };
 }
 
+Widget buildShopProductImage(ShopProduct product, {double? width, double? height, BoxFit fit = BoxFit.contain}) {
+  if (product.imageBytes != null) {
+    return Image.memory(product.imageBytes!, width: width, height: height, fit: fit);
+  }
+  return Image.asset(product.image, width: width, height: height, fit: fit);
+}
+
 const shopProducts = <ShopProduct>[
   ShopProduct(
     ru: 'BERALI шуруповёрт 48В', en: 'BERALI drill driver 48V',
-    image: 'assets/images/tool_drill.png', price: 5990, oldPrice: 7490, rating: 4.8,
+    image: 'assets/images/tool_drill.png', price: 520, oldPrice: 650, rating: 4.8,
     ratingsCount: 142, orders: 1240, badge: ProductBadge.hit, categoryIndex: 1,
     descRu: 'Аккумуляторный шуруповёрт с двумя АКБ 48В, кейсом и набором бит. Реверс, регулировка крутящего момента, светодиодная подсветка.',
     descEn: 'Cordless drill driver with two 48V batteries, a case and a set of bits. Reverse, torque control and LED light.',
   ),
   ShopProduct(
     ru: 'Шлифмашина угловая 125мм', en: 'Angle grinder 125mm',
-    image: 'assets/images/shop_grinder.png', price: 4490, oldPrice: 5290, rating: 4.7,
+    image: 'assets/images/shop_grinder.png', price: 380, oldPrice: 450, rating: 4.7,
     ratingsCount: 98, orders: 860, badge: ProductBadge.hit, categoryIndex: 1,
     descRu: 'Угловая шлифмашина (болгарка) 125мм, мощный двигатель, защита от перегрузки, удобная рукоятка.',
     descEn: '125mm angle grinder with a powerful motor, overload protection and a comfortable grip.',
   ),
   ShopProduct(
     ru: 'Дисковая пила 190мм', en: 'Circular saw 190mm',
-    image: 'assets/images/shop_saw.png', price: 6990, oldPrice: 0, rating: 4.9,
+    image: 'assets/images/shop_saw.png', price: 580, oldPrice: 0, rating: 4.9,
     ratingsCount: 76, orders: 540, badge: ProductBadge.hit, categoryIndex: 1,
     descRu: 'Дисковая пила 190мм для точного и быстрого реза дерева. Регулировка глубины и угла, лазерный указатель.',
     descEn: '190mm circular saw for fast, precise wood cutting. Depth and angle adjustment, laser guide.',
   ),
   ShopProduct(
     ru: 'Набор инструментов 108 предметов', en: 'Tool set 108 pcs',
-    image: 'assets/images/tool_set.png', price: 3890, oldPrice: 4990, rating: 4.8,
+    image: 'assets/images/tool_set.png', price: 290, oldPrice: 370, rating: 4.8,
     ratingsCount: 320, orders: 2100, badge: ProductBadge.hit, categoryIndex: 2,
     descRu: 'Универсальный набор из 108 предметов: головки, биты, ключи и трещотка в прочном кейсе.',
     descEn: 'Universal 108-piece set: sockets, bits, wrenches and a ratchet in a durable case.',
   ),
   ShopProduct(
     ru: 'Перфоратор 26мм 800Вт', en: 'Rotary hammer 26mm 800W',
-    image: 'assets/images/shop_perforator.png', price: 7990, oldPrice: 9990, rating: 4.9,
+    image: 'assets/images/shop_perforator.png', price: 620, oldPrice: 780, rating: 4.9,
     ratingsCount: 64, orders: 430, badge: ProductBadge.hit, categoryIndex: 1,
     descRu: 'Перфоратор SDS-Plus 800Вт, 3 режима работы, антивибрационная система. Для бетона, кирпича и камня.',
     descEn: 'SDS-Plus 800W rotary hammer, 3 modes, anti-vibration system. For concrete, brick and stone.',
   ),
   ShopProduct(
     ru: 'BERALI гайковёрт аккумуляторный', en: 'BERALI cordless impact wrench',
-    image: 'assets/images/tool_drill.png', price: 6490, oldPrice: 0, rating: 4.8,
+    image: 'assets/images/tool_drill.png', price: 490, oldPrice: 0, rating: 4.8,
     ratingsCount: 41, orders: 210, badge: ProductBadge.isNew, categoryIndex: 1,
     descRu: 'Аккумуляторный ударный гайковёрт с высоким крутящим моментом. Бесщёточный двигатель, быстрая зарядка.',
     descEn: 'Cordless impact wrench with high torque. Brushless motor and fast charging.',
   ),
   ShopProduct(
     ru: 'BERALI мойка высокого давления', en: 'BERALI pressure washer',
-    image: 'assets/images/shop_washer.png', price: 8990, oldPrice: 10990, rating: 4.6,
+    image: 'assets/images/shop_washer.png', price: 720, oldPrice: 880, rating: 4.6,
     ratingsCount: 53, orders: 320, badge: ProductBadge.isNew, categoryIndex: 4,
     descRu: 'Мойка высокого давления 150 бар. Для авто, фасадов и дорожек. В комплекте насадки и шланг.',
     descEn: 'High-pressure washer 150 bar. For cars, facades and pathways. Nozzles and hose included.',
   ),
   ShopProduct(
     ru: 'Набор инструментов 216 предметов', en: 'Tool set 216 pcs',
-    image: 'assets/images/tool_set.png', price: 9990, oldPrice: 12490, rating: 4.9,
+    image: 'assets/images/tool_set.png', price: 850, oldPrice: 1050, rating: 4.9,
     ratingsCount: 38, orders: 180, badge: ProductBadge.isNew, categoryIndex: 2,
     descRu: 'Профессиональный набор из 216 предметов для дома и автосервиса в металлическом кейсе.',
     descEn: 'Professional 216-piece set for home and auto service in a metal case.',
   ),
   ShopProduct(
     ru: 'BERALI лобзик 850Вт', en: 'BERALI jigsaw 850W',
-    image: 'assets/images/shop_jigsaw.png', price: 3990, oldPrice: 0, rating: 4.7,
+    image: 'assets/images/shop_jigsaw.png', price: 340, oldPrice: 0, rating: 4.7,
     ratingsCount: 47, orders: 290, badge: ProductBadge.isNew, categoryIndex: 1,
     descRu: 'Электролобзик 850Вт с маятниковым ходом и подсветкой. Точный рез дерева, металла и пластика.',
     descEn: '850W jigsaw with pendulum action and light. Precise cutting of wood, metal and plastic.',
   ),
   ShopProduct(
     ru: 'BERALI фонарь аккумуляторный', en: 'BERALI rechargeable flashlight',
-    image: 'assets/images/shop_flashlight.png', price: 1490, oldPrice: 1990, rating: 4.6,
+    image: 'assets/images/shop_flashlight.png', price: 75, oldPrice: 95, rating: 4.6,
     ratingsCount: 130, orders: 980, badge: ProductBadge.isNew, categoryIndex: 5,
     descRu: 'Аккумуляторный рабочий фонарь COB с магнитом и крючком. Несколько режимов яркости.',
     descEn: 'Rechargeable COB work light with a magnet and a hook. Several brightness modes.',
@@ -263,10 +274,10 @@ class ShopL10n {
       badgeNew: 'НОВИНКА',
       priceUnit: 'с.',
       promoTitles: ['Скидка до 30%', 'Бесплатная доставка', 'Сезонная распродажа до -40%'],
-      promoSubs: ['на электроинструмент BERALI', 'от 3000 с.', 'на садовую технику'],
+      promoSubs: ['на электроинструмент BERALI', 'от 300 с.', 'на садовую технику'],
       promoBtns: ['К покупкам', 'Подробнее', 'Смотреть'],
       advTitles: ['Бесплатная доставка', 'Гарантия качества', 'Возврат товара', 'Поддержка 24/7'],
-      advSubs: ['от 3000 с.', 'до 2 лет', 'в течение 14 дней', 'мы всегда на связи'],
+      advSubs: ['от 300 с.', 'до 2 лет', 'в течение 14 дней', 'мы всегда на связи'],
       newsletterTitle: 'Будьте в курсе новинок и акций',
       newsletterSub: 'Подпишитесь на рассылку и получайте лучшие предложения первыми',
       emailHint: 'Ваш e-mail',
@@ -312,10 +323,10 @@ class ShopL10n {
       badgeNew: 'NEW',
       priceUnit: 's.',
       promoTitles: ['Up to 30% off', 'Free delivery', 'Seasonal sale up to -40%'],
-      promoSubs: ['on BERALI power tools', 'from 3000 s.', 'on garden equipment'],
+      promoSubs: ['on BERALI power tools', 'from 300 s.', 'on garden equipment'],
       promoBtns: ['Shop now', 'Learn more', 'View'],
       advTitles: ['Free delivery', 'Quality warranty', 'Returns', '24/7 support'],
-      advSubs: ['from 3000 s.', 'up to 2 years', 'within 14 days', 'always in touch'],
+      advSubs: ['from 300 s.', 'up to 2 years', 'within 14 days', 'always in touch'],
       newsletterTitle: 'Stay up to date with deals',
       newsletterSub: 'Subscribe to the newsletter and get the best offers first',
       emailHint: 'Your e-mail',
@@ -361,10 +372,10 @@ class ShopL10n {
       badgeNew: 'НАВ',
       priceUnit: 'с.',
       promoTitles: ['Тахфиф то 30%', 'Расонидани ройгон', 'Фурӯши мавсимӣ то -40%'],
-      promoSubs: ['ба асбоби барқии BERALI', 'аз 3000 с.', 'ба техникаи боғ'],
+      promoSubs: ['ба асбоби барқии BERALI', 'аз 300 с.', 'ба техникаи боғ'],
       promoBtns: ['Ба харид', 'Муфассал', 'Дидан'],
       advTitles: ['Расонидани ройгон', 'Кафолати сифат', 'Бозгашти мол', 'Дастгирии 24/7'],
-      advSubs: ['аз 3000 с.', 'то 2 сол', 'дар 14 рӯз', 'ҳамеша дар тамос'],
+      advSubs: ['аз 300 с.', 'то 2 сол', 'дар 14 рӯз', 'ҳамеша дар тамос'],
       newsletterTitle: 'Аз навигариҳо ва аксияҳо огоҳ бошед',
       newsletterSub: 'Обуна шавед ва беҳтарин пешниҳодҳоро аввал гиред',
       emailHint: 'E-mail-и шумо',
@@ -410,10 +421,10 @@ class ShopL10n {
       badgeNew: '新品',
       priceUnit: '索',
       promoTitles: ['最高3折优惠', '免费配送', '季节促销最高6折'],
-      promoSubs: ['BERALI电动工具', '满3000索莫尼', '园艺设备'],
+      promoSubs: ['BERALI电动工具', '满300索莫尼', '园艺设备'],
       promoBtns: ['去购买', '了解更多', '查看'],
       advTitles: ['免费配送', '质量保证', '退货', '24/7支持'],
-      advSubs: ['满3000索莫尼', '长达2年', '14天内', '随时联系'],
+      advSubs: ['满300索莫尼', '长达2年', '14天内', '随时联系'],
       newsletterTitle: '及时了解新品与优惠',
       newsletterSub: '订阅邮件，第一时间获取最优惠的信息',
       emailHint: '您的邮箱',

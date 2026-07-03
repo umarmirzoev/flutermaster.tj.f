@@ -12,3 +12,10 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+avast-truststore.jks
+avast-shield.pem
+avast-*.pem
+gcs.pem
+google.pem
+maven-chain.pem
+cert-*.pem
