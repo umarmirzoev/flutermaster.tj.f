@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,52 @@ import '../../auth/providers/auth_provider.dart';
 const splashBackground = Color(0xFF57B55E);
 const _splashIconColor = Colors.white;
 
+// ─── Floating particle data ───────────────────────────────────────────────
+class _Particle {
+  _Particle({required this.rng}) {
+    reset(initial: true);
+  }
+
+  final Random rng;
+  late double x, y, size, speed, opacity;
+
+  void reset({bool initial = false}) {
+    x = rng.nextDouble();
+    y = initial ? rng.nextDouble() : 1.0 + rng.nextDouble() * 0.2;
+    size = 2 + rng.nextDouble() * 4;
+    speed = 0.15 + rng.nextDouble() * 0.35;
+    opacity = 0.15 + rng.nextDouble() * 0.4;
+  }
+
+  void update(double dt) {
+    y -= speed * dt;
+    x += sin(y * 6) * 0.001;
+    if (y < -0.05) reset();
+  }
+}
+
+class _ParticlePainter extends CustomPainter {
+  _ParticlePainter(this.particles);
+  final List<_Particle> particles;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    for (final p in particles) {
+      paint.color = Colors.white.withValues(alpha: p.opacity);
+      canvas.drawCircle(
+        Offset(p.x * size.width, p.y * size.height),
+        p.size,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ParticlePainter old) => true;
+}
+
+// ─── Splash icon config ───────────────────────────────────────────────────
 class SplashIconConfig {
   const SplashIconConfig({
     required this.alignment,
@@ -50,6 +97,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late final AnimationController _iconsController;
   late final AnimationController _dotsController;
   late final AnimationController _exitController;
+  late final AnimationController _gradientController;
+  late final AnimationController _pulseController;
+  late final AnimationController _particleController;
 
   late final Animation<double> _titleFade;
   late final Animation<double> _titleScale;
@@ -60,35 +110,51 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   bool _navigationStarted = false;
   Timer? _safetyTimer;
 
+  // Particles
+  final _particles = <_Particle>[];
+  final _rng = Random();
+
   @override
   void initState() {
     super.initState();
+
+    // Create particles
+    for (int i = 0; i < 30; i++) {
+      _particles.add(_Particle(rng: _rng));
+    }
 
     _safetyTimer = Timer(const Duration(seconds: 7), () {
       if (mounted) _finishSplash();
     });
 
-    _textController = AnimationController(
-      vsync: this,
-      duration: _textDuration,
-    );
-    _iconsController = AnimationController(
-      vsync: this,
-      duration: _iconsDuration,
-    );
+    _textController = AnimationController(vsync: this, duration: _textDuration);
+    _iconsController = AnimationController(vsync: this, duration: _iconsDuration);
     _dotsController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     )..repeat();
-    _exitController = AnimationController(
-      vsync: this,
-      duration: _exitDuration,
-    );
+    _exitController = AnimationController(vsync: this, duration: _exitDuration);
 
-    _titleFade = CurvedAnimation(
-      parent: _textController,
-      curve: Curves.easeOut,
-    );
+    // Gradient animation — shifts colors smoothly
+    _gradientController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat(reverse: true);
+
+    // Pulse glow behind logo
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+
+    // Particle ticker
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+    _particleController.addListener(_updateParticles);
+
+    _titleFade = CurvedAnimation(parent: _textController, curve: Curves.easeOut);
     _titleScale = Tween<double>(begin: 0.9, end: 1).animate(
       CurvedAnimation(parent: _textController, curve: Curves.easeOutBack),
     );
@@ -120,6 +186,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     unawaited(_startBootstrap());
   }
 
+  double _lastTime = 0;
+  void _updateParticles() {
+    final now = _particleController.value;
+    final dt = (now - _lastTime).abs();
+    _lastTime = now;
+    for (final p in _particles) {
+      p.update(dt * 2);
+    }
+  }
+
   void _finishSplash() {
     if (_navigationStarted || !AppFlowConfig.postSplashFlowEnabled) return;
     _navigationStarted = true;
@@ -146,9 +222,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           .read(authProvider.notifier)
           .initializeAuth(restoreSession: true)
           .timeout(const Duration(seconds: 3));
-    } catch (_) {
-      // Auth init must never block leaving splash (e.g. secure storage on web).
-    }
+    } catch (_) {}
 
     unawaited(
       Future<void>.delayed(_iconsStart).then((_) async {
@@ -261,6 +335,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _iconsController.dispose();
     _dotsController.dispose();
     _exitController.dispose();
+    _gradientController.dispose();
+    _pulseController.dispose();
+    _particleController.removeListener(_updateParticles);
+    _particleController.dispose();
     super.dispose();
   }
 
@@ -278,83 +356,181 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           data: const IconThemeData(color: Colors.white),
           child: SafeArea(
             child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ...List.generate(_icons.length, (index) {
-              final icon = _icons[index];
-              return AnimatedBuilder(
-                animation: Listenable.merge([
-                  _iconFadeAnimations[index],
-                  _iconSlideAnimations[index],
-                ]),
-                builder: (context, child) {
-                  final fade = _iconFadeAnimations[index].value;
-                  if (fade <= 0) return const SizedBox.shrink();
-
-                  final dx = icon.alignment.x * size.width * 0.42;
-                  final dy =
-                      icon.alignment.y * size.height * 0.34 +
-                      _iconSlideAnimations[index].value;
-
-                  return Align(
-                    alignment: Alignment.center,
-                    child: Transform.translate(
-                      offset: Offset(dx, dy),
-                      child: Opacity(
-                        opacity: fade * icon.finalOpacity,
-                        child: IconTheme(
-                          data: const IconThemeData(
-                            color: Colors.white,
-                            opacity: 1,
+              fit: StackFit.expand,
+              children: [
+                // ── Animated gradient background ──
+                AnimatedBuilder(
+                  animation: _gradientController,
+                  builder: (context, _) {
+                    final t = _gradientController.value;
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(
+                            -0.3 + t * 0.6,
+                            -0.5 + t * 1.0,
                           ),
-                          child: icon.builder(icon.size),
+                          radius: 1.4 + t * 0.4,
+                          colors: [
+                            const Color(0xFF6DD674).withValues(alpha: 0.6),
+                            splashBackground,
+                            const Color(0xFF3A8F42),
+                          ],
                         ),
                       ),
-                    ),
-                  );
-                },
-              );
-            }),
-            Center(
-              child: AnimatedBuilder(
-                animation: _textController,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _titleFade.value,
-                    child: Transform.scale(
-                      scale: _titleScale.value,
-                      child: child,
-                    ),
-                  );
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Master.tj',
-                      style: GoogleFonts.inter(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'для клиентов',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    _LoadingDots(controller: _dotsController),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            ),
-          ],
+
+                // ── Floating particles ──
+                AnimatedBuilder(
+                  animation: _particleController,
+                  builder: (context, _) =>
+                      CustomPaint(painter: _ParticlePainter(_particles)),
+                ),
+
+                // ── Icons ──
+                ...List.generate(_icons.length, (index) {
+                  final icon = _icons[index];
+                  return AnimatedBuilder(
+                    animation: Listenable.merge([
+                      _iconFadeAnimations[index],
+                      _iconSlideAnimations[index],
+                    ]),
+                    builder: (context, child) {
+                      final fade = _iconFadeAnimations[index].value;
+                      if (fade <= 0) return const SizedBox.shrink();
+
+                      final dx = icon.alignment.x * size.width * 0.42;
+                      final dy = icon.alignment.y * size.height * 0.34 +
+                          _iconSlideAnimations[index].value;
+
+                      return Align(
+                        alignment: Alignment.center,
+                        child: Transform.translate(
+                          offset: Offset(dx, dy),
+                          child: Opacity(
+                            opacity: fade * icon.finalOpacity,
+                            child: IconTheme(
+                              data: const IconThemeData(color: Colors.white, opacity: 1),
+                              child: icon.builder(icon.size),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }),
+
+                // ── Center content with pulse glow ──
+                Center(
+                  child: AnimatedBuilder(
+                    animation: _textController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _titleFade.value,
+                        child: Transform.scale(
+                          scale: _titleScale.value,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Pulse glow behind text
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            final pulse = _pulseController.value;
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withValues(
+                                      alpha: 0.08 + pulse * 0.12,
+                                    ),
+                                    blurRadius: 40 + pulse * 30,
+                                    spreadRadius: 10 + pulse * 15,
+                                  ),
+                                ],
+                              ),
+                              child: child,
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              // Logo text with shimmer-like shadow
+                              Text(
+                                'Master.tj',
+                                style: GoogleFonts.inter(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                    Shadow(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                      blurRadius: 40,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'для клиентов',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        _LoadingDots(controller: _dotsController),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Bottom tagline ──
+                Positioned(
+                  bottom: 24,
+                  left: 0,
+                  right: 0,
+                  child: AnimatedBuilder(
+                    animation: _textController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _titleFade.value * 0.6,
+                        child: child,
+                      );
+                    },
+                    child: Text(
+                      'Найди мастера • Закажи услугу • Купи инструмент',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -390,9 +566,16 @@ class _LoadingDots extends StatelessWidget {
                   child: Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.4 * pulse),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -405,9 +588,10 @@ class _LoadingDots extends StatelessWidget {
   }
 }
 
+// ─── Icon composites (unchanged from original) ──────────────────────────────
+
 class _CrossedTools extends StatelessWidget {
   const _CrossedTools({required this.size});
-
   final double size;
 
   @override
@@ -418,14 +602,8 @@ class _CrossedTools extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Transform.rotate(
-            angle: -0.55,
-            child: Icon(LucideIcons.wrench, size: size, color: _splashIconColor),
-          ),
-          Transform.rotate(
-            angle: 0.55,
-            child: Icon(LucideIcons.pencil, size: size * 0.92, color: _splashIconColor),
-          ),
+          Transform.rotate(angle: -0.55, child: Icon(LucideIcons.wrench, size: size, color: _splashIconColor)),
+          Transform.rotate(angle: 0.55, child: Icon(LucideIcons.pencil, size: size * 0.92, color: _splashIconColor)),
         ],
       ),
     );
@@ -434,23 +612,17 @@ class _CrossedTools extends StatelessWidget {
 
 class _BriefcaseSearch extends StatelessWidget {
   const _BriefcaseSearch({required this.size});
-
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 1.35,
-      height: size * 1.35,
+      width: size * 1.35, height: size * 1.35,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Icon(LucideIcons.briefcase, size: size, color: _splashIconColor),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Icon(LucideIcons.search, size: size * 0.45, color: _splashIconColor),
-          ),
+          Positioned(right: 0, bottom: 0, child: Icon(LucideIcons.search, size: size * 0.45, color: _splashIconColor)),
         ],
       ),
     );
@@ -459,22 +631,17 @@ class _BriefcaseSearch extends StatelessWidget {
 
 class _LaptopCode extends StatelessWidget {
   const _LaptopCode({required this.size});
-
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 1.35,
-      height: size * 1.1,
+      width: size * 1.35, height: size * 1.1,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Icon(LucideIcons.laptop, size: size, color: _splashIconColor),
-          Positioned(
-            top: size * 0.12,
-            child: Icon(LucideIcons.code, size: size * 0.34, color: _splashIconColor),
-          ),
+          Positioned(top: size * 0.12, child: Icon(LucideIcons.code, size: size * 0.34, color: _splashIconColor)),
         ],
       ),
     );
@@ -483,22 +650,17 @@ class _LaptopCode extends StatelessWidget {
 
 class _SupportHeadset extends StatelessWidget {
   const _SupportHeadset({required this.size});
-
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 1.35,
-      height: size * 1.2,
+      width: size * 1.35, height: size * 1.2,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Icon(LucideIcons.headphones, size: size, color: _splashIconColor),
-          Positioned(
-            bottom: 0,
-            child: Icon(LucideIcons.smile, size: size * 0.42, color: _splashIconColor),
-          ),
+          Positioned(bottom: 0, child: Icon(LucideIcons.smile, size: size * 0.42, color: _splashIconColor)),
         ],
       ),
     );
@@ -507,14 +669,12 @@ class _SupportHeadset extends StatelessWidget {
 
 class _DeskCoder extends StatelessWidget {
   const _DeskCoder({required this.size});
-
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 1.5,
-      height: size * 1.25,
+      width: size * 1.5, height: size * 1.25,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
@@ -522,8 +682,7 @@ class _DeskCoder extends StatelessWidget {
           Positioned(
             top: 0,
             child: SizedBox(
-              width: size,
-              height: size * 0.55,
+              width: size, height: size * 0.55,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -541,23 +700,17 @@ class _DeskCoder extends StatelessWidget {
 
 class _PhoneSettings extends StatelessWidget {
   const _PhoneSettings({required this.size});
-
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 1.35,
-      height: size * 1.35,
+      width: size * 1.35, height: size * 1.35,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Icon(LucideIcons.smartphone, size: size, color: _splashIconColor),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Icon(LucideIcons.settings, size: size * 0.42, color: _splashIconColor),
-          ),
+          Positioned(right: 0, bottom: 0, child: Icon(LucideIcons.settings, size: size * 0.42, color: _splashIconColor)),
         ],
       ),
     );

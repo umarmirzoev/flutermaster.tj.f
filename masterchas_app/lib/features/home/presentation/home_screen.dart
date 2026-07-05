@@ -443,7 +443,7 @@ class _IconBtn extends StatelessWidget {
   }
 }
 
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   const _SearchBar({
     required this.s,
     required this.p,
@@ -459,49 +459,122 @@ class _SearchBar extends StatelessWidget {
   final VoidCallback onClear;
 
   @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> with SingleTickerProviderStateMixin {
+  late final AnimationController _hintAnim;
+  int _hintIndex = 0;
+  static const _hints = [
+    'Электрик для дома...',
+    'Сантехник рядом...',
+    'Ремонт квартиры...',
+    'Установка кондиционера...',
+    'Мастер по мебели...',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _hintAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _cycleHints();
+  }
+
+  void _cycleHints() async {
+    while (mounted) {
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted || widget.controller.text.isNotEmpty) continue;
+      await _hintAnim.forward();
+      if (!mounted) return;
+      setState(() => _hintIndex = (_hintIndex + 1) % _hints.length);
+      _hintAnim.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _hintAnim.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hasQuery = controller.text.isNotEmpty;
+    final hasQuery = widget.controller.text.isNotEmpty;
+    final currentHint = widget.controller.text.isEmpty ? _hints[_hintIndex] : widget.s.searchPlaceholder;
     return Container(
-      height: 48,
+      height: 52,
       decoration: BoxDecoration(
-        color: p.searchBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.border),
+        color: widget.p.searchBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: widget.p.border),
+        boxShadow: [
+          BoxShadow(
+            color: brandGreen.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.only(left: 12, right: 6),
+      padding: const EdgeInsets.only(left: 14, right: 6),
       child: Row(
         children: [
-          const Icon(LucideIcons.search, color: brandGreen, size: 18),
-          const SizedBox(width: 8),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: brandGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(LucideIcons.search, color: brandGreen, size: 16),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: controller,
-              onChanged: onChanged,
+              controller: widget.controller,
+              onChanged: widget.onChanged,
               cursorColor: brandGreen,
-              style: GoogleFonts.inter(fontSize: 13, color: p.text),
+              style: GoogleFonts.inter(fontSize: 14, color: widget.p.text),
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
-                hintText: s.searchPlaceholder,
-                hintStyle: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                hintText: currentHint,
+                hintStyle: GoogleFonts.inter(fontSize: 13, color: widget.p.muted),
               ),
             ),
           ),
           if (hasQuery)
             GestureDetector(
-              onTap: onClear,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(LucideIcons.x, size: 17, color: p.muted),
+              onTap: widget.onClear,
+              child: Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(right: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(LucideIcons.x, size: 15, color: Colors.red.shade400),
               ),
             )
           else
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: brandGreen,
-                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4BAF50), Color(0xFF57B55E)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: const Icon(LucideIcons.sliders_horizontal, color: Colors.white, size: 16),
             ),
@@ -1424,24 +1497,36 @@ class _BottomNav extends StatelessWidget {
       onTap: () => onTap(i),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: c),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                  color: c,
+        child: AnimatedScale(
+          scale: on ? 1.05 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: on ? brandGreen.withValues(alpha: 0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 22, color: c),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                    color: c,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
