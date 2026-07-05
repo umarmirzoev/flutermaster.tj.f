@@ -379,7 +379,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(LucideIcons.alert_circle, size: 18, color: Colors.red.shade600),
+                                    Icon(LucideIcons.circle_alert, size: 18, color: Colors.red.shade600),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
