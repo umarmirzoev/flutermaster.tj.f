@@ -8,15 +8,21 @@ import '../../../core/l10n/home_strings.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../../core/providers/catalog_provider.dart';
+import '../../services/data/services_catalog.dart';
 import '../data/masters_data.dart';
+import '../providers/master_favorites_provider.dart';
 import 'ai_master_picker_sheet.dart';
+import 'widgets/master_favorite_button.dart';
 import 'master_detail_page.dart';
 
 class MastersPage extends ConsumerStatefulWidget {
-  const MastersPage({super.key, this.initialFilter});
+  const MastersPage({super.key, this.initialFilter, this.initialService});
 
   /// Master-category key (Russian) to pre-filter the list, or null for "Все".
   final String? initialFilter;
+
+  /// Service the client chose before picking a master.
+  final ServiceItem? initialService;
 
   @override
   ConsumerState<MastersPage> createState() => _MastersPageState();
@@ -24,7 +30,6 @@ class MastersPage extends ConsumerStatefulWidget {
 
 class _MastersPageState extends ConsumerState<MastersPage> {
   String? _filter; // null == "Все"
-  final _favorites = <String>{};
 
   @override
   void initState() {
@@ -39,6 +44,7 @@ class _MastersPageState extends ConsumerState<MastersPage> {
     final s = HomeStrings.of(locale);
     final p = HomePalette.of(context);
 
+    final favorites = ref.watch(masterFavoritesProvider);
     final allMasters = ref.watch(mastersCatalogProvider);
     final list = _filter == null
         ? allMasters
@@ -93,12 +99,8 @@ class _MastersPageState extends ConsumerState<MastersPage> {
                           s: s,
                           p: p,
                           locale: locale,
-                          isFav: _favorites.contains(m.fullName),
-                          onFav: () => setState(() {
-                            if (!_favorites.add(m.fullName)) {
-                              _favorites.remove(m.fullName);
-                            }
-                          }),
+                          isFav: favorites.contains(m.fullName),
+                          onFav: () => ref.read(masterFavoritesProvider.notifier).toggle(m.fullName),
                           onOpen: () => _openDetail(m),
                           onCall: () => _showCall(m, s),
                         ),
@@ -115,7 +117,12 @@ class _MastersPageState extends ConsumerState<MastersPage> {
 
   void _openDetail(MasterItem m) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: m)),
+      MaterialPageRoute<void>(
+        builder: (_) => MasterDetailPage(
+          master: m,
+          selectedService: widget.initialService,
+        ),
+      ),
     );
   }
 
@@ -457,7 +464,7 @@ class _MasterListCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Photo(m: m, s: s),
+                    _Photo(m: m, s: s, masterKey: m.fullName),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -512,10 +519,11 @@ class _MasterListCard extends StatelessWidget {
 }
 
 class _Photo extends StatelessWidget {
-  const _Photo({required this.m, required this.s});
+  const _Photo({required this.m, required this.s, required this.masterKey});
 
   final MasterItem m;
   final HomeStrings s;
+  final String masterKey;
 
   @override
   Widget build(BuildContext context) {
@@ -528,6 +536,11 @@ class _Photo extends StatelessWidget {
             Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
           else
             Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          Positioned(
+            right: 6,
+            top: 6,
+            child: MasterFavoriteButton(masterKey: masterKey, size: 26, iconSize: 14),
+          ),
           if (m.isOnline)
             Positioned(
               left: 8,
@@ -660,7 +673,7 @@ class _Info extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '${s.expWord} ${m.experienceYears}+ ${s.yearsShort}  ·  ${s.completedWord}: ${m.completedOrders}+',
+          '${s.expWord} ${m.experienceYears}+ ${s.yearsShort}  ·  ${s.completedWord}: ${m.completedOrders}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.inter(fontSize: 10.5, color: p.muted),

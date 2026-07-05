@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_result.dart';
 import '../../../core/realtime/signalr_provider.dart';
 import '../../../core/storage/secure_storage_provider.dart';
+import '../data/admin_credentials.dart';
 import '../data/auth_repository.dart';
+import '../data/master_credentials.dart';
 import '../models/auth_session.dart';
 import '../models/master_application_status.dart';
 import '../models/auth_state.dart';
@@ -37,7 +39,10 @@ class AuthNotifier extends Notifier<AuthState> {
             return true;
           }
 
-          if (token.startsWith('phone:') || token.startsWith('master:') || token.startsWith('user:')) {
+          if (token.startsWith('phone:') ||
+              token.startsWith('master:') ||
+              token.startsWith('user:') ||
+              token.startsWith('admin:')) {
             await _restoreLegacySession(token, storage);
             return state.isAuthenticated;
           }
@@ -79,6 +84,22 @@ class AuthNotifier extends Notifier<AuthState> {
     return false;
   }
 
+  Future<void> loginMasterWithCode({
+    required String phone,
+    required String code,
+  }) async {
+    final credential = lookupMasterCredential(phone: phone, code: code);
+    if (credential == null) {
+      throw Exception('Неверный номер или код входа');
+    }
+
+    final profile = buildMasterProfileFromCredential(credential);
+    final phoneFormatted = formatTjPhone(localDigitsFromPhone(phone));
+    final storage = ref.read(secureStorageProvider);
+    await storage.writePhone(phoneFormatted);
+    await _persistMaster(profile);
+  }
+
   Future<void> loginWithPassword({
     required String phone,
     required String password,
@@ -89,9 +110,68 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     await _applyApiSession(result.data, ref.read(secureStorageProvider));
+    await _saveClientPassword(phone, password);
     try {
       await ref.read(signalRServiceProvider).connect();
     } catch (_) {}
+  }
+
+  /// Вход администратора: для сидер-логина — сразу пускаем, API подключаем если доступен.
+  Future<void> loginAdminWithPassword({
+    required String phone,
+    required String password,
+  }) async {
+    final trimmedPassword = password.trim();
+    final localCredential = lookupAdminCredential(
+      phone: phone,
+      password: trimmedPassword,
+    );
+
+    if (localCredential != null) {
+      final apiResult = await ref
+          .read(authRepositoryProvider)
+          .login(phone, trimmedPassword);
+      if (apiResult is ApiSuccess<AuthSession> && apiResult.data.isAdmin) {
+        await _applyApiSession(
+          apiResult.data,
+          ref.read(secureStorageProvider),
+        );
+        try {
+          await ref.read(signalRServiceProvider).connect();
+        } catch (_) {}
+        return;
+      }
+      await _persistAdmin(localCredential, phone);
+      return;
+    }
+
+    await loginWithPassword(phone: phone, password: trimmedPassword);
+    if (!state.isAdmin) {
+      await signOut();
+      throw Exception('Нужна роль Admin или SuperAdmin');
+    }
+  }
+
+  Future<void> _persistAdmin(AdminCredential credential, String rawPhone) async {
+    final storage = ref.read(secureStorageProvider);
+    final phoneFormatted = formatTjPhone(localDigitsFromPhone(rawPhone));
+
+    await storage.writePhone(phoneFormatted);
+    await storage.writeToken('admin:${credential.phoneDigits}');
+    await storage.writeRole(credential.role);
+    await storage.writeDisplayName(credential.displayName);
+    await storage.deleteRefreshToken();
+
+    state = state.copyWith(
+      isAuthenticated: true,
+      isInitialized: true,
+      phone: phoneFormatted,
+      displayName: credential.displayName,
+      isGuest: false,
+      isMaster: false,
+      role: credential.role,
+      clearMasterProfile: true,
+    );
   }
 
   Future<void> registerWithPassword({
@@ -113,9 +193,21 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     await _applyApiSession(result.data, ref.read(secureStorageProvider));
+    await _saveClientPassword(phone, password);
     try {
       await ref.read(signalRServiceProvider).connect();
     } catch (_) {}
+  }
+
+  Future<void> _saveClientPassword(String phone, String password) async {
+    final storage = ref.read(secureStorageProvider);
+    final json = await storage.readClientPasswordsJson();
+    final map = <String, dynamic>{};
+    if (json != null && json.isNotEmpty) {
+      map.addAll(jsonDecode(json) as Map<String, dynamic>);
+    }
+    map[localDigitsFromPhone(phone)] = password;
+    await storage.writeClientPasswordsJson(jsonEncode(map));
   }
 
   Future<void> _applyApiSession(AuthSession session, dynamic storage) async {
@@ -146,6 +238,7 @@ class AuthNotifier extends Notifier<AuthState> {
     final savedName = await storage.readDisplayName().timeout(const Duration(seconds: 2));
     final isGuest = token == 'guest-token';
     final isMaster = token.startsWith('master:');
+    final isAdmin = token.startsWith('admin:');
     MasterProfile? masterProfile;
 
     if (isMaster) {
@@ -157,6 +250,10 @@ class AuthNotifier extends Notifier<AuthState> {
       }
     }
 
+    final role = isAdmin
+        ? (await storage.readRole().timeout(const Duration(seconds: 2)) ?? 'Admin')
+        : (isMaster ? 'Master' : 'Client');
+
     state = state.copyWith(
       isAuthenticated: true,
       isInitialized: true,
@@ -164,11 +261,13 @@ class AuthNotifier extends Notifier<AuthState> {
       displayName: isGuest
           ? 'Гость'
           : (masterProfile?.shortName ??
-              (savedName?.trim().isNotEmpty == true ? savedName!.trim() : 'Пользователь')),
+              (savedName?.trim().isNotEmpty == true
+                  ? savedName!.trim()
+                  : (isAdmin ? 'Администратор' : 'Пользователь'))),
       isGuest: isGuest,
       isMaster: isMaster,
       masterProfile: masterProfile,
-      role: isMaster ? 'Master' : 'Client',
+      role: role,
     );
   }
 
@@ -243,9 +342,12 @@ class AuthNotifier extends Notifier<AuthState> {
     await storage.writeMasterProfileJson(jsonEncode(profile.toJson()));
     await storage.writeDisplayName(profile.shortName);
 
+    final phone = await storage.readPhone();
+
     state = state.copyWith(
       isAuthenticated: true,
       isInitialized: true,
+      phone: phone,
       displayName: profile.shortName,
       isGuest: false,
       isMaster: true,
@@ -272,6 +374,21 @@ class AuthNotifier extends Notifier<AuthState> {
       portfolioBase64: [...profile.portfolioBase64, base64Image],
     );
     await _persistMaster(updated);
+  }
+
+  Future<void> updateMasterServices({
+    required List<String> services,
+    required Map<String, int> prices,
+  }) async {
+    final profile = state.masterProfile;
+    if (profile == null) return;
+
+    await _persistMaster(
+      profile.copyWith(
+        selectedServices: services,
+        servicePrices: prices,
+      ),
+    );
   }
 
   Future<void> updateMasterCabinet(MasterProfile Function(MasterProfile) update) async {

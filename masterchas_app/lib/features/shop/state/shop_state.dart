@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/catalog_provider.dart';
+import '../../../core/storage/secure_storage_provider.dart';
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
@@ -99,22 +102,95 @@ class ShopCartNotifier extends Notifier<Map<int, int>> {
 final shopFavoritesProvider = NotifierProvider<ShopFavoritesNotifier, Set<int>>(ShopFavoritesNotifier.new);
 
 class ShopFavoritesNotifier extends Notifier<Set<int>> {
-  @override
-  Set<int> build() => {};
+  bool _loaded = false;
 
-  void toggle(int idx) {
-    final s = Set<int>.from(state);
-    if (s.contains(idx)) {
-      s.remove(idx);
-    } else {
-      s.add(idx);
-    }
-    state = s;
+  @override
+  Set<int> build() {
+    ref.keepAlive();
+    Future.microtask(_ensureLoaded);
+    return {};
   }
 
-  void remove(int idx) {
+  Future<void> _ensureLoaded() async {
+    if (_loaded) return;
+    _loaded = true;
+    try {
+      final json = await ref
+          .read(secureStorageProvider)
+          .readShopFavoritesJson()
+          .timeout(const Duration(seconds: 2));
+      if (json == null || json.isEmpty) return;
+      final list = (jsonDecode(json) as List).map((e) => (e as num).toInt()).toList();
+      state = list.toSet();
+    } catch (_) {}
+  }
+
+  Future<void> toggle(int idx) async {
+    await _ensureLoaded();
+    final s = Set<int>.from(state);
+    if (!s.add(idx)) s.remove(idx);
+    state = s;
+    await ref.read(secureStorageProvider).writeShopFavoritesJson(
+          jsonEncode(s.toList()),
+        );
+  }
+
+  Future<void> remove(int idx) async {
+    await _ensureLoaded();
+    if (!state.contains(idx)) return;
     final s = Set<int>.from(state)..remove(idx);
     state = s;
+    await ref.read(secureStorageProvider).writeShopFavoritesJson(
+          jsonEncode(s.toList()),
+        );
+  }
+}
+
+final rentalFavoritesProvider =
+    NotifierProvider<RentalFavoritesNotifier, Set<int>>(RentalFavoritesNotifier.new);
+
+class RentalFavoritesNotifier extends Notifier<Set<int>> {
+  bool _loaded = false;
+
+  @override
+  Set<int> build() {
+    ref.keepAlive();
+    Future.microtask(_ensureLoaded);
+    return {};
+  }
+
+  Future<void> _ensureLoaded() async {
+    if (_loaded) return;
+    _loaded = true;
+    try {
+      final json = await ref
+          .read(secureStorageProvider)
+          .readRentalFavoritesJson()
+          .timeout(const Duration(seconds: 2));
+      if (json == null || json.isEmpty) return;
+      final list = (jsonDecode(json) as List).map((e) => (e as num).toInt()).toList();
+      state = list.toSet();
+    } catch (_) {}
+  }
+
+  Future<void> toggle(int idx) async {
+    await _ensureLoaded();
+    final s = Set<int>.from(state);
+    if (!s.add(idx)) s.remove(idx);
+    state = s;
+    await ref.read(secureStorageProvider).writeRentalFavoritesJson(
+          jsonEncode(s.toList()),
+        );
+  }
+
+  Future<void> remove(int idx) async {
+    await _ensureLoaded();
+    if (!state.contains(idx)) return;
+    final s = Set<int>.from(state)..remove(idx);
+    state = s;
+    await ref.read(secureStorageProvider).writeRentalFavoritesJson(
+          jsonEncode(s.toList()),
+        );
   }
 }
 

@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/master_palette.dart';
 import '../../auth/models/master_profile.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
+import 'widgets/master_pending_order_card.dart';
 import 'cabinet/master_cabinet_shell.dart';
 import 'master_pending_profile.dart';
 import 'widgets/master_avatar.dart';
@@ -42,6 +44,34 @@ class MasterDashboard extends ConsumerWidget {
     }
   }
 
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Выйти?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        content: Text(
+          'Вы выйдете из аккаунта мастера',
+          style: GoogleFonts.inter(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Отмена', style: GoogleFonts.inter()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: masterNavy),
+            child: Text('Выйти', style: GoogleFonts.inter(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    await ref.read(authProvider.notifier).signOut();
+    if (context.mounted) context.go('/role');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authProvider).masterProfile;
@@ -52,10 +82,59 @@ class MasterDashboard extends ConsumerWidget {
     final ratingLabel =
         profile.rating > 0 ? profile.rating.toStringAsFixed(1) : '—';
 
+    final workflowOrders = ref.watch(mergedMasterOrdersProvider).value ?? [];
+    final pendingOrders =
+        workflowOrders.where((o) => o.statusCode == 3).toList();
+    final activeCount = workflowOrders
+        .where((o) => o.statusCode == 4 || o.statusCode == 5)
+        .length;
+    final completedCount =
+        workflowOrders.where((o) => o.statusCode == 6).length;
+
     return ListView(
       padding: EdgeInsets.only(bottom: bottomPadding),
       children: [
-        _DashboardHeader(profile: profile),
+        _DashboardHeader(
+          profile: profile,
+          onLogout: () => _signOut(context, ref),
+        ),
+        if (pendingOrders.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Новые заявки',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: masterNavy,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/master/cabinet/orders'),
+                      child: Text(
+                        'Все заказы',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          color: masterNavy,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...pendingOrders.map(
+                  (order) => MasterPendingOrderCard(order: order, compact: true),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Column(
@@ -66,7 +145,7 @@ class MasterDashboard extends ConsumerWidget {
                   Expanded(
                     child: _StatCard(
                       icon: LucideIcons.wrench,
-                      value: '${profile.completedOrders}',
+                      value: '$completedCount',
                       label: 'Выполнено заказов',
                       onTap: () => context.push('/master/cabinet/orders'),
                     ),
@@ -88,7 +167,7 @@ class MasterDashboard extends ConsumerWidget {
                   Expanded(
                     child: _StatCard(
                       icon: LucideIcons.calendar,
-                      value: '${profile.activeOrders}',
+                      value: '$activeCount',
                       label: 'Активные заказы',
                       onTap: () => context.push('/master/cabinet/active-orders'),
                     ),
@@ -267,24 +346,109 @@ class MasterDashboard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
-                'Ваши услуги (${profile.selectedServices.length})',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: masterNavy,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...profile.selectedServices.take(8).map(
-                    (key) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        '• ${key.split('::').last}',
-                        style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF374151)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ваши услуги (${profile.selectedServices.length})',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: masterNavy,
                       ),
                     ),
                   ),
+                  TextButton.icon(
+                    onPressed: () => context.push('/master/cabinet/services'),
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: Text(
+                      'Добавить',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                    style: TextButton.styleFrom(foregroundColor: masterNavy),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (profile.selectedServices.isEmpty)
+                GestureDetector(
+                  onTap: () => context.push('/master/cabinet/services'),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: masterPageBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE8ECF1)),
+                    ),
+                    child: Text(
+                      'Добавьте услуги и укажите цены',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...profile.selectedServices.take(8).map(
+                      (key) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Material(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          child: InkWell(
+                            onTap: () => context.push('/master/cabinet/services'),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE8ECF1)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      profile.serviceName(key),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF374151),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    formatSomoni(profile.priceForService(key)),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: masterNavy,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+              if (profile.selectedServices.length > 8)
+                TextButton(
+                  onPressed: () => context.push('/master/cabinet/services'),
+                  child: Text(
+                    'Все услуги (${profile.selectedServices.length})',
+                    style: GoogleFonts.inter(
+                      color: masterNavy,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -294,9 +458,13 @@ class MasterDashboard extends ConsumerWidget {
 }
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.profile});
+  const _DashboardHeader({
+    required this.profile,
+    required this.onLogout,
+  });
 
   final MasterProfile profile;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -311,13 +479,27 @@ class _DashboardHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Кабинет мастера',
-            style: GoogleFonts.inter(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Кабинет мастера',
+                  style: GoogleFonts.inter(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onLogout,
+                tooltip: 'Выйти',
+                icon: Icon(
+                  LucideIcons.log_out,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(

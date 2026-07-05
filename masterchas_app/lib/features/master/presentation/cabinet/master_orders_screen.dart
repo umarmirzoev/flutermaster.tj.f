@@ -5,7 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/master_palette.dart';
 import '../../../orders/models/api_order.dart';
-import '../../../orders/providers/orders_provider.dart';
+import '../../../orders/providers/order_workflow_provider.dart';
+import '../widgets/master_pending_order_card.dart';
 import 'master_cabinet_shell.dart';
 
 class MasterOrdersScreen extends ConsumerWidget {
@@ -15,8 +16,8 @@ class MasterOrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orders = ref.watch(masterAssignedOrdersProvider);
-    final title = active ? 'Активные заказы' : 'Выполненные заказы';
+    final orders = ref.watch(mergedMasterOrdersProvider);
+    final title = active ? 'Активные заказы' : 'Заказы';
 
     return MasterCabinetShell(
       title: title,
@@ -24,22 +25,55 @@ class MasterOrdersScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (items) {
-          final filtered = active
-              ? items.where((o) => o.isActive).toList()
-              : items.where((o) => o.status.toLowerCase().contains('completed')).toList();
+          final pending =
+              items.where((o) => o.statusCode == 3).toList();
+          final activeOrders = items
+              .where((o) => o.statusCode == 4 || o.statusCode == 5)
+              .toList();
+          final completed = items
+              .where((o) => o.statusCode == 6)
+              .toList();
+          final declined =
+              items.where((o) => o.statusCode == 7).toList();
 
-          if (filtered.isEmpty) {
-            return _EmptyState(active: active);
+          if (this.active) {
+            if (pending.isEmpty && activeOrders.isEmpty) {
+              return const _EmptyState(active: true);
+            }
+            return _OrdersList(
+              sections: [
+                if (pending.isNotEmpty)
+                  _OrderSection(
+                    title: 'Новые заявки',
+                    orders: pending,
+                  ),
+                if (activeOrders.isNotEmpty)
+                  _OrderSection(
+                    title: 'В работе',
+                    orders: activeOrders,
+                  ),
+              ],
+            );
           }
 
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(masterAssignedOrdersProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) =>
-                  _OrderTile(order: filtered[index]),
-            ),
+          if (items.isEmpty) {
+            return const _EmptyState(active: false);
+          }
+
+          return _OrdersList(
+            sections: [
+              if (pending.isNotEmpty)
+                _OrderSection(
+                  title: 'Ожидают ответа',
+                  orders: pending,
+                ),
+              if (activeOrders.isNotEmpty)
+                _OrderSection(title: 'Активные', orders: activeOrders),
+              if (completed.isNotEmpty)
+                _OrderSection(title: 'Выполненные', orders: completed),
+              if (declined.isNotEmpty)
+                _OrderSection(title: 'Отклонённые', orders: declined),
+            ],
           );
         },
       ),
@@ -47,74 +81,50 @@ class MasterOrdersScreen extends ConsumerWidget {
   }
 }
 
-class _OrderTile extends StatelessWidget {
-  const _OrderTile({required this.order});
+class _OrdersList extends ConsumerWidget {
+  const _OrdersList({required this.sections});
 
-  final ApiOrder order;
+  final List<_OrderSection> sections;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8ECF1)),
-      ),
-      child: Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(mergedMasterOrdersProvider);
+        ref.invalidate(orderWorkflowProvider);
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: masterNavy.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
+          for (var i = 0; i < sections.length; i++) ...[
+            if (i > 0) const SizedBox(height: 16),
+            Text(
+              sections[i].title,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: masterNavy,
+              ),
             ),
-            child: Icon(
-              order.isActive ? LucideIcons.clock : LucideIcons.circle_check,
-              color: masterNavy,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.title,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: masterNavy,
-                  ),
+            const SizedBox(height: 10),
+            ...sections[i].orders.map(
+                  (o) => MasterPendingOrderCard(order: o),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  order.address,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: const Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${order.price.toStringAsFixed(0)} с.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: masterNavy,
-            ),
-          ),
+          ],
         ],
       ),
     );
   }
+}
+
+class _OrderSection {
+  const _OrderSection({
+    required this.title,
+    required this.orders,
+  });
+
+  final String title;
+  final List<ApiOrder> orders;
 }
 
 class _EmptyState extends StatelessWidget {
@@ -137,7 +147,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              active ? 'Нет активных заказов' : 'Пока нет выполненных заказов',
+              active ? 'Нет активных заказов' : 'Пока нет заказов',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

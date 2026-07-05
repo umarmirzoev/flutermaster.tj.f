@@ -69,13 +69,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .signInWithPhone(_phoneController.text.trim());
       if (mounted) {
         final role = GoRouterState.of(context).uri.queryParameters['role'] ?? 'Client';
-        context.push(
-          '/login/password',
-          extra: {
-            'phone': _phoneController.text.trim(),
-            'role': role,
-          },
-        );
+        if (role == 'Master') {
+          context.push(
+            '/login/master-code',
+            extra: {'phone': _phoneController.text.trim()},
+          );
+        } else {
+          context.push(
+            '/login/password',
+            extra: {
+              'phone': _phoneController.text.trim(),
+              'role': role,
+            },
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

@@ -9,7 +9,12 @@ import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../shop/data/shop_data.dart';
 import '../../shop/state/shop_state.dart';
+import '../../../core/providers/catalog_provider.dart';
+import '../../masters/data/masters_data.dart';
+import '../../masters/presentation/master_detail_page.dart';
+import '../../masters/providers/master_favorites_provider.dart';
 import '../data/profile_l10n.dart';
+import 'change_password_page.dart';
 import 'profile_shell.dart';
 
 // ─── Payment methods ─────────────────────────────────────────────────────────
@@ -404,7 +409,9 @@ class SecurityPage extends ConsumerWidget {
             width: double.infinity,
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.soon))),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ChangePasswordPage()),
+              ),
               icon: Icon(LucideIcons.key_round, color: p.text),
               label: Text(l.changePin, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: p.text)),
             ),
@@ -585,40 +592,66 @@ class _FaqTileState extends State<_FaqTile> {
 // ─── Favorites ───────────────────────────────────────────────────────────────
 
 class FavoritesPage extends ConsumerWidget {
-  const FavoritesPage({super.key, this.onOpenProduct});
-
-  final void Function(ShopProduct)? onOpenProduct;
+  const FavoritesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
     final l = ProfileL10n.of(locale);
     final p = HomePalette.of(context);
-    final fav = ref.watch(shopFavoritesProvider);
-    final products = [for (final i in fav) shopProducts[i]];
+    final favKeys = ref.watch(masterFavoritesProvider);
+    final allMasters = ref.watch(mastersCatalogProvider);
+    final masters = allMasters.where((m) => favKeys.contains(m.fullName)).toList();
 
     return ProfileSubPage(
       title: l.favorites,
-      body: products.isEmpty
-          ? _EmptyBox(icon: LucideIcons.heart, text: l.emptyFavorites, p: p)
+      body: masters.isEmpty
+          ? _EmptyBox(icon: LucideIcons.heart, text: 'Добавьте мастеров в избранное', p: p)
           : ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: products.length,
+              itemCount: masters.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) {
-                final prod = products[i];
-                final idx = shopProducts.indexOf(prod);
-                return _ProductListTile(
-                  prod: prod,
-                  locale: locale,
-                  p: p,
-                  l: l,
-                  onOpen: onOpenProduct == null ? null : () => onOpenProduct!(prod),
-                  onRemove: () => ref.read(shopFavoritesProvider.notifier).remove(idx),
-                  onAdd: () {
-                    ref.read(shopCartProvider.notifier).add(idx);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: brandGreen, content: Text(l.addToCart)));
-                  },
+                final m = masters[i];
+                return Material(
+                  color: p.cardBg,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: m)),
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: p.border),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(m.image, width: 56, height: 56, fit: BoxFit.cover),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(m.fullName, style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: p.text)),
+                                const SizedBox(height: 2),
+                                Text(m.profession(locale), style: GoogleFonts.inter(fontSize: 12, color: brandGreen)),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => ref.read(masterFavoritesProvider.notifier).remove(m.fullName),
+                            icon: const Icon(Icons.favorite, color: Color(0xFFEF4444), size: 22),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               },
             ),

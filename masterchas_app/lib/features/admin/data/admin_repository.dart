@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/platform_models.dart';
 import '../../../core/network/api_result.dart';
 import '../../../core/network/dio_provider.dart';
+import '../../masters/data/masters_data.dart';
 import '../models/admin_models.dart';
 
 class AdminRepository {
@@ -89,18 +90,23 @@ class AdminRepository {
         final scheduled = json['scheduledDate']?.toString();
         final acceptedAt = json['acceptedAt']?.toString();
 
-        return AdminOrder(
-          id: id.length > 8 ? id.substring(0, 8) : id,
-          client: nameById[clientId.toLowerCase()] ?? _shortId(clientId),
-          master: masterId != null
+        final masterName = masterId != null
               ? (nameById[masterId.toLowerCase()] ?? _shortId(masterId))
-              : '—',
+              : '—';
+
+        return AdminOrder(
+          id: id.length > 8 ? '${id.substring(0, 8)}…' : id,
+          fullId: id,
+          client: nameById[clientId.toLowerCase()] ?? _shortId(clientId),
+          master: masterName,
           service: json['title'] as String? ?? json['description'] as String? ?? 'Услуга',
           status: _mapOrderStatus(statusCode),
           date: _formatDate(scheduled ?? acceptedAt),
           amount: amount,
           clientUserId: clientId.isNotEmpty ? clientId : null,
           masterUserId: masterId,
+          masterPhone: json['masterPhone']?.toString() ?? _masterPhoneForLabel(masterName),
+          address: json['address']?.toString(),
         );
       }).toList();
 
@@ -363,6 +369,17 @@ class AdminRepository {
     if (name.isNotEmpty && name != 'Пользователь') return name;
     if (phone.isNotEmpty) return phone;
     return 'Клиент';
+  }
+
+  String? _masterPhoneForLabel(String label) {
+    if (label.isEmpty || label == '—') return null;
+    final needle = label.split(' ').first.toLowerCase();
+    for (final master in masters) {
+      if (master.fullName.toLowerCase().contains(needle)) {
+        return master.phone;
+      }
+    }
+    return null;
   }
 
   String _shortId(String id) => id.length > 8 ? id.substring(0, 8) : id;

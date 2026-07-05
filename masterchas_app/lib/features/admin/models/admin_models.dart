@@ -9,6 +9,7 @@ enum AdminMasterStatus { active, pending, blocked, top }
 class AdminOrder {
   const AdminOrder({
     required this.id,
+    required this.fullId,
     required this.client,
     required this.master,
     required this.service,
@@ -17,9 +18,12 @@ class AdminOrder {
     required this.amount,
     this.clientUserId,
     this.masterUserId,
+    this.masterPhone,
+    this.address,
   });
 
   final String id;
+  final String fullId;
   final String client;
   final String master;
   final String service;
@@ -28,6 +32,8 @@ class AdminOrder {
   final int amount;
   final String? clientUserId;
   final String? masterUserId;
+  final String? masterPhone;
+  final String? address;
 }
 
 class AdminMaster {

@@ -9,12 +9,20 @@ import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../services/data/services_catalog.dart';
 import '../data/masters_data.dart';
+import '../providers/master_reviews_provider.dart';
 import 'booking_page.dart';
+import 'master_reviews_page.dart';
+import 'widgets/master_favorite_button.dart';
 
 class MasterDetailPage extends ConsumerWidget {
-  const MasterDetailPage({super.key, required this.master});
+  const MasterDetailPage({
+    super.key,
+    required this.master,
+    this.selectedService,
+  });
 
   final MasterItem master;
+  final ServiceItem? selectedService;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,7 +43,13 @@ class MasterDetailPage extends ConsumerWidget {
                 children: [
                   _NameBlock(m: m, s: s, p: p, locale: locale),
                   const SizedBox(height: 16),
-                  _StatsRow(m: m, s: s, p: p),
+                  _StatsRow(m: m, s: s, p: p, onReviews: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => MasterReviewsPage(master: m),
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 18),
                   _Section(title: s.aboutTitle, p: p, child: Text(
                     m.bio,
@@ -61,7 +75,13 @@ class MasterDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomBar(m: m, s: s, p: p),
+      bottomNavigationBar: _BottomBar(
+        m: m,
+        s: s,
+        p: p,
+        locale: locale,
+        selectedService: selectedService,
+      ),
     );
   }
 }
@@ -101,21 +121,24 @@ class _PhotoHeader extends StatelessWidget {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    customBorder: const CircleBorder(),
-                    child: const SizedBox(
-                      width: 38,
-                      height: 38,
-                      child: Icon(LucideIcons.arrow_left, size: 19, color: Colors.white),
+              child: Row(
+                children: [
+                  Material(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      customBorder: const CircleBorder(),
+                      child: const SizedBox(
+                        width: 38,
+                        height: 38,
+                        child: Icon(LucideIcons.arrow_left, size: 19, color: Colors.white),
+                      ),
                     ),
                   ),
-                ),
+                  const Spacer(),
+                  MasterFavoriteButton(masterKey: m.fullName, lightBg: false, size: 38, iconSize: 18),
+                ],
               ),
             ),
           ),
@@ -156,7 +179,7 @@ class _PhotoHeader extends StatelessWidget {
   }
 }
 
-class _NameBlock extends StatelessWidget {
+class _NameBlock extends ConsumerWidget {
   const _NameBlock({required this.m, required this.s, required this.p, required this.locale});
 
   final MasterItem m;
@@ -165,7 +188,8 @@ class _NameBlock extends StatelessWidget {
   final AppLocale locale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = reviewStatsForMaster(ref, m.fullName, fallbackRating: m.rating);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,12 +216,12 @@ class _NameBlock extends StatelessWidget {
             const Icon(LucideIcons.star, size: 16, color: Color(0xFFFFC107)),
             const SizedBox(width: 4),
             Text(
-              m.rating.toStringAsFixed(1),
+              stats.averageRating.toStringAsFixed(1),
               style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
             ),
             const SizedBox(width: 4),
             Text(
-              '(${m.reviews} ${s.reviewsWord})',
+              '(${stats.count} ${s.reviewsWord})',
               style: GoogleFonts.inter(fontSize: 12.5, color: p.muted),
             ),
             const SizedBox(width: 10),
@@ -231,41 +255,59 @@ class _NameBlock extends StatelessWidget {
   }
 }
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.m, required this.s, required this.p});
+class _StatsRow extends ConsumerWidget {
+  const _StatsRow({
+    required this.m,
+    required this.s,
+    required this.p,
+    required this.onReviews,
+  });
 
   final MasterItem m;
   final HomeStrings s;
   final HomePalette p;
+  final VoidCallback onReviews;
 
   @override
-  Widget build(BuildContext context) {
-    Widget cell(IconData icon, String value, String label) {
-      return Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: p.cardBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: p.border),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 20, color: brandGreen),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 10, color: p.muted, height: 1.2),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = reviewStatsForMaster(ref, m.fullName, fallbackRating: m.rating);
+
+    Widget cell(IconData icon, String value, String label, {VoidCallback? onTap}) {
+      final child = Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: p.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: p.border),
         ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: brandGreen),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 10, color: p.muted, height: 1.2),
+            ),
+          ],
+        ),
+      );
+      return Expanded(
+        child: onTap == null
+            ? child
+            : Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(14),
+                  child: child,
+                ),
+              ),
       );
     }
 
@@ -273,9 +315,14 @@ class _StatsRow extends StatelessWidget {
       children: [
         cell(LucideIcons.briefcase, '${m.experienceYears}+', '${s.expWord} (${s.yearsShort})'),
         const SizedBox(width: 10),
-        cell(LucideIcons.clipboard_check, '${m.completedOrders}+', s.completedWord),
+        cell(LucideIcons.clipboard_check, '${m.completedOrders}', s.completedWord),
         const SizedBox(width: 10),
-        cell(LucideIcons.star, m.rating.toStringAsFixed(1), s.reviewsTitle),
+        cell(
+          LucideIcons.star,
+          stats.averageRating.toStringAsFixed(1),
+          '${s.reviewsTitle} (${stats.count})',
+          onTap: onReviews,
+        ),
       ],
     );
   }
@@ -426,6 +473,7 @@ class _ServicePriceRow extends StatelessWidget {
             builder: (_) => BookingPage(
               master: m,
               serviceName: svc.name(locale),
+              serviceTitleRu: svc.ru,
               servicePrice: svc.priceAvg.toDouble(),
             ),
           ),
@@ -499,14 +547,24 @@ class _Pill extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.m, required this.s, required this.p});
+  const _BottomBar({
+    required this.m,
+    required this.s,
+    required this.p,
+    required this.locale,
+    this.selectedService,
+  });
 
   final MasterItem m;
   final HomeStrings s;
   final HomePalette p;
+  final AppLocale locale;
+  final ServiceItem? selectedService;
 
   @override
   Widget build(BuildContext context) {
+    final svc = selectedService ?? defaultServiceForMaster(m);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       decoration: BoxDecoration(
@@ -542,13 +600,14 @@ class _BottomBar extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    final svc = defaultServiceForMaster(m);
+                    if (svc == null) return;
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => BookingPage(
                           master: m,
-                          serviceName: svc?.ru,
-                          servicePrice: svc?.priceAvg.toDouble(),
+                          serviceName: svc.name(locale),
+                          serviceTitleRu: svc.ru,
+                          servicePrice: svc.priceAvg.toDouble(),
                         ),
                       ),
                     );

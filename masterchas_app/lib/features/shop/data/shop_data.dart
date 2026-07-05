@@ -142,6 +142,52 @@ const shopProducts = <ShopProduct>[
   ),
 ];
 
+/// Инструменты только для вкладки «Аренда» (цена за сутки).
+const rentalProducts = <ShopProduct>[
+  ShopProduct(
+    ru: 'Дрель-шуруповёрт', en: 'Drill driver',
+    image: 'assets/images/tool_drill.png', price: 45, oldPrice: 0, rating: 4.9,
+    ratingsCount: 86, orders: 320, badge: ProductBadge.hit, categoryIndex: 1,
+    descRu: 'Аккумуляторная дрель на сутки. Залог 150 с., доставка по Душанбе.',
+    descEn: 'Cordless drill for daily rent. Deposit 150 s., delivery in Dushanbe.',
+  ),
+  ShopProduct(
+    ru: 'Дисковая пила', en: 'Circular saw',
+    image: 'assets/images/shop_saw.png', price: 55, oldPrice: 65, rating: 4.8,
+    ratingsCount: 64, orders: 210, badge: ProductBadge.hit, categoryIndex: 1,
+    descRu: 'Дисковая пила 190 мм. Аренда на 1–7 суток, залог 200 с.',
+    descEn: '190mm circular saw. Rent for 1–7 days, deposit 200 s.',
+  ),
+  ShopProduct(
+    ru: 'Перфоратор', en: 'Rotary hammer',
+    image: 'assets/images/shop_perforator.png', price: 70, oldPrice: 0, rating: 4.9,
+    ratingsCount: 52, orders: 180, badge: ProductBadge.hit, categoryIndex: 1,
+    descRu: 'Перфоратор SDS-Plus для бетона и кирпича. Залог 250 с.',
+    descEn: 'SDS-Plus rotary hammer for concrete and brick. Deposit 250 s.',
+  ),
+  ShopProduct(
+    ru: 'Угловая шлифмашина', en: 'Angle grinder',
+    image: 'assets/images/shop_grinder.png', price: 40, oldPrice: 50, rating: 4.7,
+    ratingsCount: 41, orders: 150, badge: ProductBadge.hit, categoryIndex: 1,
+    descRu: 'Болгарка 125 мм. Комплект дисков включён.',
+    descEn: '125mm angle grinder. Disc set included.',
+  ),
+  ShopProduct(
+    ru: 'Электролобзик', en: 'Jigsaw',
+    image: 'assets/images/shop_jigsaw.png', price: 35, oldPrice: 0, rating: 4.8,
+    ratingsCount: 38, orders: 120, badge: ProductBadge.isNew, categoryIndex: 1,
+    descRu: 'Лобзик для реза дерева, пластика и металла.',
+    descEn: 'Jigsaw for wood, plastic and metal.',
+  ),
+  ShopProduct(
+    ru: 'Набор инструментов', en: 'Tool set',
+    image: 'assets/images/tool_set.png', price: 30, oldPrice: 0, rating: 4.6,
+    ratingsCount: 95, orders: 410, badge: ProductBadge.hit, categoryIndex: 2,
+    descRu: 'Набор из 108 предметов для бытового ремонта.',
+    descEn: '108-piece set for household repairs.',
+  ),
+];
+
 class ShopBrand {
   const ShopBrand(this.name, this.color);
   final String name;
@@ -201,10 +247,14 @@ class ShopL10n {
     required this.total,
     required this.checkout,
     required this.orderPlaced,
+    required this.rentPriceUnit,
+    required this.rentBuyNow,
+    required this.rentOrderPlaced,
     required this.navShop,
     required this.navCats,
     required this.navDeals,
     required this.navProfile,
+    required this.navRent,
     required this.navMore,
   });
 
@@ -249,10 +299,14 @@ class ShopL10n {
   final String total;
   final String checkout;
   final String orderPlaced;
+  final String rentPriceUnit;
+  final String rentBuyNow;
+  final String rentOrderPlaced;
   final String navShop;
   final String navCats;
   final String navDeals;
   final String navProfile;
+  final String navRent;
   final String navMore;
 
   static ShopL10n of(AppLocale locale) => _map[locale]!;
@@ -301,10 +355,14 @@ class ShopL10n {
       total: 'Итого',
       checkout: 'Оформить заказ',
       orderPlaced: 'Заказ оформлен! Мы свяжемся с вами.',
+      rentPriceUnit: 'с./сут',
+      rentBuyNow: 'Арендовать',
+      rentOrderPlaced: 'Заявка на аренду отправлена! Мы свяжемся с вами.',
       navShop: 'Магазин',
       navCats: 'Категории',
       navDeals: 'Акции',
       navProfile: 'Профиль',
+      navRent: 'Аренда',
       navMore: 'Ещё',
     ),
     AppLocale.en: ShopL10n(
@@ -350,10 +408,14 @@ class ShopL10n {
       total: 'Total',
       checkout: 'Checkout',
       orderPlaced: 'Order placed! We will contact you.',
+      rentPriceUnit: 's./day',
+      rentBuyNow: 'Rent now',
+      rentOrderPlaced: 'Rental request sent! We will contact you.',
       navShop: 'Shop',
       navCats: 'Categories',
       navDeals: 'Deals',
       navProfile: 'Profile',
+      navRent: 'Rent',
       navMore: 'More',
     ),
     AppLocale.tg: ShopL10n(
@@ -399,10 +461,14 @@ class ShopL10n {
       total: 'Ҳамагӣ',
       checkout: 'Ба расмият даровардан',
       orderPlaced: 'Фармоиш қабул шуд! Мо бо шумо тамос мегирем.',
+      rentPriceUnit: 'с./рӯз',
+      rentBuyNow: 'Иҷора кардан',
+      rentOrderPlaced: 'Дархости иҷора фиристода шуд!',
       navShop: 'Мағоза',
       navCats: 'Категорияҳо',
       navDeals: 'Аксияҳо',
       navProfile: 'Профил',
+      navRent: 'Иҷора',
       navMore: 'Бештар',
     ),
     AppLocale.zh: ShopL10n(
@@ -448,10 +514,14 @@ class ShopL10n {
       total: '合计',
       checkout: '去结算',
       orderPlaced: '下单成功！我们会与您联系。',
+      rentPriceUnit: '索莫尼/天',
+      rentBuyNow: '租赁',
+      rentOrderPlaced: '租赁申请已发送！',
       navShop: '商店',
       navCats: '分类',
       navDeals: '优惠',
       navProfile: '个人',
+      navRent: '租赁',
       navMore: '更多',
     ),
   };

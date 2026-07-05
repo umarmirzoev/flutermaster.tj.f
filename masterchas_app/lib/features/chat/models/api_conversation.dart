@@ -4,12 +4,16 @@ class ApiConversation {
     required this.title,
     required this.type,
     required this.participantUserIds,
+    this.orderId,
+    this.isLocal = false,
   });
 
   final String id;
   final String title;
   final String type;
   final List<String> participantUserIds;
+  final String? orderId;
+  final bool isLocal;
 
   factory ApiConversation.fromJson(Map<String, dynamic> json) {
     return ApiConversation(
@@ -20,6 +24,7 @@ class ApiConversation {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      orderId: json['orderId']?.toString(),
     );
   }
 }

@@ -10,7 +10,7 @@ String orderStatusText(int status) {
     case 3:
       return 'Назначен';
     case 4:
-      return 'Принят';
+      return 'Мастер принял заказ';
     case 5:
       return 'В работе';
     case 6:

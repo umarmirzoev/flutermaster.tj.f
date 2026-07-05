@@ -1,3 +1,4 @@
+import '../../services/data/service_catalog_keys.dart';
 import 'master_application_status.dart';
 
 class MasterEarning {
@@ -27,6 +28,7 @@ class MasterProfile {
     this.isSelfEmployed = true,
     this.companyName,
     this.selectedServices = const [],
+    this.servicePrices = const {},
     this.avatarAsset,
     this.avatarGalleryBase64,
     this.applicationStatus = MasterApplicationStatus.pending,
@@ -48,6 +50,7 @@ class MasterProfile {
   final bool isSelfEmployed;
   final String? companyName;
   final List<String> selectedServices;
+  final Map<String, int> servicePrices;
   final String? avatarAsset;
   final String? avatarGalleryBase64;
   final MasterApplicationStatus applicationStatus;
@@ -80,6 +83,14 @@ class MasterProfile {
 
   bool get isApproved => applicationStatus == MasterApplicationStatus.approved;
 
+  int priceForService(String key) {
+    final own = servicePrices[key];
+    if (own != null) return own;
+    return defaultPriceForServiceKey(key);
+  }
+
+  String serviceName(String key) => key.contains('::') ? key.split('::').last : key;
+
   MasterProfile copyWith({
     String? lastName,
     String? firstName,
@@ -87,6 +98,7 @@ class MasterProfile {
     bool? isSelfEmployed,
     String? companyName,
     List<String>? selectedServices,
+    Map<String, int>? servicePrices,
     String? avatarAsset,
     bool clearAvatarAsset = false,
     String? avatarGalleryBase64,
@@ -110,6 +122,7 @@ class MasterProfile {
       isSelfEmployed: isSelfEmployed ?? this.isSelfEmployed,
       companyName: companyName ?? this.companyName,
       selectedServices: selectedServices ?? this.selectedServices,
+      servicePrices: servicePrices ?? this.servicePrices,
       avatarAsset: clearAvatarAsset ? null : (avatarAsset ?? this.avatarAsset),
       avatarGalleryBase64: clearAvatarGallery
           ? null
@@ -135,6 +148,7 @@ class MasterProfile {
         'isSelfEmployed': isSelfEmployed,
         'companyName': companyName,
         'selectedServices': selectedServices,
+        'servicePrices': servicePrices,
         'avatarAsset': avatarAsset,
         'avatarGalleryBase64': avatarGalleryBase64,
         'applicationStatus': applicationStatus.name,
@@ -161,6 +175,9 @@ class MasterProfile {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      servicePrices: (json['servicePrices'] as Map<String, dynamic>?)
+              ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
+          const {},
       avatarAsset: json['avatarAsset'] as String?,
       avatarGalleryBase64: json['avatarGalleryBase64'] as String?,
       applicationStatus: MasterApplicationStatus.values.firstWhere(

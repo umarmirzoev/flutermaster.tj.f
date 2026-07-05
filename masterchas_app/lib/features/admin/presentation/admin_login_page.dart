@@ -5,13 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/router/panel_routes.dart';
+import '../../auth/data/admin_credentials.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_provider.dart';
 import '../theme/admin_theme.dart';
 import 'widgets/admin_badges.dart';
-
-/// Password from MasterChasDataSeeder.cs (SeedPassword).
-const adminSeedPassword = 'MasterChas2025!';
 
 class AdminLoginPage extends ConsumerStatefulWidget {
   const AdminLoginPage({super.key});
@@ -64,7 +62,7 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
     });
 
     try {
-      await ref.read(authProvider.notifier).loginWithPassword(
+      await ref.read(authProvider.notifier).loginAdminWithPassword(
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
           );
@@ -79,7 +77,11 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
       }
 
       if (!mounted) return;
-      await ref.read(adminDataProvider.notifier).refresh();
+      try {
+        await ref.read(adminDataProvider.notifier).refresh();
+      } catch (_) {
+        // Данные подгрузятся из кэша/сидера — вход уже успешен.
+      }
       if (!mounted) return;
       final next = GoRouterState.of(context).uri.queryParameters['next'];
       context.go(resolveAdminNextRoute(next));

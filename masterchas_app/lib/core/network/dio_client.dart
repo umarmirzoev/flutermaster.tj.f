@@ -28,9 +28,16 @@ class _JwtInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await _storage.read(key: SecureStorageService.authTokenKey);
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+    final path = options.path;
+    final isAuthRoute = path.contains('/auth/login') ||
+        path.contains('/auth/register') ||
+        path.contains('/auth/refresh');
+
+    if (!isAuthRoute) {
+      final token = await _storage.read(key: SecureStorageService.authTokenKey);
+      if (token != null && token.isNotEmpty && !token.startsWith('master:') && !token.startsWith('admin:')) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
     }
     handler.next(options);
   }

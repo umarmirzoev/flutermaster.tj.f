@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/config/app_flow_config.dart';
+import '../../../core/providers/home_tab_provider.dart';
 import '../../../core/providers/splash_completed_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -130,11 +131,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final destination = AppFlowConfig.splashGoesToHome
         ? '/'
-        : (ref.read(authProvider).isAuthenticated
-            ? (ref.read(authProvider).isMaster
-                ? '/master/cabinet/orders'
-                : '/')
-            : '/role');
+        : (ref.read(authProvider).isAuthenticated ? '/' : '/role');
+    if (ref.read(authProvider).isMaster) {
+      ref.read(homeTabProvider.notifier).openProfile();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.go(destination);
     });
@@ -161,9 +161,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     final auth = ref.read(authProvider);
-    final destination = auth.isAuthenticated
-        ? (auth.isMaster ? '/master/cabinet/orders' : '/')
-        : (AppFlowConfig.splashGoesToHome ? '/' : '/role');
+    final destination =
+        auth.isAuthenticated ? '/' : (AppFlowConfig.splashGoesToHome ? '/' : '/role');
+    if (auth.isMaster) {
+      ref.read(homeTabProvider.notifier).openProfile();
+    }
 
     unawaited(_exitController.forward());
     _navigationStarted = true;

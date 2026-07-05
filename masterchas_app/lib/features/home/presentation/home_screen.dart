@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:masterchas_app/core/l10n/app_locale.dart';
 import 'package:masterchas_app/core/l10n/home_strings.dart';
@@ -12,9 +13,14 @@ import 'package:masterchas_app/features/masters/data/masters_data.dart';
 import 'package:masterchas_app/features/masters/presentation/ai_master_picker_sheet.dart';
 import 'package:masterchas_app/features/masters/presentation/master_detail_page.dart';
 import 'package:masterchas_app/features/masters/presentation/masters_page.dart';
+import 'package:masterchas_app/features/masters/presentation/master_reviews_page.dart';
+import 'package:masterchas_app/features/masters/presentation/widgets/master_favorite_button.dart';
+import 'package:masterchas_app/features/masters/providers/master_reviews_provider.dart';
 import 'package:masterchas_app/features/services/data/services_catalog.dart';
 import 'package:masterchas_app/features/services/presentation/category_detail_page.dart';
 import 'package:masterchas_app/features/shop/presentation/shop_page.dart';
+import 'package:masterchas_app/features/auth/providers/auth_provider.dart';
+import 'package:masterchas_app/features/auth/providers/master_registration_draft_provider.dart';
 import 'package:masterchas_app/features/chat/presentation/chats_list_page.dart';
 import 'package:masterchas_app/features/profile/presentation/profile_page.dart';
 
@@ -220,7 +226,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: const Color(0xFFF59E0B),
                   title: s.fabBecomeTitle,
                   sub: s.fabBecomeSub,
-                  onTap: () => Navigator.pop(ctx),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ref.read(masterRegistrationDraftProvider.notifier).reset();
+                    final phone = ref.read(authProvider).phone;
+                    context.push(
+                      '/master/register?mode=application',
+                      extra: phone != null ? {'phone': phone} : null,
+                    );
+                  },
                 ),
                 action(
                   icon: LucideIcons.shopping_bag,
@@ -316,7 +330,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 16),
                     _StatsRow(s: s, p: p),
                     const SizedBox(height: 22),
-                    _ToolsShop(s: s, p: p),
+                    _ToolsShop(
+                      s: s,
+                      p: p,
+                      onOpenShop: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const ShopPage()),
+                      ),
+                    ),
                     const SizedBox(height: 22),
                     _MoreFeatures(s: s, p: p),
                     const SizedBox(height: 18),
@@ -1587,12 +1607,7 @@ class _PopularMasterCard extends StatelessWidget {
                     Positioned(
                       right: 8,
                       top: 8,
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(LucideIcons.heart, size: 15, color: Color(0xFF8B95A5)),
-                      ),
+                      child: MasterFavoriteButton(masterKey: m.fullName),
                     ),
                     Positioned(
                       left: 8,
@@ -1713,34 +1728,59 @@ class _ReviewData {
   final String date;
   final String body;
   final Color accent;
+
+  factory _ReviewData.fromMasterReview(dynamic review, Color accent) {
+    return _ReviewData(
+      author: review.authorName as String,
+      date: review.dateLabel as String,
+      body: review.body as String,
+      accent: accent,
+    );
+  }
 }
 
-class _ClientReviews extends StatelessWidget {
+class _ClientReviews extends ConsumerWidget {
   const _ClientReviews({required this.s, required this.p});
 
   final HomeStrings s;
   final HomePalette p;
 
+  static const _accents = [
+    Color(0xFFEC4899),
+    Color(0xFF3B82F6),
+    Color(0xFF8B5CF6),
+    Color(0xFF10B981),
+  ];
+
   @override
-  Widget build(BuildContext context) {
-    final reviews = <_ReviewData>[
-      _ReviewData(author: 'Анна К.', date: '20.05.2024', body: s.review1, accent: const Color(0xFFEC4899)),
-      _ReviewData(author: 'Жахонгир И.', date: '18.05.2024', body: s.review2, accent: const Color(0xFF3B82F6)),
-      _ReviewData(author: 'Мадина С.', date: '15.05.2024', body: s.review3, accent: const Color(0xFF8B5CF6)),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final all = ref.watch(allMasterReviewsProvider);
+    final reviews = all.take(3).toList();
 
     return Column(
       children: [
-        _SectionHeader(title: s.clientReviews, action: s.allReviews, p: p),
+        _SectionHeader(
+          title: s.clientReviews,
+          action: s.allReviews,
+          p: p,
+          onAction: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const AllReviewsPage()),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 162,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: reviews.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => _ReviewCard(r: reviews[i], p: p),
-          ),
+          child: reviews.isEmpty
+              ? Center(child: Text('Отзывов пока нет', style: GoogleFonts.inter(color: p.muted)))
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: reviews.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) => _ReviewCard(
+                    r: _ReviewData.fromMasterReview(reviews[i], _accents[i % _accents.length]),
+                    p: p,
+                  ),
+                ),
         ),
       ],
     );
@@ -2017,10 +2057,11 @@ class _ProductData {
 }
 
 class _ToolsShop extends StatelessWidget {
-  const _ToolsShop({required this.s, required this.p});
+  const _ToolsShop({required this.s, required this.p, required this.onOpenShop});
 
   final HomeStrings s;
   final HomePalette p;
+  final VoidCallback onOpenShop;
 
   @override
   Widget build(BuildContext context) {
@@ -2033,7 +2074,7 @@ class _ToolsShop extends StatelessWidget {
 
     return Column(
       children: [
-        _SectionHeader(title: s.toolsShop, action: s.all, p: p),
+        _SectionHeader(title: s.toolsShop, action: s.all, p: p, onAction: onOpenShop),
         const SizedBox(height: 12),
         SizedBox(
           height: 268,

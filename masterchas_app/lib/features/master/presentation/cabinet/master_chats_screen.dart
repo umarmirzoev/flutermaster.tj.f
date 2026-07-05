@@ -61,7 +61,10 @@ class _ChatTile extends StatelessWidget {
       subtitle: const Text('Диалог по заказу'),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => ChatThreadScreen(conversation: conversation),
+          builder: (_) => ChatThreadScreen(
+            conversation: conversation,
+            isLocal: conversation.isLocal,
+          ),
         ),
       ),
     );

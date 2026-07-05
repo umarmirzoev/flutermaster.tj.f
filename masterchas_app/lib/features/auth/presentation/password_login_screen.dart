@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/providers/home_tab_provider.dart';
+import '../data/master_credentials.dart';
 import '../providers/auth_provider.dart';
 import '../utils/phone_formatter.dart';
 
@@ -65,10 +67,31 @@ class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
           );
       if (!mounted) return;
       final auth = ref.read(authProvider);
-      context.go(auth.isMaster ? '/master/cabinet/orders' : '/');
+      if (auth.isMaster) {
+        ref.read(homeTabProvider.notifier).openProfile();
+      }
+      context.go('/');
     } catch (e) {
+      final phone = _phoneController.text.trim();
+      final code = _passwordController.text.trim();
+      if (isKnownMasterPhone(phone) && code.length == 4) {
+        try {
+          await ref.read(authProvider.notifier).loginMasterWithCode(
+                phone: phone,
+                code: code,
+              );
+          if (!mounted) return;
+          ref.read(homeTabProvider.notifier).openProfile();
+          context.go('/');
+          return;
+        } catch (_) {}
+      }
+
       if (mounted) {
-        setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+        final message = isKnownMasterPhone(phone)
+            ? 'Неверный код входа. Для мастеров используйте 4-значный код.'
+            : e.toString().replaceFirst('Exception: ', '');
+        setState(() => _error = message);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

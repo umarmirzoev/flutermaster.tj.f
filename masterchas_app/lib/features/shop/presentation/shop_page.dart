@@ -6,10 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/catalog_provider.dart';
+import '../../admin/providers/admin_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../data/shop_data.dart';
+import '../providers/shop_admin_orders_provider.dart';
 import '../state/shop_state.dart';
-import 'shop_profile.dart';
 
 class ShopPage extends ConsumerStatefulWidget {
   const ShopPage({super.key});
@@ -34,6 +35,8 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   }
 
   void _toggleFav(int idx) => ref.read(shopFavoritesProvider.notifier).toggle(idx);
+
+  void _toggleRentalFav(int idx) => ref.read(rentalFavoritesProvider.notifier).toggle(idx);
 
   void _toTop() {
     if (_scrollCtrl.hasClients) {
@@ -100,6 +103,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     final p = HomePalette.of(context);
 
     final fav = ref.watch(shopFavoritesProvider);
+    final rentalFav = ref.watch(rentalFavoritesProvider);
     final cartCount = ref.watch(shopCartProvider).values.fold(0, (a, b) => a + b);
 
     final hits = _filtered(ProductBadge.hit);
@@ -118,8 +122,10 @@ class _ShopPageState extends ConsumerState<ShopPage> {
               l: l,
               p: p,
               cartCount: cartCount,
+              favCount: fav.length,
               controller: _searchCtrl,
               onCart: () => _openCart(l, locale),
+              onFavorites: () => _openFavorites(l, locale),
               onChanged: (v) => setState(() => _query = v),
               onClear: () => setState(() {
                 _query = '';
@@ -151,7 +157,20 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                       onOpen: _openProduct,
                     )
                   : _nav == 2
-                  ? ShopProfilePage(onOpenProduct: _openProduct)
+                  ? _TileListView(
+                      title: l.navRent,
+                      products: rentalProducts,
+                      catalogList: rentalProducts,
+                      priceUnit: l.rentPriceUnit,
+                      l: l,
+                      p: p,
+                      locale: locale,
+                      fav: rentalFav,
+                      onAdd: (_) {},
+                      onFav: _toggleRentalFav,
+                      onOpen: _openRentalProduct,
+                      headerIcon: LucideIcons.hammer,
+                    )
                   : ListView(
                       controller: _scrollCtrl,
                       padding: const EdgeInsets.only(bottom: 24),
@@ -273,6 +292,35 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     );
   }
 
+  void _openRentalProduct(ShopProduct prod) {
+    final locale = ref.read(localeProvider);
+    final l = ShopL10n.of(locale);
+    final index = rentalProducts.indexOf(prod);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductDetailPage(
+          product: prod,
+          l: l,
+          locale: locale,
+          isRental: true,
+          productIndex: index,
+          priceUnit: l.rentPriceUnit,
+          similarCatalog: rentalProducts,
+          onAdd: (_) {},
+          onOpen: _openRentalProduct,
+        ),
+      ),
+    );
+  }
+
+  void _openFavorites(ShopL10n l, AppLocale locale) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ShopFavoritesPage(l: l, locale: locale, onOpen: _openProduct),
+      ),
+    );
+  }
+
   void _openCart(ShopL10n l, AppLocale locale) {
     showModalBottomSheet<void>(
       context: context,
@@ -290,8 +338,10 @@ class _TopBar extends StatelessWidget {
     required this.l,
     required this.p,
     required this.cartCount,
+    required this.favCount,
     required this.controller,
     required this.onCart,
+    required this.onFavorites,
     required this.onChanged,
     required this.onClear,
   });
@@ -299,8 +349,10 @@ class _TopBar extends StatelessWidget {
   final ShopL10n l;
   final HomePalette p;
   final int cartCount;
+  final int favCount;
   final TextEditingController controller;
   final VoidCallback onCart;
+  final VoidCallback onFavorites;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
 
@@ -323,7 +375,7 @@ class _TopBar extends StatelessWidget {
                 style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
               ),
               const Spacer(),
-              _circle(LucideIcons.heart, p, () {}),
+              _FavButton(p: p, count: favCount, onTap: onFavorites),
               const SizedBox(width: 8),
               _CartButton(p: p, count: cartCount, onTap: onCart),
             ],
@@ -381,6 +433,55 @@ class _TopBar extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
           child: Icon(icon, size: 17, color: p.text),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavButton extends StatelessWidget {
+  const _FavButton({required this.p, required this.count, required this.onTap});
+
+  final HomePalette p;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFav = count > 0;
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: SizedBox(
+        width: 38,
+        height: 38,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
+              child: Icon(
+                hasFav ? Icons.favorite : Icons.favorite_border,
+                size: 17,
+                color: hasFav ? const Color(0xFFEF4444) : p.text,
+              ),
+            ),
+            if (count > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                  child: Text(
+                    '$count',
+                    style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -800,7 +901,7 @@ class _ProductCard extends StatelessWidget {
                         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)],
                       ),
                       child: Icon(
-                        LucideIcons.heart,
+                        isFav ? Icons.favorite : Icons.favorite_border,
                         size: 13,
                         color: isFav ? const Color(0xFFEF4444) : const Color(0xFF8B95A5),
                       ),
@@ -1197,7 +1298,7 @@ class _ShopBottomNav extends StatelessWidget {
     final items = [
       (LucideIcons.store, l.navShop),
       (LucideIcons.tag, l.navDeals),
-      (LucideIcons.user, l.navProfile),
+      (LucideIcons.hammer, l.navRent),
     ];
     return Container(
       decoration: BoxDecoration(
@@ -1389,21 +1490,27 @@ class _CartSheet extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: entries.isEmpty
                           ? null
-                          : () {
+                          : () async {
                               final discount = entries.fold<int>(0, (a, e) {
                                 final pr = catalog[e.key];
                                 return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
                               });
-                              ref.read(shopOrdersProvider.notifier).add(
-                                    ShopOrder(
-                                      date: DateTime.now(),
-                                      items: Map<int, int>.from(cart),
-                                      total: total,
-                                      discount: discount,
-                                      bonus: (total * 0.01).round(),
-                                    ),
+                              final order = ShopOrder(
+                                date: DateTime.now(),
+                                items: Map<int, int>.from(cart),
+                                total: total,
+                                discount: discount,
+                                bonus: (total * 0.01).round(),
+                              );
+                              ref.read(shopOrdersProvider.notifier).add(order);
+                              await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
+                                    items: order.items,
+                                    total: order.total,
+                                    catalog: catalog,
                                   );
+                              ref.invalidate(adminDataProvider);
                               ref.read(shopCartProvider.notifier).clear();
+                              if (!context.mounted) return;
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1468,6 +1575,7 @@ class _ProductTile extends StatelessWidget {
     required this.onAdd,
     required this.onFav,
     required this.onOpen,
+    this.priceUnit,
   });
 
   final ShopProduct prod;
@@ -1478,10 +1586,12 @@ class _ProductTile extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onFav;
   final VoidCallback onOpen;
+  final String? priceUnit;
 
   @override
   Widget build(BuildContext context) {
     final discount = prod.discountPercent;
+    final unit = priceUnit ?? l.priceUnit;
     return GestureDetector(
       onTap: onOpen,
       child: Container(
@@ -1540,7 +1650,7 @@ class _ProductTile extends StatelessWidget {
                       GestureDetector(
                         onTap: onFav,
                         child: Icon(
-                          LucideIcons.heart,
+                          isFav ? Icons.favorite : Icons.favorite_border,
                           size: 17,
                           color: isFav ? const Color(0xFFEF4444) : p.muted,
                         ),
@@ -1577,7 +1687,7 @@ class _ProductTile extends StatelessWidget {
                           children: [
                             if (prod.oldPrice > 0)
                               Text(
-                                '${shopMoney(prod.oldPrice)} ${l.priceUnit}',
+                                '${shopMoney(prod.oldPrice)} $unit',
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: p.muted,
@@ -1585,7 +1695,7 @@ class _ProductTile extends StatelessWidget {
                                 ),
                               ),
                             Text(
-                              '${shopMoney(prod.price)} ${l.priceUnit}',
+                              '${shopMoney(prod.price)} $unit',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -1693,6 +1803,9 @@ class _TileListView extends ConsumerWidget {
     required this.onAdd,
     required this.onFav,
     required this.onOpen,
+    this.catalogList,
+    this.priceUnit,
+    this.headerIcon = LucideIcons.tag,
   });
 
   final String title;
@@ -1704,10 +1817,14 @@ class _TileListView extends ConsumerWidget {
   final ValueChanged<int> onAdd;
   final ValueChanged<int> onFav;
   final ValueChanged<ShopProduct> onOpen;
+  final List<ShopProduct>? catalogList;
+  final String? priceUnit;
+  final IconData headerIcon;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(shopCatalogProvider);
+    final List<ShopProduct> catalog = catalogList ?? ref.watch(shopCatalogProvider);
+    final unit = priceUnit ?? l.priceUnit;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
       itemCount: products.length + 1,
@@ -1721,7 +1838,7 @@ class _TileListView extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(LucideIcons.tag, size: 14, color: Colors.white),
+                  child: Icon(headerIcon, size: 14, color: Colors.white),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -1739,6 +1856,7 @@ class _TileListView extends ConsumerWidget {
           l: l,
           p: p,
           locale: locale,
+          priceUnit: unit,
           isFav: fav.contains(idx),
           onAdd: () => onAdd(idx),
           onFav: () => onFav(idx),
@@ -1862,6 +1980,10 @@ class ProductDetailPage extends ConsumerWidget {
     required this.locale,
     required this.onAdd,
     required this.onOpen,
+    this.isRental = false,
+    this.productIndex,
+    this.priceUnit,
+    this.similarCatalog,
   });
 
   final ShopProduct product;
@@ -1869,12 +1991,17 @@ class ProductDetailPage extends ConsumerWidget {
   final AppLocale locale;
   final ValueChanged<int> onAdd;
   final ValueChanged<ShopProduct> onOpen;
+  final bool isRental;
+  final int? productIndex;
+  final String? priceUnit;
+  final List<ShopProduct>? similarCatalog;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
-    final catalog = ref.watch(shopCatalogProvider);
-    final index = catalog.indexOf(product);
+    final List<ShopProduct> catalog = similarCatalog ?? ref.watch(shopCatalogProvider);
+    final index = productIndex ?? catalog.indexOf(product);
+    final unit = priceUnit ?? (isRental ? l.rentPriceUnit : l.priceUnit);
     final discount = product.discountPercent;
     final similar = [
       for (final pr in catalog)
@@ -1886,17 +2013,46 @@ class ProductDetailPage extends ConsumerWidget {
     ];
     final related = [...similar, ...more].take(6).toList();
 
-    void buy() {
-      final disc = product.oldPrice > product.price ? product.oldPrice - product.price : 0;
-      ref.read(shopOrdersProvider.notifier).add(
-            ShopOrder(
-              date: DateTime.now(),
+    void buy() async {
+      if (isRental) {
+        await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
               items: {index: 1},
               total: product.price,
-              discount: disc,
-              bonus: (product.price * 0.01).round(),
+              catalog: catalog,
+              kind: 'Аренда',
+            );
+        ref.invalidate(adminDataProvider);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              backgroundColor: brandGreen,
+              behavior: SnackBarBehavior.floating,
+              content: Text(
+                l.rentOrderPlaced,
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
             ),
           );
+        return;
+      }
+      final disc = product.oldPrice > product.price ? product.oldPrice - product.price : 0;
+      final order = ShopOrder(
+        date: DateTime.now(),
+        items: {index: 1},
+        total: product.price,
+        discount: disc,
+        bonus: (product.price * 0.01).round(),
+      );
+      ref.read(shopOrdersProvider.notifier).add(order);
+      await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
+            items: order.items,
+            total: order.total,
+            catalog: catalog,
+          );
+      ref.invalidate(adminDataProvider);
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -1916,7 +2072,14 @@ class ProductDetailPage extends ConsumerWidget {
       body: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _DetailHeader(product: product, p: p, discount: discount, l: l),
+                _DetailHeader(
+                  product: product,
+                  productIndex: index,
+                  p: p,
+                  discount: discount,
+                  l: l,
+                  isRental: isRental,
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Column(
@@ -1926,7 +2089,7 @@ class ProductDetailPage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '${shopMoney(product.price)} ${l.priceUnit}',
+                            '${shopMoney(product.price)} $unit',
                             style: GoogleFonts.inter(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
@@ -1938,7 +2101,7 @@ class ProductDetailPage extends ConsumerWidget {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
-                                '${shopMoney(product.oldPrice)} ${l.priceUnit}',
+                                '${shopMoney(product.oldPrice)} $unit',
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
                                   color: p.muted,
@@ -2063,24 +2226,25 @@ class ProductDetailPage extends ConsumerWidget {
                           child: ElevatedButton(
                             onPressed: buy,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF59E0B),
+                              backgroundColor: isRental ? brandGreen : const Color(0xFFF59E0B),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             ),
                             child: Text(
-                              l.buyNow,
+                              isRental ? l.rentBuyNow : l.buyNow,
                               style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
                             ),
                           ),
                         ),
                       ),
+                      if (!isRental) ...[
                       const SizedBox(width: 12),
                       Expanded(
                         child: SizedBox(
                           height: 52,
                           child: ElevatedButton.icon(
-                            onPressed: () => onAdd(index),
+                            onPressed: index >= 0 ? () => onAdd(index) : null,
                             icon: const Icon(LucideIcons.shopping_cart, size: 18),
                             label: Text(
                               l.addToCartBtn,
@@ -2095,6 +2259,7 @@ class ProductDetailPage extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      ],
                     ],
                   ),
                 ),
@@ -2122,16 +2287,35 @@ class ProductDetailPage extends ConsumerWidget {
   }
 }
 
-class _DetailHeader extends StatelessWidget {
-  const _DetailHeader({required this.product, required this.p, required this.discount, required this.l});
+class _DetailHeader extends ConsumerWidget {
+  const _DetailHeader({
+    required this.product,
+    required this.productIndex,
+    required this.p,
+    required this.discount,
+    required this.l,
+    this.isRental = false,
+  });
 
   final ShopProduct product;
+  final int productIndex;
   final HomePalette p;
   final int discount;
   final ShopL10n l;
+  final bool isRental;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFav = isRental
+        ? ref.watch(rentalFavoritesProvider).contains(productIndex)
+        : ref.watch(shopFavoritesProvider).contains(productIndex);
+    void toggleFav() {
+      if (isRental) {
+        ref.read(rentalFavoritesProvider.notifier).toggle(productIndex);
+      } else {
+        ref.read(shopFavoritesProvider.notifier).toggle(productIndex);
+      }
+    }
     return Stack(
       children: [
         Container(
@@ -2154,7 +2338,11 @@ class _DetailHeader extends StatelessWidget {
           child: SafeArea(
             child: Row(
               children: [
-                _round(LucideIcons.heart, () {}),
+                _round(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  toggleFav,
+                  color: isFav ? const Color(0xFFEF4444) : const Color(0xFF1B1F24),
+                ),
                 const SizedBox(width: 8),
                 _round(LucideIcons.share_2, () {}),
               ],
@@ -2199,7 +2387,7 @@ class _DetailHeader extends StatelessWidget {
     );
   }
 
-  Widget _round(IconData icon, VoidCallback onTap) {
+  Widget _round(IconData icon, VoidCallback onTap, {Color? color}) {
     return Material(
       color: Colors.white,
       shape: const CircleBorder(),
@@ -2210,7 +2398,7 @@ class _DetailHeader extends StatelessWidget {
         child: SizedBox(
           width: 38,
           height: 38,
-          child: Icon(icon, size: 18, color: const Color(0xFF1B1F24)),
+          child: Icon(icon, size: 18, color: color ?? const Color(0xFF1B1F24)),
         ),
       ),
     );
@@ -2273,6 +2461,87 @@ class _SimilarCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ShopFavoritesPage extends ConsumerWidget {
+  const ShopFavoritesPage({
+    super.key,
+    required this.l,
+    required this.locale,
+    required this.onOpen,
+  });
+
+  final ShopL10n l;
+  final AppLocale locale;
+  final ValueChanged<ShopProduct> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = HomePalette.of(context);
+    final fav = ref.watch(shopFavoritesProvider);
+    final catalog = ref.watch(shopCatalogProvider);
+    final products = [for (final i in fav) if (i >= 0 && i < catalog.length) catalog[i]];
+
+    return Scaffold(
+      backgroundColor: p.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
+              child: Row(
+                children: [
+                  Material(
+                    color: p.pageBg,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
+                        child: Icon(LucideIcons.arrow_left, size: 18, color: p.text),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Избранное', style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: products.isEmpty
+                  ? Center(
+                      child: Text('Добавьте инструменты в избранное', style: GoogleFonts.inter(color: p.muted)),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: products.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (_, i) {
+                        final prod = products[i];
+                        final idx = catalog.indexOf(prod);
+                        return _ProductTile(
+                          prod: prod,
+                          l: l,
+                          p: p,
+                          locale: locale,
+                          isFav: true,
+                          onAdd: () {},
+                          onFav: () {
+                            ref.read(shopFavoritesProvider.notifier).remove(idx);
+                          },
+                          onOpen: () => onOpen(prod),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

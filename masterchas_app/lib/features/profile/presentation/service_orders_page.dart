@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../home/presentation/home_palette.dart';
 import '../../orders/models/api_order.dart';
+import '../../orders/providers/order_workflow_provider.dart';
 import '../../orders/providers/orders_provider.dart';
 import '../../orders/utils/order_status.dart';
 import 'profile_shell.dart';
@@ -15,7 +16,7 @@ class ServiceOrdersPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
-    final ordersAsync = ref.watch(clientOrdersProvider);
+    final ordersAsync = ref.watch(mergedClientOrdersProvider);
 
     return ProfileSubPage(
       title: 'Мои заказы',
@@ -65,7 +66,7 @@ class _OrderCard extends StatelessWidget {
                   style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                 ),
               ),
-              _StatusChip(status: order.status),
+              _StatusChip(status: order.statusCode?.toString() ?? order.status),
             ],
           ),
           if (order.address.isNotEmpty) ...[

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/master_registration_draft_provider.dart';
+import '../utils/phone_formatter.dart';
 
 const _navy = Color(0xFF1C2438);
 const _fieldFill = Color(0xFFF3F4F8);
@@ -16,7 +17,14 @@ const _titleColor = Color(0xFF111827);
 const _linkBlue = Color(0xFF2563EB);
 
 class MasterRegistrationScreen extends ConsumerStatefulWidget {
-  const MasterRegistrationScreen({super.key});
+  const MasterRegistrationScreen({
+    super.key,
+    this.applicationMode = false,
+    this.initialPhone,
+  });
+
+  final bool applicationMode;
+  final String? initialPhone;
 
   @override
   ConsumerState<MasterRegistrationScreen> createState() =>
@@ -40,10 +48,16 @@ class _MasterRegistrationScreenState
   @override
   void initState() {
     super.initState();
+    final digits = localDigitsFromPhone(widget.initialPhone);
+    if (digits.isNotEmpty) {
+      _phoneController.text = digits;
+    }
     _restoreSavedProfile();
   }
 
   Future<void> _restoreSavedProfile() async {
+    if (widget.applicationMode) return;
+
     final saved = await ref.read(authProvider.notifier).readSavedMasterProfile();
     if (!mounted || saved == null) return;
 
@@ -79,7 +93,9 @@ class _MasterRegistrationScreenState
   bool get _canContinue {
     if (_isSubmitting || !_agreedToTerms) return false;
     if (_phoneController.text.trim().length < 9) return false;
-    if (_passwordController.text.trim().length < 8) return false;
+    if (!widget.applicationMode && _passwordController.text.trim().length < 8) {
+      return false;
+    }
     if (_lastNameController.text.trim().isEmpty) return false;
     if (_firstNameController.text.trim().isEmpty) return false;
     if (_patronymicController.text.trim().isEmpty) return false;
@@ -96,6 +112,23 @@ class _MasterRegistrationScreenState
     });
 
     try {
+      if (widget.applicationMode) {
+        await ref
+            .read(authProvider.notifier)
+            .signInWithPhone(_phoneController.text.trim());
+
+        ref.read(masterRegistrationDraftProvider.notifier).saveProfile(
+              lastName: _lastNameController.text,
+              firstName: _firstNameController.text,
+              patronymic: _patronymicController.text,
+              isSelfEmployed: _isSelfEmployed,
+              companyName: _isSelfEmployed ? _companyController.text.trim() : null,
+            );
+
+        if (mounted) context.go('/master/skills');
+        return;
+      }
+
       await ref.read(authProvider.notifier).registerWithPassword(
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
@@ -135,7 +168,15 @@ class _MasterRegistrationScreenState
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.go('/role'),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                        return;
+                      }
+                      context.go(
+                        widget.applicationMode ? '/login/master-code' : '/role',
+                      );
+                    },
                     icon: const Icon(LucideIcons.arrow_left, color: _titleColor),
                   ),
                   Text(
@@ -157,7 +198,7 @@ class _MasterRegistrationScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Как вас зовут?',
+                      widget.applicationMode ? 'Заявка мастера' : 'Как вас зовут?',
                       style: GoogleFonts.inter(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
@@ -167,8 +208,10 @@ class _MasterRegistrationScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Пожалуйста, укажите ваши фамилию, имя и отчество точно '
-                      'так, как указано в паспорте. Это необходимо для проверки.',
+                      widget.applicationMode
+                          ? 'Заполните данные для подачи заявки. После проверки вы получите код для входа в кабинет.'
+                          : 'Пожалуйста, укажите ваши фамилию, имя и отчество точно '
+                              'так, как указано в паспорте. Это необходимо для проверки.',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -187,16 +230,18 @@ class _MasterRegistrationScreenState
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Пароль (мин. 8 символов)',
-                        border: OutlineInputBorder(),
+                    if (!widget.applicationMode) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Пароль (мин. 8 символов)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) => setState(() {}),
                       ),
-                      onChanged: (_) => setState(() {}),
-                    ),
+                    ],
                     const SizedBox(height: 12),
                     _NameField(
                       controller: _lastNameController,

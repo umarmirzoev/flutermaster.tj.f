@@ -1,5 +1,6 @@
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/models/platform_models.dart';
 import '../models/admin_models.dart';
 
 final adminMenuItems = <AdminMenuItem>[
@@ -106,13 +107,13 @@ final adminMenuItems = <AdminMenuItem>[
 ];
 
 final initialAdminOrders = <AdminOrder>[
-  const AdminOrder(id: '#MC-1042', client: 'Али Рахимов', master: 'Гулмахмад Д.', service: 'Сантехника', status: AdminOrderStatus.inProgress, date: '28.06.2026', amount: 150),
-  const AdminOrder(id: '#MC-1041', client: 'Мадина К.', master: 'Фаррух С.', service: 'Электрика', status: AdminOrderStatus.newOrder, date: '28.06.2026', amount: 220),
-  const AdminOrder(id: '#MC-1040', client: 'Бахтиёр Н.', master: 'Рустам А.', service: 'Отделка', status: AdminOrderStatus.completed, date: '27.06.2026', amount: 890),
-  const AdminOrder(id: '#MC-1039', client: 'Зухра М.', master: 'Гулмахмад Д.', service: 'Сантехника', status: AdminOrderStatus.completed, date: '27.06.2026', amount: 180),
-  const AdminOrder(id: '#MC-1038', client: 'Саид А.', master: '—', service: 'Мебель', status: AdminOrderStatus.cancelled, date: '26.06.2026', amount: 0),
-  const AdminOrder(id: '#MC-1037', client: 'Нигора Т.', master: 'Фаррух С.', service: 'Электрика', status: AdminOrderStatus.inProgress, date: '26.06.2026', amount: 310),
-  const AdminOrder(id: '#MC-1036', client: 'Джамшед Х.', master: 'Рустам А.', service: 'Уборка', status: AdminOrderStatus.newOrder, date: '25.06.2026', amount: 120),
+  const AdminOrder(id: '#MC-1042', fullId: '#MC-1042', client: 'Али Рахимов', master: 'Гулмахмад Д.', service: 'Сантехника', status: AdminOrderStatus.inProgress, date: '28.06.2026', amount: 150),
+  const AdminOrder(id: '#MC-1041', fullId: '#MC-1041', client: 'Мадина К.', master: 'Фаррух С.', service: 'Электрика', status: AdminOrderStatus.newOrder, date: '28.06.2026', amount: 220),
+  const AdminOrder(id: '#MC-1040', fullId: '#MC-1040', client: 'Бахтиёр Н.', master: 'Рустам А.', service: 'Отделка', status: AdminOrderStatus.completed, date: '27.06.2026', amount: 890),
+  const AdminOrder(id: '#MC-1039', fullId: '#MC-1039', client: 'Зухра М.', master: 'Гулмахмад Д.', service: 'Сантехника', status: AdminOrderStatus.completed, date: '27.06.2026', amount: 180),
+  const AdminOrder(id: '#MC-1038', fullId: '#MC-1038', client: 'Саид А.', master: '—', service: 'Мебель', status: AdminOrderStatus.cancelled, date: '26.06.2026', amount: 0),
+  const AdminOrder(id: '#MC-1037', fullId: '#MC-1037', client: 'Нигора Т.', master: 'Фаррух С.', service: 'Электрика', status: AdminOrderStatus.inProgress, date: '26.06.2026', amount: 310),
+  const AdminOrder(id: '#MC-1036', fullId: '#MC-1036', client: 'Джамшед Х.', master: 'Рустам А.', service: 'Уборка', status: AdminOrderStatus.newOrder, date: '25.06.2026', amount: 120),
 ];
 
 final initialAdminMasters = <AdminMaster>[
@@ -186,6 +187,18 @@ final masterActivityChart = <AdminChartPoint>[
   const AdminChartPoint(label: '30', value: 55),
 ];
 
+String workflowStatusLabel(int code) => switch (code) {
+      1 => 'Создан',
+      2 => 'Ожидает мастера',
+      3 => 'Назначен',
+      4 => 'Мастер принял',
+      5 => 'В работе',
+      6 => 'Завершён',
+      7 => 'Отменён',
+      8 => 'Спор',
+      _ => 'Неизвестно',
+    };
+
 String orderStatusLabel(AdminOrderStatus s) => switch (s) {
       AdminOrderStatus.newOrder => 'Новый',
       AdminOrderStatus.inProgress => 'В работе',
@@ -199,3 +212,18 @@ String masterStatusLabel(AdminMasterStatus s) => switch (s) {
       AdminMasterStatus.blocked => 'Заблокирован',
       AdminMasterStatus.top => 'Топ мастер',
     };
+
+/// Резервные данные админки, если API временно недоступен.
+final adminSeedDataState = AdminDataState(
+  orders: initialAdminOrders,
+  masters: initialAdminMasters,
+  clients: initialAdminClients,
+  chats: initialAdminChats,
+  reviews: initialAdminReviews,
+  transactions: initialAdminTransactions,
+  settings: const SaPlatformSettings(),
+  supportTickets: const [],
+  categories: const [],
+  coupons: const [],
+  marketingLogs: const [],
+);

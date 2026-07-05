@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/platform_models.dart';
 import '../../../core/providers/platform_store_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
 import '../models/admin_models.dart';
 import '../providers/admin_provider.dart';
 import '../theme/admin_theme.dart';
@@ -21,10 +22,17 @@ class AdminOrdersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(orderWorkflowProvider);
     return AdminDataBuilder(
       builder: (context, data) {
     final query = ref.watch(adminUiProvider).searchQuery;
-    final orders = filterOrders(data.orders, status: statusFilter, query: query);
+    final resolveStatus = (AdminOrder o) => effectiveAdminOrderStatus(ref, o);
+    final orders = filterOrders(
+      data.orders,
+      status: statusFilter,
+      query: query,
+      resolveStatus: resolveStatus,
+    );
     final title = switch (statusFilter) {
       AdminOrderStatus.newOrder => 'Новые заказы',
       AdminOrderStatus.inProgress => 'Заказы в работе',
@@ -39,17 +47,28 @@ class AdminOrdersPage extends ConsumerWidget {
       child: _DataTable(
         columns: const ['ID', 'Клиент', 'Мастер', 'Услуга', 'Сумма', 'Статус', 'Дата', 'Действия'],
         rows: orders.map((o) {
+          final workflowEntry =
+              ref.read(orderWorkflowProvider.notifier).entryFor(o.fullId);
+          final displayStatus = workflowEntry != null
+              ? workflowCodeToAdminStatus(workflowEntry.statusCode)
+              : o.status;
           return [
             Text(o.id, style: _cellStyle(bold: true)),
             Text(o.client, style: _cellStyle()),
             Text(o.master, style: _cellStyle(muted: true)),
             Text(o.service, style: _cellStyle(muted: true)),
             Text('${formatMoney(o.amount)} с.', style: _cellStyle(bold: true)),
-            AdminStatusBadge(status: o.status),
+            workflowEntry != null
+                ? AdminWorkflowStatusBadge(statusCode: workflowEntry.statusCode)
+                : AdminStatusBadge(status: displayStatus),
             Text(o.date, style: _cellStyle(muted: true)),
             PopupMenuButton<String>(
               icon: const Icon(LucideIcons.ellipsis, size: 16),
               onSelected: (v) {
+                if (v == 'accept') {
+                  adminApproveOrder(ref, o);
+                  return;
+                }
                 final status = switch (v) {
                   'new' => AdminOrderStatus.newOrder,
                   'progress' => AdminOrderStatus.inProgress,
@@ -57,13 +76,19 @@ class AdminOrdersPage extends ConsumerWidget {
                   'cancel' => AdminOrderStatus.cancelled,
                   _ => o.status,
                 };
-                adminUpdateOrderStatus(ref, o.id, status);
+                adminUpdateOrderStatus(ref, o, status);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'new', child: Text('Новый')),
-                PopupMenuItem(value: 'progress', child: Text('В работе')),
-                PopupMenuItem(value: 'done', child: Text('Выполнено')),
-                PopupMenuItem(value: 'cancel', child: Text('Отменить')),
+              itemBuilder: (_) => [
+                if (displayStatus == AdminOrderStatus.newOrder ||
+                    (workflowEntry?.statusCode ?? 1) < 3)
+                  const PopupMenuItem(
+                    value: 'accept',
+                    child: Text('Принять заявку'),
+                  ),
+                const PopupMenuItem(value: 'new', child: Text('Новый')),
+                const PopupMenuItem(value: 'progress', child: Text('В работе')),
+                const PopupMenuItem(value: 'done', child: Text('Выполнено')),
+                const PopupMenuItem(value: 'cancel', child: Text('Отменить')),
               ],
             ),
           ];

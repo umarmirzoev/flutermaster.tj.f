@@ -33,6 +33,33 @@ class ApiOrder {
 
   bool get isActive => !isCancelled && !status.toLowerCase().contains('completed');
 
+  bool get isPendingMasterAccept => statusCode == 3;
+
+  bool get isMasterAccepted => statusCode == 4;
+
+  ApiOrder copyWith({
+    String? title,
+    String? description,
+    String? address,
+    String? status,
+    int? statusCode,
+    double? price,
+  }) {
+    return ApiOrder(
+      id: id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      address: address ?? this.address,
+      status: status ?? this.status,
+      statusCode: statusCode ?? this.statusCode,
+      price: price ?? this.price,
+      payableAmount: payableAmount,
+      serviceId: serviceId,
+      acceptedAt: acceptedAt,
+      scheduledDate: scheduledDate,
+    );
+  }
+
   factory ApiOrder.fromJson(Map<String, dynamic> json) {
     final rawStatus = json['status'];
     final statusCode = rawStatus is int

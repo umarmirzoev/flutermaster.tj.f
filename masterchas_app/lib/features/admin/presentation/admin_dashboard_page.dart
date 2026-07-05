@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/admin_models.dart';
 import '../providers/admin_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
 import '../theme/admin_theme.dart';
 import 'widgets/admin_badges.dart';
 import 'widgets/admin_charts.dart';
@@ -16,12 +17,16 @@ class AdminDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(orderWorkflowProvider);
     return AdminDataBuilder(
       builder: (context, data) {
     final ui = ref.watch(adminUiProvider);
     final orders = data.orders;
-    final inProgress = orders.where((o) => o.status == AdminOrderStatus.inProgress).length;
-    final cancelled = orders.where((o) => o.status == AdminOrderStatus.cancelled).length;
+    final resolve = (AdminOrder o) => effectiveAdminOrderStatus(ref, o);
+    final inProgress =
+        orders.where((o) => resolve(o) == AdminOrderStatus.inProgress).length;
+    final cancelled =
+        orders.where((o) => resolve(o) == AdminOrderStatus.cancelled).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -32,7 +37,9 @@ class AdminDashboardPage extends ConsumerWidget {
             builder: (context, c) {
               final w = c.maxWidth;
               final statW = w > 1200 ? 200.0 : w > 800 ? (w - 36) / 4 : (w - 12) / 2;
-              final completed = orders.where((o) => o.status == AdminOrderStatus.completed).length;
+              final completed = orders
+                  .where((o) => resolve(o) == AdminOrderStatus.completed)
+                  .length;
               final stats = [
                 AdminStatCard(
                   label: 'Заказы',

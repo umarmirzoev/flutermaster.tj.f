@@ -5,6 +5,38 @@ import '../../models/admin_models.dart';
 import '../../theme/admin_theme.dart';
 import '../../data/admin_data.dart';
 
+class AdminWorkflowStatusBadge extends StatelessWidget {
+  const AdminWorkflowStatusBadge({super.key, required this.statusCode});
+
+  final int statusCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final adminStatus = switch (statusCode) {
+      6 => AdminOrderStatus.completed,
+      7 || 8 => AdminOrderStatus.cancelled,
+      3 || 4 || 5 => AdminOrderStatus.inProgress,
+      _ => AdminOrderStatus.newOrder,
+    };
+
+    final (bg, fg) = switch (adminStatus) {
+      AdminOrderStatus.newOrder => (const Color(0xFFDBEAFE), AdminTheme.blue),
+      AdminOrderStatus.inProgress => (const Color(0xFFFEF3C7), const Color(0xFFB45309)),
+      AdminOrderStatus.completed => (const Color(0xFFD1FAE5), AdminTheme.green),
+      AdminOrderStatus.cancelled => (const Color(0xFFFEE2E2), AdminTheme.red),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(
+        workflowStatusLabel(statusCode),
+        style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: fg),
+      ),
+    );
+  }
+}
+
 class AdminStatusBadge extends StatelessWidget {
   const AdminStatusBadge({super.key, required this.status});
 

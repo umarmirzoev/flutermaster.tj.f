@@ -45,7 +45,7 @@ class RoleSelectionScreen extends ConsumerWidget {
               icon: const _MasterIcon(),
               title: copy.masterTitle,
               subtitle: copy.masterSubtitle,
-              onTap: () => context.go('/login?role=Master'),
+              onTap: () => context.go('/login/master-code'),
             ),
           ),
         ],

@@ -4,8 +4,43 @@ import '../../../core/providers/platform_store_provider.dart';
 import '../../../core/network/api_result.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/admin_api_mapper.dart';
+import '../../chat/providers/chat_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
+import '../data/admin_data.dart';
 import '../data/admin_repository.dart';
+import '../../shop/providers/shop_admin_orders_provider.dart';
 import '../models/admin_models.dart';
+
+AdminOrderStatus workflowCodeToAdminStatus(int code) {
+  return switch (code) {
+    6 => AdminOrderStatus.completed,
+    7 || 8 => AdminOrderStatus.cancelled,
+    3 || 4 || 5 => AdminOrderStatus.inProgress,
+    _ => AdminOrderStatus.newOrder,
+  };
+}
+
+AdminOrderStatus effectiveAdminOrderStatus(WidgetRef ref, AdminOrder order) {
+  final entry =
+      ref.read(orderWorkflowProvider.notifier).entryFor(order.fullId);
+  if (entry != null) return workflowCodeToAdminStatus(entry.statusCode);
+  return order.status;
+}
+
+int adminStatusToWorkflowCode(AdminOrderStatus status) {
+  return switch (status) {
+    AdminOrderStatus.newOrder => 1,
+    AdminOrderStatus.inProgress => 3,
+    AdminOrderStatus.completed => 6,
+    AdminOrderStatus.cancelled => 7,
+  };
+}
+
+void _invalidateOrderViews(WidgetRef ref) {
+  ref.invalidate(mergedClientOrdersProvider);
+  ref.invalidate(mergedMasterOrdersProvider);
+  ref.invalidate(chatInboxProvider);
+}
 
 class AdminUiState {
   const AdminUiState({
@@ -104,14 +139,51 @@ class AdminDataNotifier extends AsyncNotifier<AdminDataState> {
     final result = await ref.read(adminRepositoryProvider).fetchDashboardData();
     if (result is ApiSuccess<AdminDataState>) {
       final data = result.data;
+      final shopOrders = await ref.read(shopAdminOrdersProvider.notifier).ensureLoaded();
+      final mergedOrders = [...shopOrders, ...data.orders];
+      final mergedData = AdminDataState(
+        orders: mergedOrders,
+        masters: data.masters,
+        clients: data.clients,
+        chats: data.chats,
+        reviews: data.reviews,
+        transactions: data.transactions,
+        settings: data.settings,
+        supportTickets: data.supportTickets,
+        categories: data.categories,
+        coupons: data.coupons,
+        marketingLogs: data.marketingLogs,
+      );
       ref.read(platformStoreProvider.notifier).syncApiCatalog(
-            orders: adminOrdersToSa(data.orders),
+            orders: adminOrdersToSa(mergedOrders),
             clients: adminClientsToSa(data.clients),
             masters: adminMastersToSa(data.masters),
           );
-      return data;
+      return mergedData;
     }
-    throw Exception(result is ApiError<AdminDataState> ? result.message : 'Ошибка загрузки');
+
+    final auth = ref.read(authProvider);
+    if (auth.isAdmin) {
+      final shopOrders = await ref.read(shopAdminOrdersProvider.notifier).ensureLoaded();
+      final seed = adminSeedDataState;
+      return AdminDataState(
+        orders: [...shopOrders, ...seed.orders],
+        masters: seed.masters,
+        clients: seed.clients,
+        chats: seed.chats,
+        reviews: seed.reviews,
+        transactions: seed.transactions,
+        settings: seed.settings,
+        supportTickets: seed.supportTickets,
+        categories: seed.categories,
+        coupons: seed.coupons,
+        marketingLogs: seed.marketingLogs,
+      );
+    }
+
+    throw Exception(
+      result is ApiError<AdminDataState> ? result.message : 'Ошибка загрузки',
+    );
   }
 }
 
@@ -126,8 +198,47 @@ void adminBlockMaster(WidgetRef ref, String id) {
   // TODO: POST block user via API
 }
 
-void adminUpdateOrderStatus(WidgetRef ref, String id, AdminOrderStatus status) {
-  // TODO: PUT order status via API
+void adminApproveOrder(WidgetRef ref, AdminOrder order) async {
+  await ref.read(orderWorkflowProvider.notifier).adminApproveOrder(
+        order.fullId,
+        masterName: order.master,
+        masterPhone: order.masterPhone,
+        clientName: order.client,
+        title: order.service,
+        address: order.address,
+        price: order.amount > 0 ? order.amount : null,
+      );
+  _invalidateOrderViews(ref);
+}
+
+void adminUpdateOrderStatus(
+  WidgetRef ref,
+  AdminOrder order,
+  AdminOrderStatus status,
+) async {
+  if (status == AdminOrderStatus.inProgress) {
+    await ref.read(orderWorkflowProvider.notifier).adminApproveOrder(
+          order.fullId,
+          masterName: order.master,
+          masterPhone: order.masterPhone,
+          clientName: order.client,
+          title: order.service,
+          address: order.address,
+          price: order.amount > 0 ? order.amount : null,
+        );
+  } else {
+    await ref.read(orderWorkflowProvider.notifier).adminSetOrderStatus(
+          order.fullId,
+          adminStatusToWorkflowCode(status),
+          masterName: order.master,
+          masterPhone: order.masterPhone,
+          clientName: order.client,
+          title: order.service,
+          address: order.address,
+          price: order.amount > 0 ? order.amount : null,
+        );
+  }
+  _invalidateOrderViews(ref);
 }
 
 void adminMarkChatRead(WidgetRef ref, String id) {}
@@ -136,9 +247,15 @@ void adminSendChatMessage(WidgetRef ref, String chatId, String text) {
   // TODO: POST chat message via API
 }
 
-List<AdminOrder> filterOrders(List<AdminOrder> orders, {AdminOrderStatus? status, String? query}) {
+List<AdminOrder> filterOrders(
+  List<AdminOrder> orders, {
+  AdminOrderStatus? status,
+  String? query,
+  AdminOrderStatus Function(AdminOrder order)? resolveStatus,
+}) {
   return orders.where((o) {
-    if (status != null && o.status != status) return false;
+    final effective = resolveStatus?.call(o) ?? o.status;
+    if (status != null && effective != status) return false;
     if (query == null || query.isEmpty) return true;
     final q = query.toLowerCase();
     return o.id.toLowerCase().contains(q) ||

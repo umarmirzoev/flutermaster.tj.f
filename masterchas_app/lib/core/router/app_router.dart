@@ -21,8 +21,10 @@ import '../../features/master/presentation/cabinet/master_level_screen.dart';
 import '../../features/master/presentation/cabinet/master_orders_screen.dart';
 import '../../features/master/presentation/cabinet/master_portfolio_screen.dart';
 import '../../features/master/presentation/cabinet/master_rating_screen.dart';
+import '../../features/master/presentation/cabinet/master_services_screen.dart';
 import '../../features/master/presentation/cabinet/master_schedule_screen.dart';
 import '../../features/master/presentation/cabinet/master_work_zone_screen.dart';
+import '../../features/auth/presentation/master_code_login_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
@@ -150,9 +152,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
+      // Мастера входят по коду, не по паролю API.
+      if (state.uri.queryParameters['role'] == 'Master') {
+        if (location == '/login' || location == '/login/password') {
+          return '/login/master-code';
+        }
+      }
+
       if (!auth.isInitialized) {
         if (location == '/login' ||
             location == '/login/password' ||
+            location == '/login/master-code' ||
             location == '/login/register' ||
             location == '/master/register' ||
             location == '/master/skills' ||
@@ -170,28 +180,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           '/master/photo',
           '/master/submitted',
         ];
-        if (masterOnboarding.contains(location) && auth.isMaster) {
+        if (masterOnboarding.contains(location)) {
+          if (!auth.isMaster) {
+            return null;
+          }
           final profile = auth.masterProfile;
           if (profile == null || !profile.isApproved) {
             return null;
           }
+          return '/';
         }
 
         if (location == '/login' ||
             location == '/login/password' ||
+            location == '/login/master-code' ||
             location == '/login/register' ||
-            location == '/master/register' ||
-            location == '/master/skills' ||
-            location == '/master/photo' ||
-            location == '/master/submitted' ||
             location == '/role') {
-          return auth.isMaster ? '/master/cabinet/orders' : '/';
+          return '/';
         }
         return null;
       }
 
       if (location == '/login' ||
           location == '/login/password' ||
+          location == '/login/master-code' ||
           location == '/login/register' ||
           location == '/master/register' ||
           location == '/master/skills' ||
@@ -237,10 +249,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/master/register',
-        pageBuilder: (context, state) => _fadePage(
-          state: state,
-          child: const MasterRegistrationScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final applicationMode = state.uri.queryParameters['mode'] == 'application';
+          String? phone;
+          if (state.extra is Map) {
+            phone = (state.extra! as Map)['phone'] as String?;
+          } else if (state.extra is String) {
+            phone = state.extra as String;
+          }
+          return _fadePage(
+            state: state,
+            child: MasterRegistrationScreen(
+              applicationMode: applicationMode,
+              initialPhone: phone,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/master/skills',
@@ -292,6 +316,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/master/cabinet/services',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const MasterServicesScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/master/cabinet/schedule',
         pageBuilder: (context, state) => _fadePage(
           state: state,
@@ -325,6 +356,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const MasterLevelScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/login/master-code',
+        pageBuilder: (context, state) {
+          String? phone;
+          if (state.extra is Map) {
+            phone = (state.extra! as Map)['phone'] as String?;
+          } else if (state.extra is String) {
+            phone = state.extra as String;
+          }
+          return _fadePage(
+            state: state,
+            child: MasterCodeLoginScreen(initialPhone: phone),
+          );
+        },
       ),
       GoRoute(
         path: '/login/password',

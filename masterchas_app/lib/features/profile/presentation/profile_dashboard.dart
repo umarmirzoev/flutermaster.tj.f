@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_locale.dart';
@@ -13,6 +14,9 @@ import '../../shop/state/shop_state.dart';
 import '../data/profile_l10n.dart';
 import 'edit_name_sheet.dart';
 import 'service_orders_page.dart';
+import '../data/account_level.dart';
+import '../providers/client_profile_stats_provider.dart';
+import '../../masters/providers/master_favorites_provider.dart';
 import 'profile_subpages.dart';
 
 class ProfileDashboard extends ConsumerWidget {
@@ -29,6 +33,31 @@ class ProfileDashboard extends ConsumerWidget {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Выйти?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        content: Text('Вы выйдете из аккаунта', style: GoogleFonts.inter()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Отмена', style: GoogleFonts.inter()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: brandGreen),
+            child: Text('Выйти', style: GoogleFonts.inter(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    await ref.read(authProvider.notifier).signOut();
+    if (context.mounted) context.go('/role');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
@@ -39,17 +68,17 @@ class ProfileDashboard extends ConsumerWidget {
     final name = auth.displayName ?? 'Пользователь';
     final phone = auth.phone ?? '—';
 
-    final orders = ref.watch(shopOrdersProvider);
-    final fav = ref.watch(shopFavoritesProvider);
+    final profileStats = ref.watch(clientProfileStatsProvider);
+    final fav = ref.watch(masterFavoritesProvider);
     final cards = ref.watch(shopCardsProvider);
     final addrs = ref.watch(shopAddressesProvider);
     final orderNotifier = ref.read(shopOrdersProvider.notifier);
 
-    final ordersCount = orders.length;
+    final ordersCount = profileStats.ordersCount;
     final favCount = fav.length;
-    final spent = orderNotifier.totalSpent;
+    final spent = profileStats.spent;
     final bonus = orderNotifier.totalBonus;
-    const toGold = 2000;
+    final level = accountLevelFor(spent: spent, orders: ordersCount);
 
     return ListView(
       padding: EdgeInsets.only(bottom: bottomPadding),
@@ -92,7 +121,7 @@ class ProfileDashboard extends ConsumerWidget {
                       value: '$favCount',
                       label: l.favorites,
                       p: p,
-                      onTap: () => _push(context, FavoritesPage(onOpenProduct: onOpenProduct)),
+                      onTap: () => _push(context, const FavoritesPage()),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -111,7 +140,7 @@ class ProfileDashboard extends ConsumerWidget {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  Expanded(child: _LevelCard(l: l, toGold: toGold, spent: spent)),
+                  Expanded(child: _LevelCard(l: l, level: level)),
                   const SizedBox(width: 12),
                   Expanded(child: _BonusCard(l: l, bonus: bonus)),
                 ],
@@ -184,6 +213,38 @@ class ProfileDashboard extends ConsumerWidget {
                       onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Material(
+                color: p.cardBg,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  onTap: () => _signOut(context, ref),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(LucideIcons.log_out, size: 18, color: Color(0xFFDC2626)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Выйти из аккаунта',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -430,15 +491,16 @@ class _StatCard extends StatelessWidget {
 }
 
 class _LevelCard extends StatelessWidget {
-  const _LevelCard({required this.l, required this.toGold, required this.spent});
+  const _LevelCard({required this.l, required this.level});
 
   final ProfileL10n l;
-  final int toGold;
-  final int spent;
+  final AccountLevelInfo level;
 
   @override
   Widget build(BuildContext context) {
-    final progress = (spent / (spent + toGold)).clamp(0.05, 0.95);
+    final nextLabel = level.nextTier == null
+        ? 'Максимальный уровень'
+        : l.toGold(level.pointsToNext);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -456,14 +518,14 @@ class _LevelCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text('Silver', style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text(level.label, style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(value: progress, minHeight: 6, backgroundColor: Colors.white.withValues(alpha: 0.18), valueColor: const AlwaysStoppedAnimation(brandGreen)),
+            child: LinearProgressIndicator(value: level.progress, minHeight: 6, backgroundColor: Colors.white.withValues(alpha: 0.18), valueColor: const AlwaysStoppedAnimation(brandGreen)),
           ),
           const SizedBox(height: 6),
-          Text(l.toGold(toGold), style: GoogleFonts.inter(fontSize: 9.5, color: Colors.white.withValues(alpha: 0.65))),
+          Text(nextLabel, style: GoogleFonts.inter(fontSize: 9.5, color: Colors.white.withValues(alpha: 0.65))),
         ],
       ),
     );

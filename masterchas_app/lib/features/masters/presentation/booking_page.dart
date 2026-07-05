@@ -11,6 +11,8 @@ import '../../home/presentation/home_palette.dart';
 import '../../orders/data/orders_repository.dart';
 import '../../orders/models/api_order.dart';
 import '../../orders/utils/address_validator.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
 import '../../orders/providers/orders_provider.dart';
 import '../../services/data/services_catalog.dart';
 import '../data/masters_data.dart';
@@ -20,11 +22,13 @@ class BookingPage extends ConsumerStatefulWidget {
     super.key,
     required this.master,
     this.serviceName,
+    this.serviceTitleRu,
     this.servicePrice,
   });
 
   final MasterItem master;
   final String? serviceName;
+  final String? serviceTitleRu;
   final double? servicePrice;
 
   @override
@@ -69,6 +73,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     final s = HomeStrings.of(locale);
     final p = HomePalette.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultService = defaultServiceForMaster(widget.master);
+    final displayServiceName = widget.serviceName ??
+        widget.serviceTitleRu ??
+        defaultService?.ru ??
+        widget.master.categories.first;
 
     return ColoredBox(
       color: p.shellBg,
@@ -97,7 +106,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       children: [
-                        _MasterSummary(m: widget.master, serviceName: widget.serviceName, p: p),
+                        _MasterSummary(
+                          m: widget.master,
+                          serviceName: displayServiceName,
+                          p: p,
+                        ),
                         const SizedBox(height: 20),
                         _SectionTitle(s.chooseDate, p),
                         const SizedBox(height: 10),
@@ -161,9 +174,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
     final s = HomeStrings.of(ref.read(localeProvider));
     final defaultService = defaultServiceForMaster(widget.master);
-    final serviceName = widget.serviceName ??
+    final apiTitle = widget.serviceTitleRu ??
+        widget.serviceName ??
         defaultService?.ru ??
         widget.master.categories.first;
+    final serviceName = apiTitle;
     final repo = ref.read(ordersRepositoryProvider);
     final address = _addressCtrl.text.trim();
 
@@ -219,7 +234,21 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       }
 
       final order = result.data;
+
+      final auth = ref.read(authProvider);
+      await ref.read(orderWorkflowProvider.notifier).registerOrder(
+            order: order,
+            clientName: auth.displayName ?? 'Клиент',
+            clientPhone: auth.phone ?? '',
+            masterName: widget.master.fullName,
+            masterPhone: widget.master.phone,
+            scheduledDate: date,
+            scheduledTime: '$time:00',
+          );
+
       ref.invalidate(clientOrdersProvider);
+      ref.invalidate(mergedClientOrdersProvider);
+      ref.invalidate(mergedMasterOrdersProvider);
 
       if (!mounted) return;
 
