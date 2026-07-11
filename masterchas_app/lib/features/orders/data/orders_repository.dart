@@ -197,18 +197,98 @@ class OrdersRepository {
 
   Future<ResolvedService?> resolveServiceByTitle(String title) async {
     _servicesCache ??= await _loadServices();
-    final normalized = title.trim().toLowerCase();
+    if (_servicesCache!.isEmpty) return null;
+
+    final normalized = _normalizeTitle(title);
+    if (normalized.isEmpty) return _fallbackService();
+
+    final direct = _findByApiName(normalized, title);
+    if (direct != null) return direct;
+
+    // Category key from local catalog → representative API service.
+    for (final cat in _categoryServiceNames.keys) {
+      if (normalized.contains(_normalizeTitle(cat)) ||
+          _normalizeTitle(cat).contains(normalized)) {
+        final hit = _findByApiName(_normalizeTitle(_categoryServiceNames[cat]!), _categoryServiceNames[cat]!);
+        if (hit != null) return hit;
+      }
+    }
+
+    // Master profession labels (Сантехник → Сантехника services).
+    for (final entry in _professionToService.entries) {
+      if (normalized.contains(entry.key) || entry.key.contains(normalized)) {
+        final hit = _findByApiName(_normalizeTitle(entry.value), entry.value);
+        if (hit != null) return hit;
+      }
+    }
+
+    return _fallbackService();
+  }
+
+  ResolvedService? _findByApiName(String normalized, String fallbackTitle) {
     for (final item in _servicesCache!) {
-      final name = (item['name'] as String? ?? '').toLowerCase();
+      final name = _normalizeTitle(item['name'] as String? ?? '');
       if (name == normalized || name.contains(normalized) || normalized.contains(name)) {
         return ResolvedService(
           id: item['id']?.toString() ?? '',
-          title: item['name'] as String? ?? title,
+          title: item['name'] as String? ?? fallbackTitle,
         );
       }
     }
     return null;
   }
+
+  String _normalizeTitle(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+  ResolvedService? _fallbackService() {
+    const fallbacks = [
+      'Аварийный выезд мастера',
+      'Другие услуги',
+    ];
+    for (final name in fallbacks) {
+      final normalized = _normalizeTitle(name);
+      for (final item in _servicesCache!) {
+        final apiName = _normalizeTitle(item['name'] as String? ?? '');
+        if (apiName == normalized || apiName.contains(normalized)) {
+          return ResolvedService(
+            id: item['id']?.toString() ?? '',
+            title: item['name'] as String? ?? name,
+          );
+        }
+      }
+    }
+    final first = _servicesCache!.first;
+    return ResolvedService(
+      id: first['id']?.toString() ?? '',
+      title: first['name'] as String? ?? 'Услуга',
+    );
+  }
+
+  static const _categoryServiceNames = <String, String>{
+    'Электрика': 'Диагностика электрики',
+    'Сантехника': 'Замена смесителя',
+    'Отделка': 'Шпаклевка стен',
+    'Отопление': 'Установка бойлера',
+    'Кондиционеры': 'Установка кондиционера',
+    'Уборка': 'Генеральная уборка',
+    'Мебель и двери': 'Вскрытие замков',
+    'Видеонаблюдение': 'Установка камеры',
+    'Умный дом': 'Установка розетки',
+    'Сварочные работы': 'Аварийный выезд мастера',
+    'Другие услуги': 'Аварийный выезд мастера',
+    'Аварийные 24/7': 'Аварийный выезд мастера',
+    'Плитка': 'Укладка плитки',
+    'Малярные работы': 'Покраска стен',
+  };
+
+  static const _professionToService = <String, String>{
+    'сантехник': 'Замена смесителя',
+    'электрик': 'Диагностика электрики',
+    'плиточник': 'Укладка плитки',
+    'отделочник': 'Шпаклевка стен',
+    'сварщик': 'Аварийный выезд мастера',
+  };
 
   String _normalizePhone(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');

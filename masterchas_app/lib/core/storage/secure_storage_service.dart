@@ -17,6 +17,8 @@ class SecureStorageService {
   static const shopFavoritesKey = 'shop_favorites';
   static const rentalFavoritesKey = 'rental_favorites';
   static const shopAdminOrdersKey = 'shop_admin_orders';
+  static const shopOrdersKey = 'shop_client_orders';
+  static const shopAddressesKey = 'shop_addresses';
 
   final FlutterSecureStorage _storage;
 
@@ -109,4 +111,15 @@ class SecureStorageService {
 
   Future<void> writeShopAdminOrdersJson(String json) =>
       _storage.write(key: shopAdminOrdersKey, value: json);
+
+  Future<String?> readShopOrdersJson() => _storage.read(key: shopOrdersKey);
+
+  Future<void> writeShopOrdersJson(String json) =>
+      _storage.write(key: shopOrdersKey, value: json);
+
+  Future<String?> readShopAddressesJson() =>
+      _storage.read(key: shopAddressesKey);
+
+  Future<void> writeShopAddressesJson(String json) =>
+      _storage.write(key: shopAddressesKey, value: json);
 }

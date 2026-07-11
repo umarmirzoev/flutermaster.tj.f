@@ -46,7 +46,7 @@ class AppTheme {
             vertical: AppSpacing.sm,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           textStyle: AppTypography.button(Colors.white),
         ),
@@ -61,7 +61,7 @@ class AppTheme {
             vertical: AppSpacing.sm,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           textStyle: AppTypography.button(colors.primary),
         ),
@@ -88,7 +88,7 @@ class AppTheme {
         labelStyle: AppTypography.small(colors.textSecondary),
         errorStyle: AppTypography.caption(colors.danger),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(

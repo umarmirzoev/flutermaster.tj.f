@@ -80,6 +80,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
     ref.invalidate(mergedMasterOrdersProvider);
     ref.invalidate(mergedClientOrdersProvider);
     ref.invalidate(conversationsProvider);
+    ref.invalidate(chatInboxProvider);
 
     if (!context.mounted || chatId == null) return;
 
@@ -103,6 +104,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
             title: localChat.title,
             type: 'Direct',
             participantUserIds: const [],
+            orderId: order.id,
           ),
           isLocal: true,
         ),

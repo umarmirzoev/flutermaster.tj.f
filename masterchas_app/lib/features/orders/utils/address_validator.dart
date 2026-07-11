@@ -5,7 +5,7 @@ class AddressValidator {
 
   static bool isValid(String address) {
     final trimmed = address.trim();
-    if (trimmed.length < 8) return false;
+    if (trimmed.length < 10) return false;
 
     final hasLetters = RegExp(
       r'[а-яёa-zA-ZҒғӢӣҚқӮӯҲҳҶҷ]{3,}',
@@ -16,11 +16,22 @@ class AddressValidator {
     final hasHouseNumber = RegExp(r'\d').hasMatch(trimmed);
     if (!hasHouseNumber) return false;
 
-    // Random latin garbage like "asdfgh" without spaces.
-    if (RegExp(r'^[a-zA-Z0-9]{5,}$').hasMatch(trimmed.replaceAll(' ', '')) &&
-        !trimmed.contains(',') &&
-        !RegExp(r'ул|куча|пр|мкр|мах|street|st\.?', caseSensitive: false)
-            .hasMatch(trimmed)) {
+    final looksLikeStreet = RegExp(
+      r'ул\.?|куча|пр\.?|просп|мкр|махалла|мах\.?|street|st\.?|душанбе|худжанд|бохтар|куляб',
+      caseSensitive: false,
+    ).hasMatch(trimmed);
+    final hasCommaAddress = trimmed.contains(',') && trimmed.length >= 12;
+    if (!looksLikeStreet && !hasCommaAddress) return false;
+
+    // Random keyboard mash without spaces (latin or cyrillic).
+    if (!trimmed.contains(' ') &&
+        !looksLikeStreet &&
+        RegExp(r'^[a-zA-Zа-яё0-9]{6,}$', caseSensitive: false).hasMatch(trimmed)) {
+      return false;
+    }
+
+    // Too many consonants in a row — likely gibberish.
+    if (RegExp(r'[бвгджзклмнпрстфхцчшщ]{6,}', caseSensitive: false).hasMatch(trimmed)) {
       return false;
     }
 

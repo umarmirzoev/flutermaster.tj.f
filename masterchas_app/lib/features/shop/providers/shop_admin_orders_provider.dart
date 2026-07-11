@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/platform_store_provider.dart';
 import '../../../core/storage/secure_storage_provider.dart';
+import '../../../core/utils/admin_date_format.dart';
 import '../../admin/models/admin_models.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/shop_data.dart';
 
-String _formatDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+String _formatDate(DateTime d) => formatAdminDateTime(d);
 
 String _productLine(ShopProduct product, int qty) {
   if (qty <= 1) return product.ru;
@@ -53,6 +53,8 @@ class ShopAdminOrdersNotifier extends Notifier<List<AdminOrder>> {
     required int total,
     required List<ShopProduct> catalog,
     String kind = 'Магазин',
+    String? address,
+    String? orderId,
   }) async {
     await _ensureLoaded();
     if (items.isEmpty || total <= 0) return;
@@ -67,16 +69,24 @@ class ShopAdminOrdersNotifier extends Notifier<List<AdminOrder>> {
         .map((e) => _productLine(catalog[e.key], e.value))
         .join(', ');
 
-    final id = DateTime.now().millisecondsSinceEpoch;
+    final id = orderId ?? 'SH-${DateTime.now().millisecondsSinceEpoch}';
+    final bareId = id.replaceFirst('#', '');
+    final displayId = '#$bareId';
+    final fullId = bareId.startsWith('shop-') ? bareId : 'shop-$bareId';
+    final service = address != null && address.trim().isNotEmpty
+        ? '$kind: $products · $address'
+        : '$kind: $products';
+
     final order = AdminOrder(
-      id: '#SH-$id',
-      fullId: 'shop-$id',
+      id: displayId,
+      fullId: fullId,
       client: client,
       master: '—',
-      service: '$kind: $products',
+      service: service,
       status: AdminOrderStatus.newOrder,
       date: _formatDate(DateTime.now()),
       amount: total,
+      address: address,
     );
 
     state = [order, ...state];
@@ -101,6 +111,7 @@ class ShopAdminOrdersNotifier extends Notifier<List<AdminOrder>> {
         'status': o.status.index,
         'date': o.date,
         'amount': o.amount,
+        if (o.address != null) 'address': o.address,
       };
 
   static AdminOrder _orderFromJson(dynamic raw) {
@@ -115,6 +126,7 @@ class ShopAdminOrdersNotifier extends Notifier<List<AdminOrder>> {
       status: AdminOrderStatus.values[statusIndex.clamp(0, AdminOrderStatus.values.length - 1)],
       date: json['date'] as String? ?? _formatDate(DateTime.now()),
       amount: (json['amount'] as num?)?.toInt() ?? 0,
+      address: json['address'] as String?,
     );
   }
 }

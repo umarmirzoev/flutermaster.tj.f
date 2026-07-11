@@ -18,6 +18,7 @@ import '../data/account_level.dart';
 import '../providers/client_profile_stats_provider.dart';
 import '../../masters/providers/master_favorites_provider.dart';
 import 'profile_subpages.dart';
+import 'widgets/profile_gamification.dart';
 
 class ProfileDashboard extends ConsumerWidget {
   const ProfileDashboard({
@@ -33,21 +34,21 @@ class ProfileDashboard extends ConsumerWidget {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+  Future<void> _signOut(BuildContext context, WidgetRef ref, ProfileL10n l) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Выйти?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        content: Text('Вы выйдете из аккаунта', style: GoogleFonts.inter()),
+        title: Text(l.signOutTitle, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        content: Text(l.signOutMsg, style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Отмена', style: GoogleFonts.inter()),
+            child: Text(l.cancel, style: GoogleFonts.inter()),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: brandGreen),
-            child: Text('Выйти', style: GoogleFonts.inter(color: Colors.white)),
+            child: Text(l.signOut, style: GoogleFonts.inter(color: Colors.white)),
           ),
         ],
       ),
@@ -65,7 +66,7 @@ class ProfileDashboard extends ConsumerWidget {
     final p = HomePalette.of(context);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final auth = ref.watch(authProvider);
-    final name = auth.displayName ?? 'Пользователь';
+    final name = auth.displayName ?? l.defaultUser;
     final phone = auth.phone ?? '—';
 
     final profileStats = ref.watch(clientProfileStatsProvider);
@@ -85,6 +86,7 @@ class ProfileDashboard extends ConsumerWidget {
       children: [
         _Header(
           l: l,
+          p: p,
           name: name,
           phone: phone,
           onSettings: () => _languageSheet(context, ref, l),
@@ -145,6 +147,14 @@ class ProfileDashboard extends ConsumerWidget {
                   Expanded(child: _BonusCard(l: l, bonus: bonus)),
                 ],
               ),
+              const SizedBox(height: 16),
+              LevelProgressCard(level: level, p: p, l: l),
+              const SizedBox(height: 16),
+              _AchievementsRow(ordersCount: ordersCount, p: p, l: l),
+              const SizedBox(height: 16),
+              DailyQuestsCard(p: p, ordersCount: ordersCount, l: l),
+              const SizedBox(height: 16),
+              ReferralCard(p: p, l: l),
               const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(
@@ -220,7 +230,7 @@ class ProfileDashboard extends ConsumerWidget {
                 color: p.cardBg,
                 borderRadius: BorderRadius.circular(18),
                 child: InkWell(
-                  onTap: () => _signOut(context, ref),
+                  onTap: () => _signOut(context, ref, l),
                   borderRadius: BorderRadius.circular(18),
                   child: Container(
                     width: double.infinity,
@@ -235,7 +245,7 @@ class ProfileDashboard extends ConsumerWidget {
                         const Icon(LucideIcons.log_out, size: 18, color: Color(0xFFDC2626)),
                         const SizedBox(width: 8),
                         Text(
-                          'Выйти из аккаунта',
+                          l.signOut,
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -262,11 +272,11 @@ class ProfileDashboard extends ConsumerWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        const langs = [
-          (AppLocale.ru, 'Русский', '🇷🇺'),
-          (AppLocale.en, 'English', '🇬🇧'),
-          (AppLocale.tg, 'Тоҷикӣ', '🇹🇯'),
-          (AppLocale.zh, '中文', '🇨🇳'),
+        final langs = [
+          (AppLocale.ru, l.langRussian, '🇷🇺'),
+          (AppLocale.en, l.langEnglish, '🇬🇧'),
+          (AppLocale.tg, l.langTajik, '🇹🇯'),
+          (AppLocale.zh, l.langChinese, '🇨🇳'),
         ];
         final current = ref.read(localeProvider);
         return Container(
@@ -307,6 +317,7 @@ class ProfileDashboard extends ConsumerWidget {
 class _Header extends StatelessWidget {
   const _Header({
     required this.l,
+    required this.p,
     required this.name,
     required this.phone,
     required this.onSettings,
@@ -315,6 +326,7 @@ class _Header extends StatelessWidget {
   });
 
   final ProfileL10n l;
+  final HomePalette p;
   final String name;
   final String phone;
   final VoidCallback onSettings;
@@ -326,12 +338,12 @@ class _Header extends StatelessWidget {
     final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
     return Container(
       padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 18, 16, 22),
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2E9E4F), Color(0xFF57B55E), Color(0xFF7CC97F)],
+          colors: p.headerGradient,
         ),
       ),
       child: Column(
@@ -368,8 +380,13 @@ class _Header extends StatelessWidget {
                       height: 84,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: RadialGradient(colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.55)]),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 2),
+                        gradient: RadialGradient(
+                          colors: [
+                            p.headerCardBg.withValues(alpha: 0.95),
+                            p.headerCardBg.withValues(alpha: 0.55),
+                          ],
+                        ),
+                        border: Border.all(color: p.headerCardBg.withValues(alpha: 0.7), width: 2),
                       ),
                       alignment: Alignment.center,
                       child: Text(initial, style: GoogleFonts.inter(fontSize: 34, fontWeight: FontWeight.w900, color: const Color(0xFF2E9E4F))),
@@ -392,9 +409,15 @@ class _Header extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: p.headerCardBg,
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +429,7 @@ class _Header extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1C1C1C),
+                          color: p.text,
                           height: 1.2,
                         ),
                       ),
@@ -420,7 +443,7 @@ class _Header extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6B7280),
+                            color: p.muted,
                           ),
                         ),
                       ),
@@ -498,9 +521,7 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nextLabel = level.nextTier == null
-        ? 'Максимальный уровень'
-        : l.toGold(level.pointsToNext);
+    final nextLabel = level.nextTier == null ? l.maxLevel : l.toGold(level.pointsToNext);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -518,7 +539,7 @@ class _LevelCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(level.label, style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text(l.tierName(level.tier), style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -616,6 +637,101 @@ class _MenuRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Achievements / badges row ──
+class _AchievementsRow extends StatelessWidget {
+  const _AchievementsRow({required this.ordersCount, required this.p, required this.l});
+
+  final int ordersCount;
+  final HomePalette p;
+  final ProfileL10n l;
+
+  @override
+  Widget build(BuildContext context) {
+    final achievements = <({IconData icon, String label, Color color, bool unlocked})>[
+      (icon: LucideIcons.rocket, label: l.achFirstOrder, color: const Color(0xFF57B55E), unlocked: ordersCount >= 1),
+      (icon: LucideIcons.flame, label: l.ach5Orders, color: const Color(0xFFF59E0B), unlocked: ordersCount >= 5),
+      (icon: LucideIcons.crown, label: l.ach10Orders, color: const Color(0xFF8B5CF6), unlocked: ordersCount >= 10),
+      (icon: LucideIcons.star, label: l.achReview, color: const Color(0xFF3B82F6), unlocked: ordersCount >= 2),
+      (icon: LucideIcons.gift, label: l.achRefer, color: const Color(0xFFEC4899), unlocked: false),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(LucideIcons.medal, size: 18, color: Color(0xFFF59E0B)),
+            const SizedBox(width: 6),
+            Text(
+              l.achievementsTitle,
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '${achievements.where((a) => a.unlocked).length}/${achievements.length}',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.muted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: achievements.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final a = achievements[i];
+              return SizedBox(
+                width: 72,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: a.unlocked
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [a.color, Color.lerp(a.color, Colors.black, 0.2)!],
+                              )
+                            : null,
+                        color: a.unlocked ? null : p.muted.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: a.unlocked
+                            ? [BoxShadow(color: a.color.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]
+                            : null,
+                      ),
+                      child: Icon(
+                        a.unlocked ? a.icon : LucideIcons.lock,
+                        size: 26,
+                        color: a.unlocked ? Colors.white : p.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      a.label,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: a.unlocked ? p.text : p.muted,
+                        height: 1.15,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

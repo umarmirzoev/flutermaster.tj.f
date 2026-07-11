@@ -26,6 +26,10 @@ class AuthState {
     return r == 'admin' || r == 'superadmin';
   }
 
+  /// Client with a real API session (not guest / legacy local token).
+  bool get canPlaceOrders =>
+      isAuthenticated && !isGuest && !isMaster && !isAdmin;
+
   AuthState copyWith({
     bool? isAuthenticated,
     bool? isInitialized,

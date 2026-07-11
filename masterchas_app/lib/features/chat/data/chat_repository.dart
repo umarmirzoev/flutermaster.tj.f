@@ -58,6 +58,26 @@ class ChatRepository {
       );
     }
   }
+
+  Future<ApiResult<void>> sendMessage({
+    required String conversationId,
+    required String text,
+  }) async {
+    try {
+      await _dio.post(
+        '/chat/conversations/$conversationId/messages',
+        data: {'text': text, 'messageType': 1},
+      );
+      return const ApiSuccess(null);
+    } on DioException catch (e) {
+      return ApiError(
+        e.response?.data is Map
+            ? (e.response?.data['message'] as String? ?? 'Не удалось отправить')
+            : 'Ошибка сети',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 }
 
 final chatRepositoryProvider = Provider<ChatRepository>(

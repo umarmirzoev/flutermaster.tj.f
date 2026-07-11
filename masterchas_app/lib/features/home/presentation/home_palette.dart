@@ -14,6 +14,10 @@ class HomePalette {
     required this.masterCardBg,
     required this.promoCodeBg,
     required this.promoCodeText,
+    required this.headerGradient,
+    required this.headerCardBg,
+    required this.productImageBg,
+    required this.inputFill,
   });
 
   final Color pageBg;
@@ -26,6 +30,10 @@ class HomePalette {
   final Color masterCardBg;
   final Color promoCodeBg;
   final Color promoCodeText;
+  final List<Color> headerGradient;
+  final Color headerCardBg;
+  final Color productImageBg;
+  final Color inputFill;
 
   factory HomePalette.of(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -37,10 +45,18 @@ class HomePalette {
         muted: Color(0xFF9CA3AF),
         border: Color(0xFF2D2D2D),
         shellBg: Color(0xFF111111),
-        searchBg: Color(0xFF1A1A1A),
+        searchBg: Color(0xFF252525),
         masterCardBg: Color(0xFF252525),
-        promoCodeBg: Colors.white,
+        promoCodeBg: Color(0xFF2A2A2A),
         promoCodeText: brandGreen,
+        headerGradient: [
+          Color(0xFF0F2418),
+          Color(0xFF163322),
+          Color(0xFF1A3D28),
+        ],
+        headerCardBg: Color(0xFF1A1A1A),
+        productImageBg: Color(0xFF252525),
+        inputFill: Color(0xFF252525),
       );
     }
     return const HomePalette(
@@ -54,6 +70,14 @@ class HomePalette {
       masterCardBg: Color(0xFFE9F0E5),
       promoCodeBg: Colors.white,
       promoCodeText: brandGreen,
+      headerGradient: [
+        Color(0xFF3B8F42),
+        Color(0xFF57B55E),
+        Color(0xFF6DD674),
+      ],
+      headerCardBg: Colors.white,
+      productImageBg: Colors.white,
+      inputFill: Color(0xFFF3F4F8),
     );
   }
 }

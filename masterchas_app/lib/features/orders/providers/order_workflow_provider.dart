@@ -297,6 +297,48 @@ class OrderWorkflowNotifier extends Notifier<OrderWorkflowState> {
     return chatId;
   }
 
+  /// Создаёт локальный чат для заказа в работе, если его ещё нет.
+  Future<String?> ensureConversationForOrder(String orderId) async {
+    await _ensureLoaded();
+    final key = _resolveOrderKey(orderId);
+    if (key == null) return null;
+    final entry = state.orders[key]!;
+    if (entry.conversationId != null) return entry.conversationId;
+    if (entry.statusCode < 4 || entry.statusCode == 7) return null;
+
+    final chatId = 'local-chat-$key';
+    final now = DateTime.now();
+    final conversation = LocalConversation(
+      id: chatId,
+      orderId: key,
+      title: entry.clientName,
+      clientPhone: entry.clientPhone,
+      masterPhone: entry.masterPhone,
+      masterName: entry.masterName,
+      messages: [
+        LocalChatMessage(
+          id: 'msg-$key-system',
+          senderRole: 'system',
+          text: chatSystemOpenMessage,
+          createdAt: now,
+        ),
+      ],
+    );
+
+    final nextOrders = Map<String, OrderWorkflowEntry>.from(state.orders);
+    nextOrders[key] = entry.copyWith(
+      conversationId: chatId,
+      updatedAt: DateTime.now(),
+    );
+
+    final nextChats = Map<String, LocalConversation>.from(state.conversations);
+    nextChats[chatId] = conversation;
+
+    state = state.copyWith(orders: nextOrders, conversations: nextChats);
+    await _persist();
+    return chatId;
+  }
+
   Future<void> masterDeclineOrder(String orderId, String reason) async {
     await _ensureLoaded();
     final key = _resolveOrderKey(orderId);

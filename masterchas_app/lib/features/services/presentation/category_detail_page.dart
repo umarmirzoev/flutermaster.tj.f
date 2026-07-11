@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/l10n/home_strings.dart';
+import '../../../core/theme/app_design.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../masters/presentation/masters_page.dart';
 import '../data/services_catalog.dart';
@@ -33,13 +34,16 @@ class CategoryDetailPage extends StatelessWidget {
             sliver: SliverList.separated(
               itemCount: category.services.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _ServiceRow(
-                service: category.services[i],
-                categoryRu: category.ru,
-                accent: category.color,
-                locale: locale,
-                s: s,
-                p: p,
+              itemBuilder: (_, i) => FadeSlideIn(
+                delay: Duration(milliseconds: 50 * (i % 8)),
+                child: _ServiceRow(
+                  service: category.services[i],
+                  categoryRu: category.ru,
+                  accent: category.color,
+                  locale: locale,
+                  s: s,
+                  p: p,
+                ),
               ),
             ),
           ),
@@ -236,32 +240,45 @@ class _ServiceRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => MastersPage(
-                      initialFilter: categoryRu,
-                      initialService: service,
-                    ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => MastersPage(
+                    initialFilter: categoryRu,
+                    initialService: service,
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandGreen,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                visualDensity: VisualDensity.compact,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4BAF50), Color(0xFF57B55E), Color(0xFF6DD674)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandGreen.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              icon: const Icon(LucideIcons.plus, size: 16),
-              label: Text(
-                s.orderBtn,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(LucideIcons.search, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    s.orderBtn,
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(LucideIcons.arrow_right, size: 15, color: Colors.white),
+                ],
               ),
             ),
           ),

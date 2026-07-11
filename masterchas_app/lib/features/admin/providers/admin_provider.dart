@@ -4,6 +4,7 @@ import '../../../core/providers/platform_store_provider.dart';
 import '../../../core/network/api_result.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/admin_api_mapper.dart';
+import '../../chat/data/chat_repository.dart';
 import '../../chat/providers/chat_provider.dart';
 import '../../orders/providers/order_workflow_provider.dart';
 import '../data/admin_data.dart';
@@ -243,8 +244,14 @@ void adminUpdateOrderStatus(
 
 void adminMarkChatRead(WidgetRef ref, String id) {}
 
-void adminSendChatMessage(WidgetRef ref, String chatId, String text) {
-  // TODO: POST chat message via API
+void adminSendChatMessage(WidgetRef ref, String chatId, String text) async {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return;
+  await ref.read(chatRepositoryProvider).sendMessage(
+        conversationId: chatId,
+        text: trimmed,
+      );
+  ref.invalidate(adminDataProvider);
 }
 
 List<AdminOrder> filterOrders(

@@ -56,6 +56,8 @@ class MasterDetailPage extends ConsumerWidget {
                     style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.5),
                   )),
                   const SizedBox(height: 18),
+                  _PortfolioGallery(m: m, p: p),
+                  const SizedBox(height: 18),
                   _ServicesPrices(m: m, s: s, p: p, locale: locale),
                   const SizedBox(height: 18),
                   _Section(
@@ -100,10 +102,12 @@ class _PhotoHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (m.imageBytes != null)
-            Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
-          else
-            Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          Hero(
+            tag: 'master-photo-${m.fullName}',
+            child: m.imageBytes != null
+                ? Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
+                : Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          ),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -347,6 +351,163 @@ class _Section extends StatelessWidget {
         const SizedBox(height: 10),
         child,
       ],
+    );
+  }
+}
+
+// ── Portfolio gallery — horizontal scroll of work photos ──
+class _PortfolioGallery extends StatelessWidget {
+  const _PortfolioGallery({required this.m, required this.p});
+
+  final MasterItem m;
+  final HomePalette p;
+
+  @override
+  Widget build(BuildContext context) {
+    // Use master avatar + generic work images as portfolio placeholders
+    final images = <String>[
+      m.image,
+      'assets/images/master_1.png',
+      'assets/images/master_2.png',
+      'assets/images/master_3.png',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Портфолио работ',
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: brandGreen.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${images.length}',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: brandGreen),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 130,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, i) {
+              return GestureDetector(
+                onTap: () => _openFullscreen(context, images, i),
+                child: Hero(
+                  tag: 'portfolio-${m.fullName}-$i',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        (m.imageBytes != null && i == 0)
+                            ? Image.memory(m.imageBytes!, width: 130, height: 130, fit: BoxFit.cover)
+                            : Image.asset(images[i], width: 130, height: 130, fit: BoxFit.cover),
+                        Positioned(
+                          right: 6,
+                          bottom: 6,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(LucideIcons.maximize_2, size: 12, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openFullscreen(BuildContext context, List<String> images, int index) {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) => _FullscreenGallery(
+          images: images,
+          initialIndex: index,
+          heroPrefix: 'portfolio-${m.fullName}',
+          imageBytes: m.imageBytes,
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenGallery extends StatelessWidget {
+  const _FullscreenGallery({
+    required this.images,
+    required this.initialIndex,
+    required this.heroPrefix,
+    this.imageBytes,
+  });
+
+  final List<String> images;
+  final int initialIndex;
+  final String heroPrefix;
+  final dynamic imageBytes;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = PageController(initialPage: initialIndex);
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: controller,
+            itemCount: images.length,
+            itemBuilder: (context, i) {
+              return Center(
+                child: Hero(
+                  tag: '$heroPrefix-$i',
+                  child: InteractiveViewer(
+                    child: (imageBytes != null && i == 0)
+                        ? Image.memory(imageBytes!, fit: BoxFit.contain)
+                        : Image.asset(images[i], fit: BoxFit.contain),
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 8,
+            right: 16,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.4),
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: () => Navigator.of(context).maybePop(),
+                customBorder: const CircleBorder(),
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(LucideIcons.x, color: Colors.white, size: 22),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

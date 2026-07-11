@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/platform_models.dart';
 import '../../../core/network/api_result.dart';
 import '../../../core/network/dio_provider.dart';
+import '../../../core/utils/admin_date_format.dart';
 import '../../masters/data/masters_data.dart';
 import '../models/admin_models.dart';
 
@@ -89,6 +90,7 @@ class AdminRepository {
         final amount = _readAmount(json['payableAmount'] ?? json['price']);
         final scheduled = json['scheduledDate']?.toString();
         final acceptedAt = json['acceptedAt']?.toString();
+        final createdAt = json['createdAt']?.toString();
 
         final masterName = masterId != null
               ? (nameById[masterId.toLowerCase()] ?? _shortId(masterId))
@@ -101,7 +103,7 @@ class AdminRepository {
           master: masterName,
           service: json['title'] as String? ?? json['description'] as String? ?? 'Услуга',
           status: _mapOrderStatus(statusCode),
-          date: _formatDate(scheduled ?? acceptedAt),
+          date: formatAdminDateTimeFromRaw(createdAt ?? acceptedAt ?? scheduled),
           amount: amount,
           clientUserId: clientId.isNotEmpty ? clientId : null,
           masterUserId: masterId,
@@ -384,18 +386,11 @@ class AdminRepository {
 
   String _shortId(String id) => id.length > 8 ? id.substring(0, 8) : id;
 
-  String _formatDate(String? raw) {
-    if (raw == null || raw.isEmpty) return '—';
-    final date = DateTime.tryParse(raw);
-    if (date == null) return raw.split('T').first;
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-  }
-
   String _formatTime(String? raw) {
     if (raw == null || raw.isEmpty) return '—';
     final date = DateTime.tryParse(raw);
     if (date == null) return raw;
-    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    return formatAdminDateTime(date);
   }
 }
 

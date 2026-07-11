@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../auth/api_token.dart';
 import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 
@@ -35,7 +36,7 @@ class _JwtInterceptor extends Interceptor {
 
     if (!isAuthRoute) {
       final token = await _storage.read(key: SecureStorageService.authTokenKey);
-      if (token != null && token.isNotEmpty && !token.startsWith('master:') && !token.startsWith('admin:')) {
+      if (isValidApiJwt(token)) {
         options.headers['Authorization'] = 'Bearer $token';
       }
     }

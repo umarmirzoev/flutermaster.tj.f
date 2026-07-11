@@ -29,4 +29,23 @@ class ChatInboxItem {
 
   bool get canOpenChat =>
       conversationId != null && conversationId!.isNotEmpty;
+
+  ChatInboxItem copyWith({
+    String? conversationId,
+    bool? isLocal,
+  }) {
+    return ChatInboxItem(
+      orderId: orderId,
+      conversationId: conversationId ?? this.conversationId,
+      peerName: peerName,
+      subtitle: subtitle,
+      timeLabel: timeLabel,
+      badgeLabel: badgeLabel,
+      badgeColor: badgeColor,
+      badgeBgColor: badgeBgColor,
+      sortTime: sortTime,
+      avatarAsset: avatarAsset,
+      isLocal: isLocal ?? this.isLocal,
+    );
+  }
 }

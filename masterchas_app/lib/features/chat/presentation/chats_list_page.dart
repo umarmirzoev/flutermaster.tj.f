@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../auth/providers/auth_provider.dart';
+import '../../orders/providers/order_workflow_provider.dart';
 import '../../chat/models/api_conversation.dart';
 import '../../chat/presentation/chat_thread_screen.dart';
 import '../../chat/models/chat_inbox_item.dart';
@@ -30,24 +31,22 @@ class _ChatsListPageState extends ConsumerState<ChatsListPage> {
     super.dispose();
   }
 
-  void _openItem(ChatInboxItem item) {
+  Future<void> _openItem(ChatInboxItem item) async {
     if (item.canOpenChat) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ChatThreadScreen(
-            conversation: ApiConversation(
-              id: item.conversationId!,
-              title: item.peerName,
-              type: 'Direct',
-              participantUserIds: const [],
-              orderId: item.orderId,
-              isLocal: item.isLocal,
-            ),
-            isLocal: item.isLocal,
-          ),
-        ),
-      );
+      _pushChat(item);
       return;
+    }
+
+    if (item.conversationId == null) {
+      final chatId = await ref
+          .read(orderWorkflowProvider.notifier)
+          .ensureConversationForOrder(item.orderId);
+      if (!mounted) return;
+      if (chatId != null) {
+        ref.invalidate(chatInboxProvider);
+        _pushChat(item.copyWith(conversationId: chatId, isLocal: true));
+        return;
+      }
     }
 
     final auth = ref.read(authProvider);
@@ -67,6 +66,24 @@ class _ChatsListPageState extends ConsumerState<ChatsListPage> {
     );
   }
 
+  void _pushChat(ChatInboxItem item) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChatThreadScreen(
+          conversation: ApiConversation(
+            id: item.conversationId!,
+            title: item.peerName,
+            type: 'Direct',
+            participantUserIds: const [],
+            orderId: item.orderId,
+            isLocal: item.isLocal,
+          ),
+          isLocal: item.isLocal,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final inbox = ref.watch(chatInboxProvider);
@@ -76,23 +93,54 @@ class _ChatsListPageState extends ConsumerState<ChatsListPage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
-            decoration: InputDecoration(
-              hintText: 'Поиск',
-              hintStyle: GoogleFonts.inter(color: p.muted, fontSize: 15),
-              prefixIcon: Icon(LucideIcons.search, color: p.muted, size: 20),
-              filled: true,
-              fillColor: p.cardBg,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: p.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: p.border),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF57B55E).withValues(alpha: 0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+              cursorColor: const Color(0xFF57B55E),
+              style: GoogleFonts.inter(color: p.text, fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Поиск чатов...',
+                hintStyle: GoogleFonts.inter(color: p.muted, fontSize: 15),
+                prefixIcon: Container(
+                  margin: const EdgeInsets.only(left: 12, right: 8),
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF57B55E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(LucideIcons.search,
+                      color: Color(0xFF57B55E), size: 15),
+                ),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 0, minHeight: 0),
+                filled: true,
+                fillColor: p.cardBg,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: p.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: p.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF57B55E), width: 1.6),
+                ),
               ),
             ),
           ),

@@ -697,6 +697,18 @@ class OrdersPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text('${o.count} ${l.itemsWord}', style: GoogleFonts.inter(fontSize: 12, color: p.muted)),
+                      if (o.address.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(LucideIcons.map_pin, size: 13, color: brandGreen),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(o.address, style: GoogleFonts.inter(fontSize: 11.5, color: p.muted)),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (o.discount > 0 || o.bonus > 0) ...[
                         const SizedBox(height: 6),
                         Row(

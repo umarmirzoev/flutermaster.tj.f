@@ -10,11 +10,10 @@ import '../../services/data/service_catalog_keys.dart';
 import '../../services/data/services_catalog.dart';
 import '../providers/auth_provider.dart';
 import '../providers/master_registration_draft_provider.dart';
+import '../data/master_reg_l10n.dart';
+import '../../home/presentation/home_palette.dart';
 
 const _navy = Color(0xFF1C2438);
-const _bodyGrey = Color(0xFF6B7280);
-const _titleColor = Color(0xFF111827);
-const _pageBg = Color(0xFFF8FAFC);
 const _brandGreen = Color(0xFF57B55E);
 
 class MasterSkillsScreen extends ConsumerStatefulWidget {
@@ -72,19 +71,21 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
+    final l = MasterRegL10n.of(locale);
+    final p = HomePalette.of(context);
     final draft = ref.watch(masterRegistrationDraftProvider);
     final selectedCount = draft.selectedServices.length;
     final canContinue = selectedCount > 0 && !_isSubmitting;
 
     if (!draft.hasProfile) {
-      return const Scaffold(
-        backgroundColor: _pageBg,
+      return Scaffold(
+        backgroundColor: p.pageBg,
         body: Center(child: CircularProgressIndicator(color: _brandGreen)),
       );
     }
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: p.pageBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,14 +96,14 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.go('/master/register'),
-                    icon: const Icon(LucideIcons.arrow_left, color: _titleColor),
+                    icon: const Icon(LucideIcons.arrow_left, color: brandGreen),
                   ),
                   Text(
                     'master.tj',
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: _titleColor,
+                      color: p.text,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -114,22 +115,21 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                 children: [
                   Text(
-                    'Чем вы занимаетесь?',
+                    l.skillsTitle,
                     style: GoogleFonts.inter(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
-                      color: _titleColor,
+                      color: p.text,
                       height: 1.15,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Укажите все ваши навыки и специальности, чтобы вам '
-                    'поступало больше подходящих заказов.',
+                    l.skillsSub,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: _bodyGrey,
+                      color: p.muted,
                       height: 1.45,
                     ),
                   ),
@@ -145,6 +145,7 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                       child: _CategoryCard(
                         category: category,
                         locale: locale,
+                        p: p,
                         isExpanded: isExpanded,
                         selectedServices: draft.selectedServices,
                         selectedInCategory: categorySelected,
@@ -167,7 +168,8 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: p.cardBg,
+                border: Border(top: BorderSide(color: p.border)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.06),
@@ -181,7 +183,7 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                 children: [
                   if (selectedCount > 0)
                     Text(
-                      'Выбрано услуг: $selectedCount',
+                      l.selectedServices(selectedCount),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 13,
@@ -203,7 +205,7 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                         ),
                       ),
                       child: Text(
-                        _isSubmitting ? 'Сохранение...' : 'Продолжить',
+                        _isSubmitting ? l.saving : l.skillsContinue,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -225,6 +227,7 @@ class _CategoryCard extends StatelessWidget {
   const _CategoryCard({
     required this.category,
     required this.locale,
+    required this.p,
     required this.isExpanded,
     required this.selectedServices,
     required this.selectedInCategory,
@@ -234,6 +237,7 @@ class _CategoryCard extends StatelessWidget {
 
   final ServiceCategory category;
   final AppLocale locale;
+  final HomePalette p;
   final bool isExpanded;
   final Set<String> selectedServices;
   final int selectedInCategory;
@@ -248,12 +252,12 @@ class _CategoryCard extends StatelessWidget {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: p.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isExpanded
               ? accent.withValues(alpha: 0.45)
-              : const Color(0xFFE8ECF1),
+              : p.border,
           width: isExpanded ? 1.4 : 1,
         ),
         boxShadow: [
@@ -295,7 +299,7 @@ class _CategoryCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: _titleColor,
+                            color: p.text,
                             height: 1.25,
                           ),
                         ),
@@ -326,7 +330,7 @@ class _CategoryCard extends StatelessWidget {
                         child: Icon(
                           LucideIcons.chevron_down,
                           size: 20,
-                          color: _bodyGrey.withValues(alpha: 0.9),
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -345,6 +349,7 @@ class _CategoryCard extends StatelessWidget {
                     for (final service in category.services)
                       _ServiceCheckTile(
                         label: service.name(locale),
+                        p: p,
                         isSelected: selectedServices.contains(
                           serviceSelectionKey(category, service),
                         ),
@@ -372,12 +377,14 @@ class _CategoryCard extends StatelessWidget {
 class _ServiceCheckTile extends StatelessWidget {
   const _ServiceCheckTile({
     required this.label,
+    required this.p,
     required this.isSelected,
     required this.accent,
     required this.onTap,
   });
 
   final String label;
+  final HomePalette p;
   final bool isSelected;
   final Color accent;
   final VoidCallback onTap;
@@ -398,10 +405,10 @@ class _ServiceCheckTile extends StatelessWidget {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: isSelected ? _navy : Colors.white,
+                  color: isSelected ? _navy : p.inputFill,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isSelected ? _navy : const Color(0xFFCBD5E1),
+                    color: isSelected ? _navy : p.border,
                     width: 1.6,
                   ),
                 ),
@@ -416,7 +423,7 @@ class _ServiceCheckTile extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: _titleColor,
+                    color: p.text,
                     height: 1.3,
                   ),
                 ),

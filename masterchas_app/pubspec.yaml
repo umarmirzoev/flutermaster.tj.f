@@ -20,6 +20,8 @@ dependencies:
   image_picker: ^1.1.2
   google_fonts: ^6.2.1
   fl_chart: ^1.2.0
+  video_player: ^2.9.2
+  image: ^4.9.1
 
 dev_dependencies:
   flutter_test:
@@ -31,6 +33,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/video/
 
 flutter_launcher_icons:
   android: true

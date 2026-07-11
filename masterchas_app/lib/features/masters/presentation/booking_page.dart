@@ -2,10 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/auth/api_token.dart';
 import '../../../core/l10n/home_strings.dart';
 import '../../../core/network/api_result.dart';
+import '../../../core/storage/secure_storage_provider.dart';
+import '../../../core/widgets/confetti_overlay.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../orders/data/orders_repository.dart';
@@ -45,6 +49,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _timeIndex = 2;
   final _addressCtrl = TextEditingController();
   final _commentCtrl = TextEditingController();
+  final _promoCtrl = TextEditingController();
   bool _isSubmitting = false;
   String? _error;
 
@@ -59,6 +64,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   void dispose() {
     _addressCtrl.dispose();
     _commentCtrl.dispose();
+    _promoCtrl.dispose();
     super.dispose();
   }
 
@@ -146,6 +152,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         _SectionTitle(s.commentTitle, p),
                         const SizedBox(height: 10),
                         _CommentField(controller: _commentCtrl, s: s, p: p),
+                        const SizedBox(height: 20),
+                        _PromoField(controller: _promoCtrl, p: p),
                       ],
                     ),
                   ),
@@ -166,6 +174,33 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
   Future<void> _confirm() async {
     if (!_canConfirm) return;
+
+    final auth = ref.read(authProvider);
+    final token = await ref.read(secureStorageProvider).readToken();
+    if (!auth.canPlaceOrders || !isValidApiJwt(token)) {
+      if (!mounted) return;
+      final goLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Войдите в аккаунт'),
+          content: const Text(
+            'Чтобы оформить заказ, войдите или зарегистрируйтесь по номеру телефона.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: brandGreen),
+              child: const Text('Войти'),
+            ),
+          ],
+        ),
+      );
+      if (goLogin == true && mounted) {
+        context.push('/login');
+      }
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -193,7 +228,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     try {
       final resolved = await repo.resolveServiceByTitle(serviceName);
       if (resolved == null || resolved.id.isEmpty) {
-        throw Exception('Услуга «$serviceName» не найдена на сервере');
+        throw Exception('Не удалось подобрать услугу. Проверьте интернет и попробуйте снова.');
       }
 
       double price = widget.servicePrice ??
@@ -227,7 +262,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
       if (result is! ApiSuccess<ApiOrder>) {
         final message = switch (result) {
-          ApiError<ApiOrder>(:final message) => message,
+          ApiError<ApiOrder>(:final message, :final statusCode) =>
+            statusCode == 401
+                ? 'Войдите в аккаунт, чтобы оформить заказ'
+                : message,
           _ => result.toString(),
         };
         throw Exception(message);
@@ -268,16 +306,22 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
-        builder: (ctx) => _SuccessSheet(
-          s: s,
-          master: widget.master,
-          date: date,
-          time: time,
-          address: _addressCtrl.text.trim(),
-          onClose: () {
-            Navigator.pop(ctx);
-            Navigator.of(context).maybePop();
-          },
+        isScrollControlled: true,
+        builder: (ctx) => Stack(
+          children: [
+            _SuccessSheet(
+              s: s,
+              master: widget.master,
+              date: date,
+              time: time,
+              address: _addressCtrl.text.trim(),
+              onClose: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).maybePop();
+              },
+            ),
+            const Positioned.fill(child: ConfettiOverlay()),
+          ],
         ),
       );
     } catch (e, st) {
@@ -630,6 +674,104 @@ class _CommentField extends StatelessWidget {
   }
 }
 
+class _PromoField extends StatefulWidget {
+  const _PromoField({required this.controller, required this.p});
+
+  final TextEditingController controller;
+  final HomePalette p;
+
+  @override
+  State<_PromoField> createState() => _PromoFieldState();
+}
+
+class _PromoFieldState extends State<_PromoField> {
+  bool _applied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.p;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Промокод',
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.only(left: 14, right: 6),
+          decoration: BoxDecoration(
+            color: p.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _applied ? brandGreen : p.border,
+              width: _applied ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _applied ? LucideIcons.circle_check : LucideIcons.ticket,
+                size: 18,
+                color: _applied ? brandGreen : p.muted,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  enabled: !_applied,
+                  textCapitalization: TextCapitalization.characters,
+                  cursorColor: brandGreen,
+                  style: GoogleFonts.inter(fontSize: 14, color: p.text, fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    border: InputBorder.none,
+                    hintText: 'MASTER20',
+                    hintStyle: GoogleFonts.inter(fontSize: 14, color: p.muted),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  if (widget.controller.text.trim().isEmpty) return;
+                  setState(() => _applied = !_applied);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: _applied ? brandGreen : p.muted,
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(
+                        _applied ? 'Промокод применён! Скидка 20%' : 'Промокод убран',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _applied ? p.muted.withValues(alpha: 0.2) : brandGreen,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _applied ? 'Убрать' : 'Применить',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _applied ? p.text : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ConfirmBar extends StatelessWidget {
   const _ConfirmBar({
     required this.s,
@@ -656,19 +798,23 @@ class _ConfirmBar extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           height: 52,
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: enabled ? onConfirm : null,
-            style: ElevatedButton.styleFrom(
+            style: FilledButton.styleFrom(
               backgroundColor: brandGreen,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: brandGreen.withValues(alpha: 0.4),
-              disabledForegroundColor: Colors.white,
+              disabledBackgroundColor: brandGreen.withValues(alpha: 0.35),
+              disabledForegroundColor: Colors.white.withValues(alpha: 0.85),
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             child: Text(
               s.confirmBtn,
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
           ),
         ),

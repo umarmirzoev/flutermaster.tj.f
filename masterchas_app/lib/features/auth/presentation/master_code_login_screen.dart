@@ -6,9 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/providers/home_tab_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/master_registration_draft_provider.dart';
 import '../utils/phone_formatter.dart';
+import '../data/master_reg_l10n.dart';
+import '../../home/presentation/home_palette.dart';
 
 const _masterNavy = Color(0xFF1C2438);
 const _hintGrey = Color(0xFF9CA3AF);
@@ -104,87 +107,121 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final locale = ref.watch(localeProvider);
+    final l = MasterRegL10n.of(locale);
+    final p = HomePalette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => context.go('/role'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(
-                    LucideIcons.chevron_left,
-                    color: _masterNavy,
-                    size: 28,
+      backgroundColor: p.pageBg,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Premium navy→green gradient header
+          Container(
+            padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 14, 20, 26),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? p.headerGradient
+                    : const [Color(0xFF1C2438), Color(0xFF2A4A3A), Color(0xFF3B8F42)],
+              ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => context.go('/role'),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: const Icon(LucideIcons.arrow_left, size: 19, color: Colors.white),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: _masterNavy.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 18),
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF57B55E), Color(0xFF6DD674)]),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(color: const Color(0xFF57B55E).withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: const Icon(LucideIcons.hammer, color: Colors.white, size: 30),
                 ),
-                child: const Icon(
-                  LucideIcons.hammer,
-                  color: _masterNavy,
-                  size: 28,
+                const SizedBox(height: 16),
+                Text(
+                  l.loginTitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.15,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 6),
+                Text(
+                  l.loginSub,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
               Text(
-                'Вход для мастера',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: _titleColor,
-                  height: 1.15,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Введите номер телефона и код входа из личного кабинета',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: _bodyGrey,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                'Номер телефона',
+                l.phoneLabel,
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _titleColor,
+                  color: p.text,
                 ),
               ),
               const SizedBox(height: 8),
               _PhoneField(
                 controller: _phoneController,
+                p: p,
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 20),
               Text(
-                'Код входа',
+                l.codeLabel,
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _titleColor,
+                  color: p.text,
                 ),
               ),
               const SizedBox(height: 8),
               _CodeField(
                 controller: _codeController,
+                p: p,
                 onChanged: (_) => setState(() {}),
                 onSubmitted: _canLogin ? _onLogin : null,
               ),
@@ -219,30 +256,31 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                 ),
               ],
               const SizedBox(height: 28),
-              SizedBox(
-                height: 52,
-                child: FilledButton(
-                  onPressed: _canLogin ? _onLogin : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _masterNavy,
-                    disabledBackgroundColor: _masterNavy.withValues(alpha: 0.45),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+              GestureDetector(
+                onTap: _canLogin ? _onLogin : null,
+                child: Container(
+                  height: 54,
+                  decoration: BoxDecoration(
+                    gradient: _canLogin
+                        ? const LinearGradient(colors: [Color(0xFF1C2438), Color(0xFF2A4A3A), Color(0xFF3B8F42)])
+                        : null,
+                    color: _canLogin ? null : _masterNavy.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: _canLogin
+                        ? [BoxShadow(color: const Color(0xFF3B8F42).withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))]
+                        : null,
                   ),
-                  child: Text(
-                    _isSubmitting ? 'Вход...' : 'Войти в кабинет',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  child: Center(
+                    child: Text(
+                      _isSubmitting ? l.loggingIn : l.loginBtn,
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               Text(
-                'Код выдаётся при регистрации мастера. Если забыли код — обратитесь в поддержку.',
+                l.codeHint,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 13,
@@ -251,31 +289,32 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              const _OrDivider(),
+              _OrDivider(label: l.orDivider),
               const SizedBox(height: 20),
               SizedBox(
                 height: 52,
-                child: OutlinedButton(
+                child: OutlinedButton.icon(
                   onPressed: _onApply,
+                  icon: const Icon(LucideIcons.user_plus, size: 18),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: _masterNavy,
-                    side: const BorderSide(color: _masterNavy, width: 1.5),
+                    foregroundColor: const Color(0xFF3B8F42),
+                    side: const BorderSide(color: Color(0xFF57B55E), width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text(
-                    'Подать заявку',
+                  label: Text(
+                    l.becomeMaster,
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Станьте мастером на Master.tj — укажите ФИО, услуги и дождитесь одобрения',
+                l.applySub,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 13,
@@ -283,16 +322,20 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                   height: 1.4,
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
 class _OrDivider extends StatelessWidget {
-  const _OrDivider();
+  const _OrDivider({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -302,7 +345,7 @@ class _OrDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
-            'или',
+            label,
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w400,
@@ -319,10 +362,12 @@ class _OrDivider extends StatelessWidget {
 class _PhoneField extends StatelessWidget {
   const _PhoneField({
     required this.controller,
+    required this.p,
     required this.onChanged,
   });
 
   final TextEditingController controller;
+  final HomePalette p;
   final ValueChanged<String> onChanged;
 
   @override
@@ -338,9 +383,11 @@ class _PhoneField extends StatelessWidget {
       style: GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w500,
-        color: _titleColor,
+        color: p.text,
       ),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: p.inputFill,
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 16, right: 8),
           child: Row(
@@ -351,14 +398,14 @@ class _PhoneField extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: _titleColor,
+                  color: p.text,
                 ),
               ),
               Container(
                 width: 1,
                 height: 22,
                 margin: const EdgeInsets.only(left: 12),
-                color: const Color(0xFFE5E7EB),
+                color: p.border,
               ),
             ],
           ),
@@ -368,15 +415,12 @@ class _PhoneField extends StatelessWidget {
         hintStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w400,
-          color: _hintGrey,
+          color: p.muted,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: _masterNavy.withValues(alpha: 0.35),
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: p.border, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -390,11 +434,13 @@ class _PhoneField extends StatelessWidget {
 class _CodeField extends StatelessWidget {
   const _CodeField({
     required this.controller,
+    required this.p,
     required this.onChanged,
     this.onSubmitted,
   });
 
   final TextEditingController controller;
+  final HomePalette p;
   final ValueChanged<String> onChanged;
   final VoidCallback? onSubmitted;
 
@@ -413,24 +459,23 @@ class _CodeField extends StatelessWidget {
       style: GoogleFonts.inter(
         fontSize: 28,
         fontWeight: FontWeight.w700,
-        color: _titleColor,
+        color: p.text,
         letterSpacing: 12,
       ),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: p.inputFill,
         hintText: '••••',
         hintStyle: GoogleFonts.inter(
           fontSize: 28,
           fontWeight: FontWeight.w700,
-          color: _hintGrey,
+          color: p.muted,
           letterSpacing: 12,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: _masterNavy.withValues(alpha: 0.35),
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: p.border, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

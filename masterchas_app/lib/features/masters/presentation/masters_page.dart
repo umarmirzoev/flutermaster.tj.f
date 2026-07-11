@@ -3,6 +3,8 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/theme/app_design.dart';
+
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/l10n/home_strings.dart';
 import '../../../core/providers/locale_provider.dart';
@@ -12,11 +14,19 @@ import '../../services/data/services_catalog.dart';
 import '../data/masters_data.dart';
 import '../providers/master_favorites_provider.dart';
 import 'ai_master_picker_sheet.dart';
+import '../../notifications/presentation/client_notifications_page.dart';
 import 'widgets/master_favorite_button.dart';
 import 'master_detail_page.dart';
 
 class MastersPage extends ConsumerStatefulWidget {
-  const MastersPage({super.key, this.initialFilter, this.initialService});
+  const MastersPage({
+    super.key,
+    this.initialFilter,
+    this.initialService,
+    this.initialDistrict,
+    this.initialOnlineOnly = false,
+    this.initialTopOnly = false,
+  });
 
   /// Master-category key (Russian) to pre-filter the list, or null for "Все".
   final String? initialFilter;
@@ -24,18 +34,38 @@ class MastersPage extends ConsumerStatefulWidget {
   /// Service the client chose before picking a master.
   final ServiceItem? initialService;
 
+  final String? initialDistrict;
+  final bool initialOnlineOnly;
+  final bool initialTopOnly;
+
   @override
   ConsumerState<MastersPage> createState() => _MastersPageState();
 }
 
 class _MastersPageState extends ConsumerState<MastersPage> {
   String? _filter; // null == "Все"
+  String? _district;
+  bool _onlineOnly = false;
+  bool _topOnly = false;
 
   @override
   void initState() {
     super.initState();
     final f = widget.initialFilter;
     _filter = f == null ? null : resolveMasterCategory(f);
+    _district = widget.initialDistrict;
+    _onlineOnly = widget.initialOnlineOnly;
+    _topOnly = widget.initialTopOnly;
+  }
+
+  List<MasterItem> _applyFilters(List<MasterItem> allMasters) {
+    return allMasters.where((m) {
+      if (_filter != null && !m.categories.contains(_filter)) return false;
+      if (_district != null && !m.districts.contains(_district)) return false;
+      if (_onlineOnly && !m.isOnline) return false;
+      if (_topOnly && !m.isTop) return false;
+      return true;
+    }).toList();
   }
 
   @override
@@ -46,16 +76,15 @@ class _MastersPageState extends ConsumerState<MastersPage> {
 
     final favorites = ref.watch(masterFavoritesProvider);
     final allMasters = ref.watch(mastersCatalogProvider);
-    final list = _filter == null
-        ? allMasters
-        : allMasters.where((m) => m.categories.contains(_filter)).toList();
+    final list = _applyFilters(allMasters);
 
     return Scaffold(
       backgroundColor: p.pageBg,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            _Header(s: s, p: p),
+            _Header(s: s, p: p, mastersCount: allMasters.length),
             _FilterChips(
               s: s,
               p: p,
@@ -91,18 +120,21 @@ class _MastersPageState extends ConsumerState<MastersPage> {
                       ),
                     )
                   else
-                    ...list.map(
-                      (m) => Padding(
+                    ...list.asMap().entries.map(
+                      (entry) => Padding(
                         padding: const EdgeInsets.only(bottom: 14),
-                        child: _MasterListCard(
-                          m: m,
-                          s: s,
-                          p: p,
-                          locale: locale,
-                          isFav: favorites.contains(m.fullName),
-                          onFav: () => ref.read(masterFavoritesProvider.notifier).toggle(m.fullName),
-                          onOpen: () => _openDetail(m),
-                          onCall: () => _showCall(m, s),
+                        child: FadeSlideIn(
+                          delay: Duration(milliseconds: 60 * (entry.key % 8)),
+                          child: _MasterListCard(
+                            m: entry.value,
+                            s: s,
+                            p: p,
+                            locale: locale,
+                            isFav: favorites.contains(entry.value.fullName),
+                            onFav: () => ref.read(masterFavoritesProvider.notifier).toggle(entry.value.fullName),
+                            onOpen: () => _openDetail(entry.value),
+                            onCall: () => _showCall(entry.value, s),
+                          ),
                         ),
                       ),
                     ),
@@ -153,61 +185,98 @@ class _MastersPageState extends ConsumerState<MastersPage> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.s, required this.p});
+  const _Header({required this.s, required this.p, required this.mastersCount});
 
   final HomeStrings s;
   final HomePalette p;
+  final int mastersCount;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: Row(
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 12, 16, 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: p.headerGradient,
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: brandGreen.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          Material(
-            color: p.cardBg,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: () => Navigator.of(context).maybePop(),
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: p.border),
-                ),
-                child: Icon(LucideIcons.arrow_left, size: 18, color: p.text),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '${s.mastersWord} ',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: p.text,
-                      ),
-                    ),
-                    TextSpan(
-                      text: s.nearWord,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: brandGreen,
-                      ),
-                    ),
-                  ],
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.of(context).maybePop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                  ),
+                  child: const Icon(LucideIcons.arrow_left, size: 19, color: Colors.white),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Text(
+                s.mastersWord,
+                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+              ),
+              const Spacer(),
+              _BellButton(
+                p: p,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const ClientNotificationsPage()),
+                ),
+              ),
+            ],
           ),
-          _BellButton(p: p),
+          const SizedBox(height: 16),
+          // Stats row
+          Row(
+            children: [
+              Expanded(child: _stat(LucideIcons.users, '$mastersCount', s.mastersCountSuffix)),
+              const SizedBox(width: 10),
+              Expanded(child: _stat(LucideIcons.star, '4.8', s.statRatingShort)),
+              const SizedBox(width: 10),
+              Expanded(child: _stat(LucideIcons.clock, '15 ${s.minShort}', s.statReplyShort)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stat(IconData icon, String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: Colors.white),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 10, color: Colors.white.withValues(alpha: 0.85)),
+          ),
         ],
       ),
     );
@@ -215,27 +284,30 @@ class _Header extends StatelessWidget {
 }
 
 class _BellButton extends StatelessWidget {
-  const _BellButton({required this.p});
+  const _BellButton({required this.p, required this.onTap});
 
   final HomePalette p;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 36,
-      height: 36,
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+      width: 40,
+      height: 40,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: p.cardBg,
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: p.border),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
             ),
-            child: Icon(LucideIcons.bell, size: 17, color: p.text),
+            child: const Icon(LucideIcons.bell, size: 18, color: Colors.white),
           ),
           Positioned(
             right: -2,
@@ -244,7 +316,11 @@ class _BellButton extends StatelessWidget {
               width: 16,
               height: 16,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
               child: Text(
                 '3',
                 style: GoogleFonts.inter(
@@ -256,6 +332,7 @@ class _BellButton extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -297,17 +374,33 @@ class _FilterChips extends StatelessWidget {
           final (key, label, icon) = chips[i];
           final on = key == selected;
           return Material(
-            color: on ? brandGreen : p.cardBg,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
               onTap: () => onSelect(key),
               borderRadius: BorderRadius.circular(20),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  color: on ? null : p.cardBg,
+                  gradient: on
+                      ? const LinearGradient(
+                          colors: [Color(0xFF4BAF50), Color(0xFF57B55E)],
+                        )
+                      : null,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: on ? brandGreen : p.border),
+                  boxShadow: on
+                      ? [
+                          BoxShadow(
+                            color: brandGreen.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -532,10 +625,12 @@ class _Photo extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (m.imageBytes != null)
-            Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
-          else
-            Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          Hero(
+            tag: 'master-photo-${m.fullName}',
+            child: m.imageBytes != null
+                ? Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
+                : Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+          ),
           Positioned(
             right: 6,
             top: 6,

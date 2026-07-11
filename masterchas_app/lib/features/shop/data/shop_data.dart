@@ -247,6 +247,9 @@ class ShopL10n {
     required this.total,
     required this.checkout,
     required this.orderPlaced,
+    required this.deliveryAddress,
+    required this.deliveryAddressSub,
+    required this.addressHint,
     required this.rentPriceUnit,
     required this.rentBuyNow,
     required this.rentOrderPlaced,
@@ -256,6 +259,11 @@ class ShopL10n {
     required this.navProfile,
     required this.navRent,
     required this.navMore,
+    required this.favoritesTitle,
+    required this.favoritesEmpty,
+    required this.storeAddress,
+    required this.checkoutKindShop,
+    required this.checkoutKindRent,
   });
 
   final String title;
@@ -299,6 +307,9 @@ class ShopL10n {
   final String total;
   final String checkout;
   final String orderPlaced;
+  final String deliveryAddress;
+  final String deliveryAddressSub;
+  final String addressHint;
   final String rentPriceUnit;
   final String rentBuyNow;
   final String rentOrderPlaced;
@@ -308,6 +319,11 @@ class ShopL10n {
   final String navProfile;
   final String navRent;
   final String navMore;
+  final String favoritesTitle;
+  final String favoritesEmpty;
+  final String storeAddress;
+  final String checkoutKindShop;
+  final String checkoutKindRent;
 
   static ShopL10n of(AppLocale locale) => _map[locale]!;
 
@@ -355,6 +371,9 @@ class ShopL10n {
       total: 'Итого',
       checkout: 'Оформить заказ',
       orderPlaced: 'Заказ оформлен! Мы свяжемся с вами.',
+      deliveryAddress: 'Адрес доставки',
+      deliveryAddressSub: 'Укажите адрес, куда привезти товар',
+      addressHint: 'ул. Рудаки 45, Душанбе',
       rentPriceUnit: 'с./сут',
       rentBuyNow: 'Арендовать',
       rentOrderPlaced: 'Заявка на аренду отправлена! Мы свяжемся с вами.',
@@ -364,6 +383,11 @@ class ShopL10n {
       navProfile: 'Профиль',
       navRent: 'Аренда',
       navMore: 'Ещё',
+      favoritesTitle: 'Избранное',
+      favoritesEmpty: 'Добавьте инструменты в избранное',
+      storeAddress: 'г. Душанбе, ул. Бохтар, 123',
+      checkoutKindShop: 'Магазин',
+      checkoutKindRent: 'Аренда',
     ),
     AppLocale.en: ShopL10n(
       title: 'Shop',
@@ -408,6 +432,9 @@ class ShopL10n {
       total: 'Total',
       checkout: 'Checkout',
       orderPlaced: 'Order placed! We will contact you.',
+      deliveryAddress: 'Delivery address',
+      deliveryAddressSub: 'Enter where to deliver the order',
+      addressHint: 'Rudaki St 45, Dushanbe',
       rentPriceUnit: 's./day',
       rentBuyNow: 'Rent now',
       rentOrderPlaced: 'Rental request sent! We will contact you.',
@@ -417,6 +444,11 @@ class ShopL10n {
       navProfile: 'Profile',
       navRent: 'Rent',
       navMore: 'More',
+      favoritesTitle: 'Favorites',
+      favoritesEmpty: 'Add tools to your favorites',
+      storeAddress: '123 Bokhtar St., Dushanbe',
+      checkoutKindShop: 'Shop',
+      checkoutKindRent: 'Rent',
     ),
     AppLocale.tg: ShopL10n(
       title: 'Мағоза',
@@ -461,6 +493,9 @@ class ShopL10n {
       total: 'Ҳамагӣ',
       checkout: 'Ба расмият даровардан',
       orderPlaced: 'Фармоиш қабул шуд! Мо бо шумо тамос мегирем.',
+      deliveryAddress: 'Суроғаи расонидан',
+      deliveryAddressSub: 'Суроғаи расонидани молро нависед',
+      addressHint: 'кучаи Рӯдакӣ 45, Душанбе',
       rentPriceUnit: 'с./рӯз',
       rentBuyNow: 'Иҷора кардан',
       rentOrderPlaced: 'Дархости иҷора фиристода шуд!',
@@ -470,6 +505,11 @@ class ShopL10n {
       navProfile: 'Профил',
       navRent: 'Иҷора',
       navMore: 'Бештар',
+      favoritesTitle: 'Дӯстдошта',
+      favoritesEmpty: 'Асбобҳоро ба дӯстдошта илова кунед',
+      storeAddress: 'ш. Душанбе, кӯчаи Бохтар, 123',
+      checkoutKindShop: 'Мағоза',
+      checkoutKindRent: 'Иҷора',
     ),
     AppLocale.zh: ShopL10n(
       title: '商店',
@@ -514,6 +554,9 @@ class ShopL10n {
       total: '合计',
       checkout: '去结算',
       orderPlaced: '下单成功！我们会与您联系。',
+      deliveryAddress: '配送地址',
+      deliveryAddressSub: '请输入商品配送地址',
+      addressHint: '鲁达基街45号，杜尚别',
       rentPriceUnit: '索莫尼/天',
       rentBuyNow: '租赁',
       rentOrderPlaced: '租赁申请已发送！',
@@ -523,6 +566,11 @@ class ShopL10n {
       navProfile: '个人',
       navRent: '租赁',
       navMore: '更多',
+      favoritesTitle: '收藏',
+      favoritesEmpty: '将工具添加到收藏',
+      storeAddress: '杜尚别市博赫塔尔街123号',
+      checkoutKindShop: '商城',
+      checkoutKindRent: '租赁',
     ),
   };
 }

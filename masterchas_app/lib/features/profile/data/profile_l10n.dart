@@ -1,4 +1,5 @@
 import '../../../core/l10n/app_locale.dart';
+import 'account_level.dart';
 
 class ProfileL10n {
   const ProfileL10n({
@@ -71,6 +72,36 @@ class ProfileL10n {
     required this.cardSaved,
     required this.addressSaved,
     required this.addToCart,
+    required this.levelLabelTpl,
+    required this.pointsToNextTpl,
+    required this.maxLevel,
+    required this.tierBronze,
+    required this.tierSilver,
+    required this.tierGold,
+    required this.tierPlatinum,
+    required this.referFriend,
+    required this.referBonus,
+    required this.promoCopiedTpl,
+    required this.dailyQuests,
+    required this.bonusesRewardTpl,
+    required this.questReview,
+    required this.questShare,
+    required this.questOrderToday,
+    required this.achievementsTitle,
+    required this.achFirstOrder,
+    required this.ach5Orders,
+    required this.ach10Orders,
+    required this.achReview,
+    required this.achRefer,
+    required this.signOut,
+    required this.signOutTitle,
+    required this.signOutMsg,
+    required this.cancel,
+    required this.defaultUser,
+    required this.langRussian,
+    required this.langEnglish,
+    required this.langTajik,
+    required this.langChinese,
   });
 
   final String title;
@@ -142,8 +173,59 @@ class ProfileL10n {
   final String cardSaved;
   final String addressSaved;
   final String addToCart;
+  final String levelLabelTpl;
+  final String pointsToNextTpl;
+  final String maxLevel;
+  final String tierBronze;
+  final String tierSilver;
+  final String tierGold;
+  final String tierPlatinum;
+  final String referFriend;
+  final String referBonus;
+  final String promoCopiedTpl;
+  final String dailyQuests;
+  final String bonusesRewardTpl;
+  final String questReview;
+  final String questShare;
+  final String questOrderToday;
+  final String achievementsTitle;
+  final String achFirstOrder;
+  final String ach5Orders;
+  final String ach10Orders;
+  final String achReview;
+  final String achRefer;
+  final String signOut;
+  final String signOutTitle;
+  final String signOutMsg;
+  final String cancel;
+  final String defaultUser;
+  final String langRussian;
+  final String langEnglish;
+  final String langTajik;
+  final String langChinese;
 
   String toGold(int n) => toGoldTpl.replaceFirst('{n}', '$n');
+
+  String tierName(AccountTier tier) => switch (tier) {
+        AccountTier.bronze => tierBronze,
+        AccountTier.silver => tierSilver,
+        AccountTier.gold => tierGold,
+        AccountTier.platinum => tierPlatinum,
+      };
+
+  String levelLine(AccountTier tier) =>
+      levelLabelTpl.replaceFirst('{tier}', tierName(tier));
+
+  String pointsToNextLine(AccountTier nextTier, int points) =>
+      pointsToNextTpl
+          .replaceFirst('{tier}', tierName(nextTier))
+          .replaceFirst('{n}', '$points');
+
+  String promoCopied(String code) =>
+      promoCopiedTpl.replaceFirst('{code}', code);
+
+  String bonusesReward(int points) =>
+      bonusesRewardTpl.replaceFirst('{n}', '$points');
 
   static ProfileL10n of(AppLocale locale) => _map[locale]!;
 
@@ -217,6 +299,36 @@ class ProfileL10n {
     cardSaved: 'Карта добавлена',
     addressSaved: 'Адрес сохранён',
     addToCart: 'В корзину',
+    levelLabelTpl: 'Уровень: {tier}',
+    pointsToNextTpl: 'До «{tier}» осталось {n} с.',
+    maxLevel: 'Максимальный уровень!',
+    tierBronze: 'Бронза',
+    tierSilver: 'Серебро',
+    tierGold: 'Золото',
+    tierPlatinum: 'Платина',
+    referFriend: 'Приведи друга',
+    referBonus: 'Вы и друг получите по 50 сомони',
+    promoCopiedTpl: 'Промокод {code} скопирован',
+    dailyQuests: 'Задания дня',
+    bonusesRewardTpl: '+{n} бонусов',
+    questReview: 'Оставь отзыв о мастере',
+    questShare: 'Поделись приложением',
+    questOrderToday: 'Закажи услугу сегодня',
+    achievementsTitle: 'Достижения',
+    achFirstOrder: 'Первый\nзаказ',
+    ach5Orders: '5\nзаказов',
+    ach10Orders: '10\nзаказов',
+    achReview: 'Отзыв\nоставлен',
+    achRefer: 'Пригласил\nдруга',
+    signOut: 'Выйти из аккаунта',
+    signOutTitle: 'Выйти?',
+    signOutMsg: 'Вы выйдете из аккаунта',
+    cancel: 'Отмена',
+    defaultUser: 'Пользователь',
+    langRussian: 'Русский',
+    langEnglish: 'English',
+    langTajik: 'Тоҷикӣ',
+    langChinese: '中文',
   );
 
   static const _en = ProfileL10n(
@@ -289,6 +401,36 @@ class ProfileL10n {
     cardSaved: 'Card added',
     addressSaved: 'Address saved',
     addToCart: 'Add to cart',
+    levelLabelTpl: 'Level: {tier}',
+    pointsToNextTpl: '{n} s. left until «{tier}»',
+    maxLevel: 'Maximum level!',
+    tierBronze: 'Bronze',
+    tierSilver: 'Silver',
+    tierGold: 'Gold',
+    tierPlatinum: 'Platinum',
+    referFriend: 'Refer a friend',
+    referBonus: 'You and your friend get 50 somoni each',
+    promoCopiedTpl: 'Promo code {code} copied',
+    dailyQuests: 'Daily quests',
+    bonusesRewardTpl: '+{n} bonuses',
+    questReview: 'Leave a review about a master',
+    questShare: 'Share the app',
+    questOrderToday: 'Order a service today',
+    achievementsTitle: 'Achievements',
+    achFirstOrder: 'First\norder',
+    ach5Orders: '5\norders',
+    ach10Orders: '10\norders',
+    achReview: 'Review\nleft',
+    achRefer: 'Invited\na friend',
+    signOut: 'Sign out',
+    signOutTitle: 'Sign out?',
+    signOutMsg: 'You will be signed out of your account',
+    cancel: 'Cancel',
+    defaultUser: 'User',
+    langRussian: 'Русский',
+    langEnglish: 'English',
+    langTajik: 'Тоҷикӣ',
+    langChinese: '中文',
   );
 
   static const _tg = ProfileL10n(
@@ -361,6 +503,36 @@ class ProfileL10n {
     cardSaved: 'Корт илова шуд',
     addressSaved: 'Суроға захира шуд',
     addToCart: 'Ба сабад',
+    levelLabelTpl: 'Сатҳ: {tier}',
+    pointsToNextTpl: 'То «{tier}» {n} с. мондааст',
+    maxLevel: 'Сатҳи максималӣ!',
+    tierBronze: 'Бронза',
+    tierSilver: 'Нуқра',
+    tierGold: 'Тилло',
+    tierPlatinum: 'Платина',
+    referFriend: 'Дӯстро биёред',
+    referBonus: 'Шумо ва дӯстатон ҳар як 50 сомонӣ мегиред',
+    promoCopiedTpl: 'Рамзи промо {code} нусха бардошта шуд',
+    dailyQuests: 'Вазифаҳои рӯз',
+    bonusesRewardTpl: '+{n} бонус',
+    questReview: 'Ба маъмур баҳо гузоред',
+    questShare: 'Барномаро мубодила кунед',
+    questOrderToday: 'Имрӯз хизмат фармоиш диҳед',
+    achievementsTitle: 'Дастовардҳо',
+    achFirstOrder: 'Фармоиши\nаввал',
+    ach5Orders: '5\nфармоиш',
+    ach10Orders: '10\nфармоиш',
+    achReview: 'Баҳо\nгузошта шуд',
+    achRefer: 'Дӯстро\nдаъват кард',
+    signOut: 'Баромадан',
+    signOutTitle: 'Баромадан?',
+    signOutMsg: 'Шумо аз ҳисоб баромада мешавед',
+    cancel: 'Бекор',
+    defaultUser: 'Корбар',
+    langRussian: 'Русский',
+    langEnglish: 'English',
+    langTajik: 'Тоҷикӣ',
+    langChinese: '中文',
   );
 
   static const _zh = ProfileL10n(
@@ -433,6 +605,36 @@ class ProfileL10n {
     cardSaved: '卡已添加',
     addressSaved: '地址已保存',
     addToCart: '加入购物车',
+    levelLabelTpl: '等级：{tier}',
+    pointsToNextTpl: '距离「{tier}」还差 {n} 索',
+    maxLevel: '已达最高等级！',
+    tierBronze: '青铜',
+    tierSilver: '白银',
+    tierGold: '黄金',
+    tierPlatinum: '铂金',
+    referFriend: '邀请好友',
+    referBonus: '您和好友各得 50 索莫尼',
+    promoCopiedTpl: '优惠码 {code} 已复制',
+    dailyQuests: '每日任务',
+    bonusesRewardTpl: '+{n} 积分',
+    questReview: '给师傅留下评价',
+    questShare: '分享应用',
+    questOrderToday: '今天下单服务',
+    achievementsTitle: '成就',
+    achFirstOrder: '首单',
+    ach5Orders: '5单',
+    ach10Orders: '10单',
+    achReview: '已评价',
+    achRefer: '邀请好友',
+    signOut: '退出登录',
+    signOutTitle: '退出？',
+    signOutMsg: '您将退出当前账户',
+    cancel: '取消',
+    defaultUser: '用户',
+    langRussian: 'Русский',
+    langEnglish: 'English',
+    langTajik: 'Тоҷикӣ',
+    langChinese: '中文',
   );
 
   static const _map = {

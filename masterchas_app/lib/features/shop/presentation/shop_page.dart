@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,10 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/catalog_provider.dart';
-import '../../admin/providers/admin_provider.dart';
 import '../../home/presentation/home_palette.dart';
+import '../data/shop_checkout.dart';
 import '../data/shop_data.dart';
-import '../providers/shop_admin_orders_provider.dart';
 import '../state/shop_state.dart';
 
 class ShopPage extends ConsumerStatefulWidget {
@@ -66,6 +66,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   }
 
   void _add(int productIndex, ShopL10n l) {
+    HapticFeedback.lightImpact();
     ref.read(shopCartProvider.notifier).add(productIndex);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -115,6 +116,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     return Scaffold(
       backgroundColor: p.pageBg,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [
@@ -359,20 +361,31 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 12, 16, 20),
       decoration: BoxDecoration(
-        color: p.cardBg,
-        border: Border(bottom: BorderSide(color: p.border)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: p.headerGradient,
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: brandGreen.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              _circle(LucideIcons.arrow_left, p, () => Navigator.of(context).maybePop()),
-              const SizedBox(width: 10),
+              _circleGlass(LucideIcons.arrow_left, () => Navigator.of(context).maybePop()),
+              const SizedBox(width: 12),
               Text(
                 l.title,
-                style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
+                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const Spacer(),
               _FavButton(p: p, count: favCount, onTap: onFavorites),
@@ -380,25 +393,41 @@ class _TopBar extends StatelessWidget {
               _CartButton(p: p, count: cartCount, onTap: onCart),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            height: 52,
+            padding: const EdgeInsets.only(left: 8, right: 8),
             decoration: BoxDecoration(
-              color: p.searchBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: p.border),
+              color: p.headerCardBg,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark ? 0.35 : 0.12,
+                  ),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.search, size: 18, color: p.muted),
-                const SizedBox(width: 8),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF4BAF50), Color(0xFF57B55E)]),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: const Icon(LucideIcons.search, size: 17, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     controller: controller,
                     onChanged: onChanged,
                     textInputAction: TextInputAction.search,
-                    style: GoogleFonts.inter(fontSize: 13, color: p.text),
+                    style: GoogleFonts.inter(fontSize: 14, color: p.text),
                     cursorColor: brandGreen,
                     decoration: InputDecoration(
                       isCollapsed: true,
@@ -411,7 +440,15 @@ class _TopBar extends StatelessWidget {
                 if (controller.text.isNotEmpty)
                   GestureDetector(
                     onTap: onClear,
-                    child: Icon(LucideIcons.x, size: 18, color: p.muted),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(LucideIcons.x, size: 15, color: Colors.red.shade400),
+                    ),
                   ),
               ],
             ),
@@ -421,19 +458,18 @@ class _TopBar extends StatelessWidget {
     );
   }
 
-  Widget _circle(IconData icon, HomePalette p, VoidCallback onTap) {
-    return Material(
-      color: p.pageBg,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
-          child: Icon(icon, size: 17, color: p.text),
+  Widget _circleGlass(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
         ),
+        child: Icon(icon, size: 19, color: Colors.white),
       ),
     );
   }
@@ -459,13 +495,17 @@ class _FavButton extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+              ),
               child: Icon(
                 hasFav ? Icons.favorite : Icons.favorite_border,
-                size: 17,
-                color: hasFav ? const Color(0xFFEF4444) : p.text,
+                size: 18,
+                color: Colors.white,
               ),
             ),
             if (count > 0)
@@ -474,7 +514,11 @@ class _FavButton extends StatelessWidget {
                 top: -2,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
                   child: Text(
                     '$count',
                     style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
@@ -507,23 +551,40 @@ class _CartButton extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: p.border)),
-              child: Icon(LucideIcons.shopping_cart, size: 17, color: p.text),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+              ),
+              child: const Icon(LucideIcons.shopping_cart, size: 18, color: Colors.white),
             ),
             if (count > 0)
               Positioned(
                 right: -2,
                 top: -3,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle),
-                  child: Text(
-                    '$count',
-                    style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey(count),
+                  tween: Tween(begin: 0.4, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF4BAF50), Color(0xFF57B55E)]),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: brandGreen.withValues(alpha: 0.4), blurRadius: 6),
+                      ],
+                    ),
+                    child: Text(
+                      '$count',
+                      style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
@@ -544,10 +605,21 @@ class _Categories extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onSelect;
 
+  static const _catColors = [
+    Color(0xFF57B55E), // Все
+    Color(0xFFF59E0B), // Электроинструмент
+    Color(0xFF3B82F6), // Ручной инструмент
+    Color(0xFF8B5CF6), // Расходники
+    Color(0xFF14B8A6), // Садовая техника
+    Color(0xFFEC4899), // Освещение
+    Color(0xFFEF4444), // Измерительный
+    Color(0xFF6366F1), // Хранение
+  ];
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 78,
+      height: 82,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -555,22 +627,35 @@ class _Categories extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) {
           final on = i == selected;
+          final color = _catColors[i % _catColors.length];
           return GestureDetector(
             onTap: () => onSelect(i),
             behavior: HitTestBehavior.opaque,
             child: SizedBox(
-              width: 64,
+              width: 66,
               child: Column(
                 children: [
-                  Container(
-                    width: 52,
-                    height: 52,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 54,
+                    height: 54,
                     decoration: BoxDecoration(
-                      color: on ? brandGreen : p.cardBg,
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: on ? brandGreen : p.border),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [color, Color.lerp(color, Colors.black, 0.2)!],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: on ? 0.45 : 0.25),
+                          blurRadius: on ? 14 : 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: on ? Border.all(color: Colors.white, width: 2) : null,
                     ),
-                    child: Icon(shopCategoryIcons[i], size: 24, color: on ? Colors.white : p.text),
+                    child: Icon(shopCategoryIcons[i], size: 24, color: Colors.white),
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -580,8 +665,8 @@ class _Categories extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 9,
-                      fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                      color: on ? brandGreen : p.muted,
+                      fontWeight: on ? FontWeight.w800 : FontWeight.w500,
+                      color: on ? color : p.muted,
                     ),
                   ),
                 ],
@@ -802,7 +887,7 @@ class _ProductRow extends ConsumerWidget {
   }
 }
 
-class _ProductCard extends StatelessWidget {
+class _ProductCard extends StatefulWidget {
   const _ProductCard({
     required this.prod,
     required this.l,
@@ -824,177 +909,204 @@ class _ProductCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
+  State<_ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<_ProductCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final prod = widget.prod;
+    final l = widget.l;
+    final p = widget.p;
+    final locale = widget.locale;
+    final isFav = widget.isFav;
     final light = Theme.of(context).brightness == Brightness.light;
     final discount = prod.discountPercent;
     return GestureDetector(
-      onTap: onOpen,
-      child: Container(
-        width: 158,
-        decoration: BoxDecoration(
-          color: p.cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: p.border),
-          boxShadow: light
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))]
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 116,
-                  width: double.infinity,
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(10),
-                  child: buildShopProductImage(prod, fit: BoxFit.contain),
-                ),
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (discount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '-$discount%',
-                            style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
-                          ),
-                        ),
-                      if (prod.badge != ProductBadge.none) ...[
-                        if (discount > 0) const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: prod.badge == ProductBadge.hit ? const Color(0xFFF59E0B) : brandGreen,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            prod.badge == ProductBadge.hit ? l.badgeHit : l.badgeNew,
-                            style: GoogleFonts.inter(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: GestureDetector(
-                    onTap: onFav,
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)],
-                      ),
-                      child: Icon(
-                        isFav ? Icons.favorite : Icons.favorite_border,
-                        size: 13,
-                        color: isFav ? const Color(0xFFEF4444) : const Color(0xFF8B95A5),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onOpen,
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          width: 158,
+          decoration: BoxDecoration(
+            color: p.cardBg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: p.border),
+            boxShadow: light
+                ? [BoxShadow(color: Colors.black.withValues(alpha: _pressed ? 0.1 : 0.05), blurRadius: 14, offset: const Offset(0, 4))]
+                : null,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
                 children: [
-                  SizedBox(
-                    height: 34,
-                    child: Text(
-                      prod.name(locale),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                  Container(
+                    height: 116,
+                    width: double.infinity,
+                    color: p.productImageBg,
+                    padding: const EdgeInsets.all(10),
+                    child: buildShopProductImage(prod, fit: BoxFit.contain),
+                  ),
+                  Positioned(
+                    left: 8,
+                    top: 8,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (discount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '-$discount%',
+                              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                            ),
+                          ),
+                        if (prod.badge != ProductBadge.none) ...[
+                          if (discount > 0) const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: prod.badge == ProductBadge.hit ? const Color(0xFFF59E0B) : brandGreen,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              prod.badge == ProductBadge.hit ? l.badgeHit : l.badgeNew,
+                              style: GoogleFonts.inter(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107)),
-                      const SizedBox(width: 3),
-                      Text(
-                        prod.rating.toStringAsFixed(1),
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          '${prod.orders} ${l.ordersWord}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 9.5, color: p.muted),
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: GestureDetector(
+                      onTap: widget.onFav,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: p.cardBg,
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)],
+                        ),
+                        child: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          size: 14,
+                          color: isFav ? const Color(0xFFEF4444) : p.muted,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (prod.oldPrice > 0)
-                              Text(
-                                '${shopMoney(prod.oldPrice)} ${l.priceUnit}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: p.muted,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            Text(
-                              '${shopMoney(prod.price)} ${l.priceUnit}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: prod.oldPrice > 0 ? const Color(0xFFEF4444) : p.text,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Material(
-                        color: brandGreen,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          onTap: onAdd,
-                          customBorder: const CircleBorder(),
-                          child: const SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: Icon(LucideIcons.plus, size: 17, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 34,
+                      child: Text(
+                        prod.name(locale),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107)),
+                        const SizedBox(width: 3),
+                        Text(
+                          prod.rating.toStringAsFixed(1),
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            '${prod.orders} ${l.ordersWord}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(fontSize: 9.5, color: p.muted),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (prod.oldPrice > 0)
+                                Text(
+                                  '${shopMoney(prod.oldPrice)} ${l.priceUnit}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: p.muted,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              Text(
+                                '${shopMoney(prod.price)} ${l.priceUnit}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: prod.oldPrice > 0 ? const Color(0xFFEF4444) : p.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: widget.onAdd,
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF4BAF50), Color(0xFF57B55E)],
+                              ),
+                              borderRadius: BorderRadius.circular(11),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: brandGreen.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(LucideIcons.plus, size: 18, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1148,10 +1260,10 @@ class _Newsletter extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2E7D32), Color(0xFF57B55E)],
+          colors: p.headerGradient,
         ),
       ),
       child: Column(
@@ -1174,10 +1286,10 @@ class _Newsletter extends StatelessWidget {
                   height: 44,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   alignment: Alignment.centerLeft,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: p.headerCardBg, borderRadius: BorderRadius.circular(10)),
                   child: Text(
                     l.emailHint,
-                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF8B95A5)),
+                    style: GoogleFonts.inter(fontSize: 13, color: p.muted),
                   ),
                 ),
               ),
@@ -1254,7 +1366,7 @@ class _Footer extends StatelessWidget {
               const Icon(LucideIcons.map_pin, size: 15, color: brandGreen),
               const SizedBox(width: 8),
               Text(
-                'г. Душанбе, ул. Бохтар, 123',
+                l.storeAddress,
                 style: GoogleFonts.inter(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
               ),
             ],
@@ -1425,7 +1537,7 @@ class _CartSheet extends ConsumerWidget {
                           Container(
                             width: 52,
                             height: 52,
-                            color: Colors.white,
+                            color: p.productImageBg,
                             padding: const EdgeInsets.all(4),
                             child: buildShopProductImage(prod, fit: BoxFit.contain),
                           ),
@@ -1495,33 +1607,19 @@ class _CartSheet extends ConsumerWidget {
                                 final pr = catalog[e.key];
                                 return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
                               });
-                              final order = ShopOrder(
-                                date: DateTime.now(),
+                              final ok = await completeShopCheckout(
+                                context: context,
+                                ref: ref,
                                 items: Map<int, int>.from(cart),
                                 total: total,
                                 discount: discount,
-                                bonus: (total * 0.01).round(),
+                                catalog: catalog,
+                                l: l,
+                                clearCart: true,
                               );
-                              ref.read(shopOrdersProvider.notifier).add(order);
-                              await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
-                                    items: order.items,
-                                    total: order.total,
-                                    catalog: catalog,
-                                  );
-                              ref.invalidate(adminDataProvider);
-                              ref.read(shopCartProvider.notifier).clear();
-                              if (!context.mounted) return;
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: brandGreen,
-                                  behavior: SnackBarBehavior.floating,
-                                  content: Text(
-                                    l.orderPlaced,
-                                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                                  ),
-                                ),
-                              );
+                              if (ok && context.mounted) {
+                                Navigator.pop(context);
+                              }
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: brandGreen,
@@ -1609,7 +1707,7 @@ class _ProductTile extends StatelessWidget {
                 Container(
                   width: 84,
                   height: 84,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: p.productImageBg, borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.all(6),
                   child: buildShopProductImage(prod, fit: BoxFit.contain),
                 ),
@@ -2014,57 +2112,18 @@ class ProductDetailPage extends ConsumerWidget {
     final related = [...similar, ...more].take(6).toList();
 
     void buy() async {
-      if (isRental) {
-        await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
-              items: {index: 1},
-              total: product.price,
-              catalog: catalog,
-              kind: 'Аренда',
-            );
-        ref.invalidate(adminDataProvider);
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              backgroundColor: brandGreen,
-              behavior: SnackBarBehavior.floating,
-              content: Text(
-                l.rentOrderPlaced,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-              ),
-            ),
-          );
-        return;
-      }
+      if (index < 0) return;
       final disc = product.oldPrice > product.price ? product.oldPrice - product.price : 0;
-      final order = ShopOrder(
-        date: DateTime.now(),
+      await completeShopCheckout(
+        context: context,
+        ref: ref,
         items: {index: 1},
         total: product.price,
         discount: disc,
-        bonus: (product.price * 0.01).round(),
+        catalog: catalog,
+        l: l,
+        kind: isRental ? l.checkoutKindRent : l.checkoutKindShop,
       );
-      ref.read(shopOrdersProvider.notifier).add(order);
-      await ref.read(shopAdminOrdersProvider.notifier).registerPurchase(
-            items: order.items,
-            total: order.total,
-            catalog: catalog,
-          );
-      ref.invalidate(adminDataProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            backgroundColor: brandGreen,
-            behavior: SnackBarBehavior.floating,
-            content: Text(
-              l.orderPlaced,
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-            ),
-          ),
-        );
     }
 
     return Scaffold(
@@ -2321,7 +2380,7 @@ class _DetailHeader extends ConsumerWidget {
         Container(
           height: 320,
           width: double.infinity,
-          color: Colors.white,
+          color: p.productImageBg,
           padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
           child: buildShopProductImage(product, fit: BoxFit.contain),
         ),
@@ -2389,7 +2448,7 @@ class _DetailHeader extends ConsumerWidget {
 
   Widget _round(IconData icon, VoidCallback onTap, {Color? color}) {
     return Material(
-      color: Colors.white,
+      color: p.cardBg,
       shape: const CircleBorder(),
       elevation: 1,
       child: InkWell(
@@ -2398,7 +2457,7 @@ class _DetailHeader extends ConsumerWidget {
         child: SizedBox(
           width: 38,
           height: 38,
-          child: Icon(icon, size: 18, color: color ?? const Color(0xFF1B1F24)),
+          child: Icon(icon, size: 18, color: color ?? p.text),
         ),
       ),
     );
@@ -2432,7 +2491,7 @@ class _SimilarCard extends StatelessWidget {
             Container(
               height: 96,
               width: double.infinity,
-              color: Colors.white,
+              color: p.productImageBg,
               padding: const EdgeInsets.all(8),
                             child: buildShopProductImage(prod, fit: BoxFit.contain),
             ),
@@ -2512,14 +2571,14 @@ class ShopFavoritesPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Избранное', style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
+                  Text(l.favoritesTitle, style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
                 ],
               ),
             ),
             Expanded(
               child: products.isEmpty
                   ? Center(
-                      child: Text('Добавьте инструменты в избранное', style: GoogleFonts.inter(color: p.muted)),
+                      child: Text(l.favoritesEmpty, style: GoogleFonts.inter(color: p.muted)),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
