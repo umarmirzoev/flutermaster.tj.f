@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/admin_models.dart';
 import '../../theme/admin_theme.dart';
 import '../../data/admin_data.dart';
+import '../../../../core/widgets/hover_lift.dart';
 
 class AdminWorkflowStatusBadge extends StatelessWidget {
   const AdminWorkflowStatusBadge({super.key, required this.statusCode});
@@ -86,17 +87,27 @@ class AdminCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: AdminTheme.cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AdminTheme.border),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
+    return HoverLift(
+      cursor: SystemMouseCursors.basic,
+      builder: (context, hovering) => AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: padding,
+        transform: Matrix4.translationValues(0, hovering ? -3 : 0, 0),
+        decoration: BoxDecoration(
+          color: AdminTheme.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: hovering ? AdminTheme.sidebarActive.withValues(alpha: 0.35) : AdminTheme.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: hovering ? 0.09 : 0.03),
+              blurRadius: hovering ? 18 : 8,
+              offset: Offset(0, hovering ? 8 : 2),
+            ),
+          ],
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }

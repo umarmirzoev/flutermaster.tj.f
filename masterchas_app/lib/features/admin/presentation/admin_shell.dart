@@ -9,6 +9,7 @@ import '../models/admin_models.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_provider.dart';
 import '../theme/admin_theme.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class AdminShell extends ConsumerStatefulWidget {
   const AdminShell({super.key, required this.child});
@@ -237,6 +238,7 @@ class _NavItem extends StatelessWidget {
                   InkWell(
                     onTap: () => onChildTap(child.route),
                     borderRadius: BorderRadius.circular(6),
+                    hoverColor: Colors.white.withValues(alpha: 0.08),
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -272,6 +274,15 @@ class _TopBar extends ConsumerWidget {
   final VoidCallback onSearchTap;
   final ValueChanged<String> onResultTap;
   final VoidCallback onDismissSearch;
+
+  Widget _animIcon(Widget child) => HoverLift(
+        builder: (context, hovering) => AnimatedScale(
+          scale: hovering ? 1.15 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          child: child,
+        ),
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -360,7 +371,7 @@ class _TopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Stack(
+          _animIcon(Stack(
             children: [
               IconButton(icon: const Icon(LucideIcons.bell, size: 20, color: AdminTheme.text), onPressed: () {}),
               Positioned(
@@ -375,19 +386,19 @@ class _TopBar extends ConsumerWidget {
                 ),
               ),
             ],
-          ),
-          IconButton(icon: const Icon(LucideIcons.message_circle, size: 20, color: AdminTheme.text), onPressed: () => context.go('/admin/chats')),
-          IconButton(
+          )),
+          _animIcon(IconButton(icon: const Icon(LucideIcons.message_circle, size: 20, color: AdminTheme.text), onPressed: () => context.go('/admin/chats'))),
+          _animIcon(IconButton(
             icon: const Icon(LucideIcons.refresh_cw, size: 20, color: AdminTheme.text),
             onPressed: () => ref.read(adminDataProvider.notifier).refresh(),
-          ),
-          IconButton(
+          )),
+          _animIcon(IconButton(
             icon: const Icon(LucideIcons.log_out, size: 20, color: AdminTheme.text),
             onPressed: () async {
               await ref.read(authProvider.notifier).signOut();
               if (context.mounted) context.go('/admin/login');
             },
-          ),
+          )),
           const SizedBox(width: 8),
           Row(
             children: [

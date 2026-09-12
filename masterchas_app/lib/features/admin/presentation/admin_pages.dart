@@ -12,6 +12,7 @@ import '../theme/admin_theme.dart';
 import 'widgets/admin_badges.dart';
 import 'widgets/admin_charts.dart';
 import 'widgets/admin_data_builder.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
@@ -709,17 +710,27 @@ class _DataTable extends StatelessWidget {
               child: Text('Нет данных', style: GoogleFonts.inter(color: AdminTheme.muted)),
             )
           else
-            ...rows.map((row) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < row.length; i++)
-                        Expanded(
-                          flex: columns[i] == 'Действия' ? 2 : 3,
-                          child: row[i],
-                        ),
-                    ],
+            ...rows.map((row) => HoverLift(
+                  cursor: SystemMouseCursors.basic,
+                  builder: (context, hovering) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 130),
+                    curve: Curves.easeOut,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: hovering ? AdminTheme.pageBg : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < row.length; i++)
+                          Expanded(
+                            flex: columns[i] == 'Действия' ? 2 : 3,
+                            child: row[i],
+                          ),
+                      ],
+                    ),
                   ),
                 )),
         ],

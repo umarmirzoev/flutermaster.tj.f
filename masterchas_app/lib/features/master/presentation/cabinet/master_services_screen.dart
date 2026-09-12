@@ -273,7 +273,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                           IconButton(
                             onPressed: () => _removeService(key),
                             icon: const Icon(
-                              LucideIcons.trash_2,
+                              LucideIcons.trash,
                               size: 18,
                               color: Color(0xFFDC2626),
                             ),

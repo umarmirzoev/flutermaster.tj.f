@@ -12,6 +12,7 @@ import '../data/superadmin_data.dart';
 import '../models/superadmin_models.dart';
 import '../providers/superadmin_provider.dart';
 import '../theme/superadmin_theme.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class SuperAdminShell extends ConsumerStatefulWidget {
   const SuperAdminShell({super.key, required this.child});
@@ -293,6 +294,7 @@ class _Sidebar extends StatelessWidget {
     return InkWell(
       onTap: () => context.go(route),
       borderRadius: BorderRadius.circular(8),
+      hoverColor: SuperAdminTheme.sidebarHover,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Row(
@@ -435,7 +437,13 @@ class _TopBar extends ConsumerWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Stack(
+      hoverColor: SuperAdminTheme.pageBg,
+      child: HoverLift(
+        builder: (context, hovering) => AnimatedScale(
+          scale: hovering ? 1.12 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          child: Stack(
         children: [
           Padding(padding: const EdgeInsets.all(8), child: Icon(icon, size: 20, color: SuperAdminTheme.text)),
           Positioned(
@@ -447,7 +455,9 @@ class _TopBar extends ConsumerWidget {
               child: Text(count, style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -195,6 +195,7 @@ class AdminRepository {
               phone: phone,
               roles: roles,
               status: _readInt(json['status']),
+              createdAt: json['createdAt']?.toString(),
             ),
           );
         }
@@ -321,7 +322,7 @@ class AdminRepository {
         phone: c.phone,
         orders: clientOrders.length,
         spent: spent,
-        joined: '—',
+        joined: formatAdminDateTimeFromRaw(c.createdAt),
         isVip: spent >= 5000,
       );
     }).toList();
@@ -401,6 +402,7 @@ class _AdminUserRow {
     required this.phone,
     required this.roles,
     required this.status,
+    required this.createdAt,
   });
 
   final String id;
@@ -408,6 +410,7 @@ class _AdminUserRow {
   final String phone;
   final List<String> roles;
   final int status;
+  final String? createdAt;
 }
 
 final adminRepositoryProvider = Provider<AdminRepository>(

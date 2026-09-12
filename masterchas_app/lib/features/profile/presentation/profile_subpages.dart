@@ -165,7 +165,7 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
                         const Spacer(),
                         IconButton(
                           onPressed: () => ref.read(shopCardsProvider.notifier).removeAt(i),
-                          icon: const Icon(LucideIcons.trash_2, color: Colors.white70, size: 18),
+                          icon: const Icon(LucideIcons.trash, color: Colors.white70, size: 18),
                         ),
                       ],
                     ),
@@ -372,7 +372,7 @@ class _AddressesPageState extends ConsumerState<AddressesPage> {
                     ),
                     IconButton(
                       onPressed: () => ref.read(shopAddressesProvider.notifier).removeAt(i),
-                      icon: Icon(LucideIcons.trash_2, size: 18, color: p.muted),
+                      icon: Icon(LucideIcons.trash, size: 18, color: p.muted),
                     ),
                   ],
                 ),

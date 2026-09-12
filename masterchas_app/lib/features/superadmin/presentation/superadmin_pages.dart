@@ -10,6 +10,7 @@ import '../providers/superadmin_provider.dart';
 import '../theme/superadmin_theme.dart';
 import 'widgets/superadmin_forms.dart';
 import 'widgets/superadmin_widgets.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class SaListPage extends ConsumerWidget {
   const SaListPage({super.key, required this.title, required this.builder, this.action});
@@ -44,6 +45,19 @@ Widget _addBtn(String label, VoidCallback onTap) => ElevatedButton.icon(
       icon: const Icon(LucideIcons.plus, size: 16),
       label: Text(label),
       style: ElevatedButton.styleFrom(backgroundColor: SuperAdminTheme.green, foregroundColor: Colors.white),
+    );
+
+Widget _hoverTile(Widget child) => HoverLift(
+      cursor: SystemMouseCursors.basic,
+      builder: (context, hovering) => AnimatedContainer(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: hovering ? SuperAdminTheme.pageBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: child,
+      ),
     );
 
 Future<String?> _prompt(BuildContext context, String title, {String hint = '', String initial = ''}) async {
@@ -244,7 +258,7 @@ class SaOrdersPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Заказов пока нет. Нажмите «Добавить заказ».')))
           : SaCard(
               child: Column(
-                children: orders.map((o) => ListTile(
+                children: orders.map((o) => _hoverTile(ListTile(
                   title: Text('${o.id} — ${o.client}', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
                   subtitle: Text('${o.service} · ${o.master} · ${o.date}'),
                   trailing: Row(
@@ -256,10 +270,10 @@ class SaOrdersPage extends ConsumerWidget {
                         onSelected: (s) => store.updateOrderStatus(o.id, s),
                         itemBuilder: (_) => SaOrderStatus.values.map((s) => PopupMenuItem(value: s, child: Text(saOrderStatusLabel(s)))).toList(),
                       ),
-                      IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeOrder(o.id)),
+                      IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeOrder(o.id)),
                     ],
                   ),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -280,16 +294,16 @@ class SaMastersPage extends ConsumerWidget {
       action: _addBtn('Добавить мастера', () => showAddMasterSheet(context, ref)),
       builder: (_, __) => SaCard(
         child: Column(
-          children: masters.map((m) => ListTile(
+          children: masters.map((m) => _hoverTile(ListTile(
             leading: SaMasterAvatar(master: m),
             title: Text(m.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
             subtitle: Text('${m.specialization} · ${m.phone} · ${m.orders} заказов'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               const Icon(LucideIcons.star, size: 14, color: Color(0xFFFFC107)),
               Text(' ${m.rating}'),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeMaster(m.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeMaster(m.id)),
             ]),
-          )).toList(),
+          ))).toList(),
         ),
       ),
     );
@@ -314,16 +328,16 @@ class SaClientsPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Клиентов пока нет.')))
           : SaCard(
               child: Column(
-                children: clients.map((u) => ListTile(
+                children: clients.map((u) => _hoverTile(ListTile(
                   leading: CircleAvatar(backgroundImage: AssetImage(u.avatar)),
                   title: Text(u.name),
                   subtitle: Text('${u.phone} · Регистрация: ${u.date}'),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     if (u.isVip) const SaStatusPill(label: 'VIP', color: SuperAdminTheme.yellow),
                     if (u.isNew) const SaStatusPill(label: 'Новый', color: SuperAdminTheme.blue),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeClient(u.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeClient(u.id)),
                   ]),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -375,15 +389,15 @@ class SaProductsPage extends ConsumerWidget {
       action: _addBtn('Добавить товар', () => showAddProductSheet(context, ref)),
       builder: (_, __) => SaCard(
         child: Column(
-          children: products.map((p) => ListTile(
+          children: products.map((p) => _hoverTile(ListTile(
             leading: SaProductImage(product: p, size: 40),
             title: Text(p.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
             subtitle: Text('${p.category} · ${p.description.isNotEmpty ? p.description : 'Продано: ${p.sold}'}'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: p.inStock, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.toggleProductStock(p.id)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeProduct(p.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeProduct(p.id)),
             ]),
-          )).toList(),
+          ))).toList(),
         ),
       ),
     );
@@ -413,7 +427,7 @@ class SaCategoriesPage extends ConsumerWidget {
             subtitle: Text('${c.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCategory(c.id, active: v)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCategory(c.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCategory(c.id)),
             ]),
           )).toList(),
         ),
@@ -443,7 +457,7 @@ class SaBrandsPage extends ConsumerWidget {
             subtitle: Text('${b.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: b.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateBrand(b.id, active: v)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeBrand(b.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeBrand(b.id)),
             ]),
           )).toList(),
         ),
@@ -552,7 +566,7 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
                   subtitle: Text(c.description.isNotEmpty ? c.description : 'Скидка ${c.discountPercent}%'),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCoupon(c.id, active: v)),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCoupon(c.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCoupon(c.id)),
                   ]),
                 )).toList(),
               ),
@@ -704,16 +718,16 @@ class SaReviewsPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Отзывов нет.')))
           : SaCard(
               child: Column(
-                children: reviews.map((r) => ListTile(
+                children: reviews.map((r) => _hoverTile(ListTile(
                   leading: CircleAvatar(child: Text(r.avatar)),
                   title: Text('${r.author} → ${r.master}'),
                   subtitle: Text(r.text),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     ...List.generate(r.rating, (_) => const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107))),
                     IconButton(icon: Icon(r.hidden ? LucideIcons.eye : LucideIcons.eye_off, size: 16), onPressed: () => store.toggleReviewHidden(r.id)),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeReview(r.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeReview(r.id)),
                   ]),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -756,7 +770,7 @@ class SaFinancePage extends ConsumerWidget {
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                         Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
                         Switch(value: p.paid, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.togglePayoutPaid(p.id)),
-                        IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removePayout(p.id)),
+                        IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removePayout(p.id)),
                       ]),
                     )).toList(),
                   ),

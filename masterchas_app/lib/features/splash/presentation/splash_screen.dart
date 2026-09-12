@@ -660,7 +660,7 @@ class _SupportHeadset extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Icon(LucideIcons.headphones, size: size, color: _splashIconColor),
-          Positioned(bottom: 0, child: Icon(LucideIcons.smile, size: size * 0.42, color: _splashIconColor)),
+          Positioned(bottom: 0, child: Icon(LucideIcons.face_grinning, size: size * 0.42, color: _splashIconColor)),
         ],
       ),
     );

@@ -164,7 +164,7 @@ class ProfileDashboard extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    _MenuRow(icon: LucideIcons.history, label: l.orderHistory, p: p, onTap: () => _push(context, const ServiceOrdersPage())),
+                    _MenuRow(icon: LucideIcons.list_clock, label: l.orderHistory, p: p, onTap: () => _push(context, const ServiceOrdersPage())),
                     _divider(p),
                     _MenuRow(
                       icon: LucideIcons.credit_card,
