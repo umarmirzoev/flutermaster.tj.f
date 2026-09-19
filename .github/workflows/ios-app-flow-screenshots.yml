@@ -1,0 +1,101 @@
+name: iOS App Flow Screenshots
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  flow-screenshots:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: masterchas_app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.5.0.app
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Pick and boot a 6.5-inch class simulator
+        run: |
+          CANDIDATES=("iPhone 14 Plus" "iPhone 13 Pro Max" "iPhone 12 Pro Max" "iPhone 11 Pro Max" "iPhone Xs Max")
+          UDID=""
+          NAME=""
+          for CAND in "${CANDIDATES[@]}"; do
+            LINE=$(xcrun simctl list devices available | grep -F "$CAND (" | head -1)
+            if [ -n "$LINE" ]; then
+              UDID=$(echo "$LINE" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+              NAME="$CAND"
+              break
+            fi
+          done
+          if [ -z "$UDID" ]; then
+            LINE=$(xcrun simctl list devices available | grep -E "iPhone" | tail -1)
+            UDID=$(echo "$LINE" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+            NAME="fallback"
+          fi
+          echo "Using device: $NAME ($UDID)"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Grant privacy permissions
+        run: |
+          xcrun simctl privacy "$UDID" grant all tj.masterchas.masterchasApp || true
+
+      - name: Build for simulator
+        run: flutter build ios --simulator --debug
+
+      - name: Install and launch app
+        run: |
+          APP_PATH=$(find build/ios/iphonesimulator -maxdepth 1 -iname '*.app' | head -1)
+          echo "App path: $APP_PATH"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" tj.masterchas.masterchasApp
+          mkdir -p screenshots
+          sleep 5
+          xcrun simctl io "$UDID" screenshot screenshots/01-splash.png
+
+      - name: Install idb
+        run: |
+          brew install idb-companion || brew install facebook/fb/idb-companion || true
+          pip3 install --break-system-packages fb-idb || pip3 install fb-idb || true
+          idb_companion --version || true
+          idb --version || true
+
+      - name: Start idb companion
+        run: |
+          nohup idb_companion --udid "$UDID" > "$GITHUB_WORKSPACE/companion.log" 2>&1 &
+          sleep 6
+          idb list-targets || true
+          idb connect "$UDID" || true
+
+      - name: Automate login flow and capture screens
+        run: |
+          python3 "$GITHUB_WORKSPACE/automate.py"
+        continue-on-error: true
+
+      - name: Final fallback screenshot
+        run: |
+          xcrun simctl io "$UDID" screenshot screenshots/99-final-fallback.png || true
+
+      - name: Upload screenshots and debug logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: masterchas-flow-screenshots
+          path: |
+            masterchas_app/screenshots/*.png
+            masterchas_app/tree-*.json
+            companion.log
+          retention-days: 14
