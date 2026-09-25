@@ -18,6 +18,7 @@ import '../data/account_level.dart';
 import '../providers/client_profile_stats_provider.dart';
 import '../../masters/providers/master_favorites_provider.dart';
 import 'profile_subpages.dart';
+import 'delete_account_page.dart';
 import 'widgets/profile_gamification.dart';
 
 class ProfileDashboard extends ConsumerWidget {
@@ -186,7 +187,9 @@ class ProfileDashboard extends ConsumerWidget {
                     _divider(p),
                     _MenuRow(icon: LucideIcons.bell, label: l.notifications, p: p, onTap: () => _push(context, const NotificationsPage())),
                     _divider(p),
-                    _MenuRow(icon: LucideIcons.headphones, label: l.support, p: p, onTap: () => _push(context, const SupportPage()), last: true),
+                    _MenuRow(icon: LucideIcons.headphones, label: l.support, p: p, onTap: () => _push(context, const SupportPage())),
+                    _divider(p),
+                    _MenuRow(icon: LucideIcons.trash, label: 'Удалить аккаунт', p: p, onTap: () => _push(context, const DeleteAccountPage()), last: true),
                   ],
                 ),
               ),
