@@ -15,16 +15,8 @@ class AdminCredential {
   final String displayName;
 }
 
-const adminSeedPassword = 'MasterChas2025!';
-
-const _adminCredentials = <AdminCredential>[
-  AdminCredential(
-    phoneDigits: '900000099',
-    password: adminSeedPassword,
-    role: 'SuperAdmin',
-    displayName: 'Администратор',
-  ),
-];
+/// Локальных учётных данных администратора в приложении нет: вход проверяется только на сервере.
+const _adminCredentials = <AdminCredential>[];
 
 AdminCredential? lookupAdminCredential({
   required String phone,
