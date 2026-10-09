@@ -169,7 +169,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                 const SizedBox(height: 16),
                 Text(
                   l.loginTitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -179,7 +179,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                 const SizedBox(height: 6),
                 Text(
                   l.loginSub,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Colors.white.withValues(alpha: 0.85),
@@ -197,7 +197,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                 children: [
               Text(
                 l.phoneLabel,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: p.text,
@@ -212,7 +212,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
               const SizedBox(height: 20),
               Text(
                 l.codeLabel,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: p.text,
@@ -245,7 +245,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                       Expanded(
                         child: Text(
                           _error!,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             color: const Color(0xFFDC2626),
                             fontSize: 14,
                           ),
@@ -273,7 +273,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                   child: Center(
                     child: Text(
                       _isSubmitting ? l.loggingIn : l.loginBtn,
-                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                      style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
                   ),
                 ),
@@ -282,7 +282,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
               Text(
                 l.codeHint,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   color: _hintGrey,
                   height: 1.4,
@@ -305,7 +305,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
                   ),
                   label: Text(
                     l.becomeMaster,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -316,7 +316,7 @@ class _MasterCodeLoginScreenState extends ConsumerState<MasterCodeLoginScreen> {
               Text(
                 l.applySub,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   color: _bodyGrey,
                   height: 1.4,
@@ -346,7 +346,7 @@ class _OrDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: _hintGrey,
@@ -380,7 +380,7 @@ class _PhoneField extends StatelessWidget {
         LengthLimitingTextInputFormatter(9),
       ],
       onChanged: onChanged,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.manrope(
         fontSize: 18,
         fontWeight: FontWeight.w500,
         color: p.text,
@@ -395,7 +395,7 @@ class _PhoneField extends StatelessWidget {
             children: [
               Text(
                 '+992',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                   color: p.text,
@@ -412,7 +412,7 @@ class _PhoneField extends StatelessWidget {
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         hintText: '900 00 00 00',
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.manrope(
           fontSize: 18,
           fontWeight: FontWeight.w400,
           color: p.muted,
@@ -456,7 +456,7 @@ class _CodeField extends StatelessWidget {
       ],
       onChanged: onChanged,
       onSubmitted: onSubmitted != null ? (_) => onSubmitted!() : null,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.manrope(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: p.text,
@@ -466,7 +466,7 @@ class _CodeField extends StatelessWidget {
         filled: true,
         fillColor: p.inputFill,
         hintText: '••••',
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.manrope(
           fontSize: 28,
           fontWeight: FontWeight.w700,
           color: p.muted,

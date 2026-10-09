@@ -7,6 +7,7 @@ import '../../../core/l10n/home_strings.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../profile/presentation/profile_subpages.dart';
+import '../../../core/widgets/motion.dart';
 
 class ClientNotificationsPage extends ConsumerWidget {
   const ClientNotificationsPage({super.key});
@@ -51,13 +52,13 @@ class ClientNotificationsPage extends ConsumerWidget {
         elevation: 0,
         title: Text(
           s.notificationsTitle,
-          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800),
+          style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
             tooltip: s.notifSettings,
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const NotificationsPage()),
+              SmoothRoute<void>(builder: (_) => const NotificationsPage()),
             ),
             icon: Icon(LucideIcons.settings, color: p.muted, size: 20),
           ),
@@ -72,7 +73,7 @@ class ClientNotificationsPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text(
                     s.notifEmpty,
-                    style: GoogleFonts.inter(fontSize: 14, color: p.muted),
+                    style: GoogleFonts.manrope(fontSize: 14, color: p.muted),
                   ),
                 ],
               ),
@@ -147,7 +148,7 @@ class _NotifTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.title,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: p.text,
@@ -156,14 +157,14 @@ class _NotifTile extends StatelessWidget {
                         ),
                         Text(
                           item.time,
-                          style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                          style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.body,
-                      style: GoogleFonts.inter(fontSize: 12.5, color: p.muted, height: 1.35),
+                      style: GoogleFonts.manrope(fontSize: 12.5, color: p.muted, height: 1.35),
                     ),
                   ],
                 ),

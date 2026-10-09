@@ -183,7 +183,7 @@ class _IncomeCard extends StatelessWidget {
                   'Доход платформы',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text),
+                  style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text),
                 ),
               ),
               const SizedBox(width: 8),
@@ -195,9 +195,9 @@ class _IncomeCard extends StatelessWidget {
                     value: period,
                     isDense: true,
                     iconSize: 18,
-                    style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.text),
+                    style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.text),
                     items: ['Сегодня', 'Неделя', 'Месяц']
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.inter(fontSize: 12))))
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.manrope(fontSize: 12))))
                         .toList(),
                     onChanged: (v) {
                       if (v != null) onPeriod(v);
@@ -240,14 +240,14 @@ class _IncomeCard extends StatelessWidget {
     final col = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(label, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 4),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AdminTheme.text)),
+          child: Text(value, style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: AdminTheme.text)),
         ),
-        Text(change, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: pos ? AdminTheme.green : AdminTheme.red)),
+        Text(change, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: pos ? AdminTheme.green : AdminTheme.red)),
       ],
     );
     return expanded ? Expanded(child: col) : col;
@@ -272,9 +272,9 @@ class _RecentOrdersPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Последние заказы', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+              Text('Последние заказы', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
               const Spacer(),
-              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
+              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
             ],
           ),
           const SizedBox(height: 8),
@@ -292,7 +292,7 @@ class _RecentOrdersPanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: on ? AdminTheme.green : AdminTheme.border),
                   ),
-                  child: Text(_tabs[i], style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: on ? AdminTheme.green : AdminTheme.muted)),
+                  child: Text(_tabs[i], style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: on ? AdminTheme.green : AdminTheme.muted)),
                 ),
               );
             }),
@@ -302,13 +302,13 @@ class _RecentOrdersPanel extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    SizedBox(width: 72, child: Text(o.id, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: AdminTheme.text))),
-                    Expanded(flex: 2, child: Text(o.client, style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.text), overflow: TextOverflow.ellipsis)),
-                    Expanded(flex: 2, child: Text(o.master, style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.muted), overflow: TextOverflow.ellipsis)),
-                    Expanded(flex: 2, child: Text(o.service, style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.muted), overflow: TextOverflow.ellipsis)),
+                    SizedBox(width: 72, child: Text(o.id, style: GoogleFonts.manrope(fontSize: 11.5, fontWeight: FontWeight.w600, color: AdminTheme.text))),
+                    Expanded(flex: 2, child: Text(o.client, style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.text), overflow: TextOverflow.ellipsis)),
+                    Expanded(flex: 2, child: Text(o.master, style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.muted), overflow: TextOverflow.ellipsis)),
+                    Expanded(flex: 2, child: Text(o.service, style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.muted), overflow: TextOverflow.ellipsis)),
                     AdminStatusBadge(status: o.status),
                     const SizedBox(width: 8),
-                    Text(o.date, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted)),
+                    Text(o.date, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted)),
                   ],
                 ),
               )),
@@ -332,9 +332,9 @@ class _MastersPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Мастера', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+              Text('Мастера', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
               const Spacer(),
-              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
+              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
             ],
           ),
           const SizedBox(height: 12),
@@ -348,21 +348,21 @@ class _MastersPanel extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(m.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
-                          Text(m.specialization, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted)),
+                          Text(m.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                          Text(m.specialization, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted)),
                         ],
                       ),
                     ),
-                    Text('${m.orders}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text('${m.orders}', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 12),
                     Row(
                       children: [
                         const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107)),
-                        Text(m.rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(m.rating.toStringAsFixed(1), style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700)),
                       ],
                     ),
                     const SizedBox(width: 12),
-                    Text('${formatMoney(m.income)} с.', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AdminTheme.green)),
+                    Text('${formatMoney(m.income)} с.', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: AdminTheme.green)),
                     const SizedBox(width: 8),
                     AdminMasterBadge(status: m.status),
                   ],
@@ -388,9 +388,9 @@ class _ChatsPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Чаты', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+              Text('Чаты', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: AdminTheme.text)),
               const Spacer(),
-              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
+              TextButton(onPressed: onOpen, child: Text('Все', style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.green, fontWeight: FontWeight.w600))),
             ],
           ),
           const SizedBox(height: 8),
@@ -401,22 +401,22 @@ class _ChatsPanel extends StatelessWidget {
                     CircleAvatar(
                       radius: 18,
                       backgroundColor: AdminTheme.green.withValues(alpha: 0.15),
-                      child: Text(c.avatar, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AdminTheme.green)),
+                      child: Text(c.avatar, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: AdminTheme.green)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(c.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
-                          Text(c.lastMessage, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(c.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700)),
+                          Text(c.lastMessage, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(c.time, style: GoogleFonts.inter(fontSize: 10, color: AdminTheme.muted)),
+                        Text(c.time, style: GoogleFonts.manrope(fontSize: 10, color: AdminTheme.muted)),
                         if (c.unread > 0)
                           Container(
                             margin: const EdgeInsets.only(top: 4),
@@ -424,7 +424,7 @@ class _ChatsPanel extends StatelessWidget {
                             height: 18,
                             alignment: Alignment.center,
                             decoration: const BoxDecoration(color: AdminTheme.green, shape: BoxShape.circle),
-                            child: Text('${c.unread}', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                            child: Text('${c.unread}', style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
                           ),
                       ],
                     ),

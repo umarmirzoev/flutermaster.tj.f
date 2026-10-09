@@ -12,13 +12,15 @@ import '../theme/admin_theme.dart';
 import 'widgets/admin_badges.dart';
 import 'widgets/admin_charts.dart';
 import 'widgets/admin_data_builder.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
 class AdminOrdersPage extends ConsumerWidget {
-  const AdminOrdersPage({super.key, this.statusFilter});
+  const AdminOrdersPage({super.key, this.statusFilter, this.sosOnly = false});
 
   final AdminOrderStatus? statusFilter;
+  final bool sosOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,8 +34,9 @@ class AdminOrdersPage extends ConsumerWidget {
       status: statusFilter,
       query: query,
       resolveStatus: resolveStatus,
+      sosOnly: sosOnly,
     );
-    final title = switch (statusFilter) {
+    final title = sosOnly ? 'SOS заказы' : switch (statusFilter) {
       AdminOrderStatus.newOrder => 'Новые заказы',
       AdminOrderStatus.inProgress => 'Заказы в работе',
       AdminOrderStatus.completed => 'Выполненные заказы',
@@ -56,7 +59,7 @@ class AdminOrdersPage extends ConsumerWidget {
             Text(o.id, style: _cellStyle(bold: true)),
             Text(o.client, style: _cellStyle()),
             Text(o.master, style: _cellStyle(muted: true)),
-            Text(o.service, style: _cellStyle(muted: true)),
+            Text(o.service, style: o.isSos ? _cellStyle(bold: true, color: const Color(0xFFDC2626)) : _cellStyle(muted: true)),
             Text('${formatMoney(o.amount)} с.', style: _cellStyle(bold: true)),
             workflowEntry != null
                 ? AdminWorkflowStatusBadge(statusCode: workflowEntry.statusCode)
@@ -193,7 +196,7 @@ class AdminClientsPage extends ConsumerWidget {
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(12)),
-                    child: Text('VIP', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFFB45309))),
+                    child: Text('VIP', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFFB45309))),
                   )
                 : Text('Обычный', style: _cellStyle(muted: true)),
           ];
@@ -228,7 +231,7 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
     return AdminDataBuilder(
       builder: (context, data) {
     if (data.chats.isEmpty) {
-      return _AdminPageScaffold(title: 'Чаты', count: 0, child: AdminCard(child: Padding(padding: const EdgeInsets.all(24), child: Text('Чатов нет.', style: GoogleFonts.inter(color: AdminTheme.muted)))));
+      return _AdminPageScaffold(title: 'Чаты', count: 0, child: AdminCard(child: Padding(padding: const EdgeInsets.all(24), child: Text('Чатов нет.', style: GoogleFonts.manrope(color: AdminTheme.muted)))));
     }
     final selected = ref.watch(adminUiProvider).selectedChatId ?? data.chats.first.id;
     final chat = data.chats.firstWhere((c) => c.id == selected, orElse: () => data.chats.first);
@@ -244,7 +247,7 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Чаты', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text('Чаты', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 12),
                   ...data.chats.map((c) {
                     final on = c.id == selected;
@@ -264,15 +267,15 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
                             CircleAvatar(
                               radius: 18,
                               backgroundColor: AdminTheme.green.withValues(alpha: 0.15),
-                              child: Text(c.avatar, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AdminTheme.green)),
+                              child: Text(c.avatar, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: AdminTheme.green)),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(c.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
-                                  Text(c.lastMessage, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(c.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 13)),
+                                  Text(c.lastMessage, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 ],
                               ),
                             ),
@@ -282,7 +285,7 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
                                 height: 20,
                                 alignment: Alignment.center,
                                 decoration: const BoxDecoration(color: AdminTheme.green, shape: BoxShape.circle),
-                                child: Text('${c.unread}', style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700)),
+                                child: Text('${c.unread}', style: GoogleFonts.manrope(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700)),
                               ),
                           ],
                         ),
@@ -300,7 +303,7 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Чат с ${chat.name}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text('Чат с ${chat.name}', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 16),
                   Expanded(
                     child: ListView(
@@ -358,7 +361,7 @@ class _AdminChatsPageState extends ConsumerState<AdminChatsPage> {
           color: admin ? AdminTheme.green : AdminTheme.pageBg,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(text, style: GoogleFonts.inter(fontSize: 13, color: admin ? Colors.white : AdminTheme.text)),
+        child: Text(text, style: GoogleFonts.manrope(fontSize: 13, color: admin ? Colors.white : AdminTheme.text)),
       ),
     );
   }
@@ -394,7 +397,7 @@ class AdminReviewsPage extends ConsumerWidget {
             Expanded(child: Text(r.text, style: _cellStyle(), maxLines: 2, overflow: TextOverflow.ellipsis)),
             Text(r.date, style: _cellStyle(muted: true)),
             r.flagged
-                ? Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(12)), child: Text('Жалоба', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AdminTheme.red)))
+                ? Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(12)), child: Text('Жалоба', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: AdminTheme.red)))
                 : Text('Опубликован', style: _cellStyle(muted: true)),
           ];
         }).toList(),
@@ -541,14 +544,14 @@ class _AdminSettingsPageState extends ConsumerState<AdminSettingsPage> {
               _settingRow('Push-уведомления', Switch(value: s.pushNotifications, onChanged: (v) => store.updateSettings(SaPlatformSettings(maintenance: s.maintenance, registrations: s.registrations, commissionPercent: s.commissionPercent, pushNotifications: v, autoApproveMasters: s.autoApproveMasters)), activeThumbColor: AdminTheme.green)),
               _settingRow('Авто-одобрение мастеров', Switch(value: s.autoApproveMasters, onChanged: (v) => store.updateSettings(SaPlatformSettings(maintenance: s.maintenance, registrations: s.registrations, commissionPercent: s.commissionPercent, pushNotifications: s.pushNotifications, autoApproveMasters: v)), activeThumbColor: AdminTheme.green)),
               const SizedBox(height: 12),
-              Text('Комиссия платформы: ${s.commissionPercent}%', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text('Комиссия платформы: ${s.commissionPercent}%', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
             ],
             if (widget.section == 'categories') ...[
               if (data.categories.isEmpty) const Text('Категорий нет'),
               for (final cat in data.categories)
                 ListTile(
                   leading: const Icon(LucideIcons.wrench, size: 18, color: AdminTheme.green),
-                  title: Text(cat.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  title: Text(cat.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
                   subtitle: Text('${cat.productCount} товаров'),
                   trailing: Switch(value: cat.active, onChanged: (v) => store.updateCategory(cat.id, active: v), activeThumbColor: AdminTheme.green),
                 ),
@@ -557,7 +560,7 @@ class _AdminSettingsPageState extends ConsumerState<AdminSettingsPage> {
               if (data.coupons.isEmpty) const Text('Промокодов нет'),
               for (final promo in data.coupons)
                 ListTile(
-                  title: Text(promo.code, style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+                  title: Text(promo.code, style: GoogleFonts.manrope(fontWeight: FontWeight.w800)),
                   subtitle: Text('${promo.description} · ${promo.discountPercent}%'),
                   trailing: Switch(value: promo.active, onChanged: (v) => store.updateCoupon(promo.id, active: v), activeThumbColor: AdminTheme.green),
                 ),
@@ -581,7 +584,7 @@ class _AdminSettingsPageState extends ConsumerState<AdminSettingsPage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(label, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600))),
           trailing,
         ],
       ),
@@ -604,12 +607,12 @@ class AdminSupportPage extends ConsumerWidget {
       title: 'Поддержка',
       count: tickets.length,
       child: tickets.isEmpty
-          ? AdminCard(child: Padding(padding: const EdgeInsets.all(24), child: Text('Обращений нет.', style: GoogleFonts.inter(color: AdminTheme.muted))))
+          ? AdminCard(child: Padding(padding: const EdgeInsets.all(24), child: Text('Обращений нет.', style: GoogleFonts.manrope(color: AdminTheme.muted))))
           : AdminCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Обращения пользователей', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+            Text('Обращения пользователей', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
             for (final ticket in tickets)
               Padding(
@@ -630,7 +633,7 @@ class AdminSupportPage extends ConsumerWidget {
                           color: ticket.status == 'Открыт' ? const Color(0xFFFEE2E2) : ticket.status == 'В работе' ? const Color(0xFFFEF3C7) : const Color(0xFFD1FAE5),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(ticket.status, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
+                        child: Text(ticket.status, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -663,13 +666,13 @@ class _AdminPageScaffold extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AdminTheme.text)),
+              Text(title, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: AdminTheme.text)),
               if (count != null) ...[
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: AdminTheme.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                  child: Text('$count', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AdminTheme.green)),
+                  child: Text('$count', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: AdminTheme.green)),
                 ),
               ],
             ],
@@ -698,7 +701,7 @@ class _DataTable extends StatelessWidget {
               for (final col in columns)
                 Expanded(
                   flex: col == 'Действия' ? 2 : 3,
-                  child: Text(col, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AdminTheme.muted)),
+                  child: Text(col, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: AdminTheme.muted)),
                 ),
             ],
           ),
@@ -706,20 +709,30 @@ class _DataTable extends StatelessWidget {
           if (rows.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
-              child: Text('Нет данных', style: GoogleFonts.inter(color: AdminTheme.muted)),
+              child: Text('Нет данных', style: GoogleFonts.manrope(color: AdminTheme.muted)),
             )
           else
-            ...rows.map((row) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < row.length; i++)
-                        Expanded(
-                          flex: columns[i] == 'Действия' ? 2 : 3,
-                          child: row[i],
-                        ),
-                    ],
+            ...rows.map((row) => HoverLift(
+                  cursor: SystemMouseCursors.basic,
+                  builder: (context, hovering) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 130),
+                    curve: Curves.easeOut,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: hovering ? AdminTheme.pageBg : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < row.length; i++)
+                          Expanded(
+                            flex: columns[i] == 'Действия' ? 2 : 3,
+                            child: row[i],
+                          ),
+                      ],
+                    ),
                   ),
                 )),
         ],
@@ -729,7 +742,7 @@ class _DataTable extends StatelessWidget {
 }
 
 TextStyle _cellStyle({bool bold = false, bool muted = false, Color? color}) {
-  return GoogleFonts.inter(
+  return GoogleFonts.manrope(
     fontSize: 12.5,
     fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
     color: color ?? (muted ? AdminTheme.muted : AdminTheme.text),
@@ -747,7 +760,7 @@ Widget _actionBtn(String label, Color color, VoidCallback onTap) {
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700)),
+      child: Text(label, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700)),
     ),
   );
 }
@@ -761,7 +774,7 @@ Widget _masterAvatar(AdminMaster master) {
     backgroundColor: AdminTheme.green.withValues(alpha: 0.15),
     child: Text(
       master.avatar.isNotEmpty ? master.avatar : '?',
-      style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AdminTheme.green, fontSize: 12),
+      style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: AdminTheme.green, fontSize: 12),
     ),
   );
 }

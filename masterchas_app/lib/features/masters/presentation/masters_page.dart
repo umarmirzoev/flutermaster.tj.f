@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_design.dart';
+import '../../../core/widgets/motion.dart';
 
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/l10n/home_strings.dart';
@@ -84,20 +87,39 @@ class _MastersPageState extends ConsumerState<MastersPage> {
         top: false,
         child: Column(
           children: [
-            _Header(s: s, p: p, mastersCount: allMasters.length),
-            _FilterChips(
-              s: s,
-              p: p,
-              locale: locale,
-              selected: _filter,
-              onSelect: (v) => setState(() => _filter = v),
+            Reveal(
+              offsetY: -18,
+              duration: const Duration(milliseconds: 550),
+              child: _Header(s: s, p: p, mastersCount: allMasters.length),
+            ),
+            const SizedBox(height: 14),
+            Reveal(
+              delay: const Duration(milliseconds: 120),
+              offsetY: 12,
+              child: _FilterChips(
+                s: s,
+                p: p,
+                locale: locale,
+                selected: _filter,
+                onSelect: (v) => setState(() => _filter = v),
+              ),
             ),
             const SizedBox(height: 4),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  _AiPickCard(s: s, p: p, onPick: () => showAiMasterPickerSheet(context)),
+                  Reveal(
+                    delay: const Duration(milliseconds: 200),
+                    child: HoverLift(
+                      glowColor: AppDesign.accentPurple,
+                      child: ShineSweep(
+                        delay: const Duration(milliseconds: 900),
+                        radius: 16,
+                        child: _AiPickCard(s: s, p: p, onPick: () => showAiMasterPickerSheet(context)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   if (list.isEmpty)
                     Padding(
@@ -109,7 +131,7 @@ class _MastersPageState extends ConsumerState<MastersPage> {
                             const SizedBox(height: 12),
                             Text(
                               s.nothingFoundMasters,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: p.muted,
@@ -123,9 +145,13 @@ class _MastersPageState extends ConsumerState<MastersPage> {
                     ...list.asMap().entries.map(
                       (entry) => Padding(
                         padding: const EdgeInsets.only(bottom: 14),
-                        child: FadeSlideIn(
-                          delay: Duration(milliseconds: 60 * (entry.key % 8)),
-                          child: _MasterListCard(
+                        child: Reveal(
+                          key: ValueKey('${_filter ?? 'all'}-${entry.value.fullName}'),
+                          delay: Duration(milliseconds: 260 + 70 * (entry.key % 8)),
+                          child: HoverLift(
+                            radius: 16,
+                            scale: 1.015,
+                            child: _MasterListCard(
                             m: entry.value,
                             s: s,
                             p: p,
@@ -134,6 +160,7 @@ class _MastersPageState extends ConsumerState<MastersPage> {
                             onFav: () => ref.read(masterFavoritesProvider.notifier).toggle(entry.value.fullName),
                             onOpen: () => _openDetail(entry.value),
                             onCall: () => _showCall(entry.value, s),
+                          ),
                           ),
                         ),
                       ),
@@ -149,7 +176,7 @@ class _MastersPageState extends ConsumerState<MastersPage> {
 
   void _openDetail(MasterItem m) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => MasterDetailPage(
           master: m,
           selectedService: widget.initialService,
@@ -158,7 +185,11 @@ class _MastersPageState extends ConsumerState<MastersPage> {
     );
   }
 
-  void _showCall(MasterItem m, HomeStrings s) {
+  /// Звонок мастеру через единый номер (личные номера мастеров клиентам не показываем).
+  Future<void> _showCall(MasterItem m, HomeStrings s) async {
+    const digits = AppConfig.masterHotline;
+    final ok = digits.length >= 9 && await launchUrl(Uri(scheme: 'tel', path: digits));
+    if (ok || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: brandGreen,
@@ -169,8 +200,8 @@ class _MastersPageState extends ConsumerState<MastersPage> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '${m.fullName} · ${m.phone}',
-                style: GoogleFonts.inter(
+                '${m.fullName} · ${AppConfig.masterHotlineLabel}',
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -193,6 +224,54 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+      child: Stack(
+        children: [
+          _buildHeader(context),
+          Positioned(
+            right: -40,
+            top: -30,
+            child: IgnorePointer(
+              child: FloatY(
+                amplitude: 6,
+                period: const Duration(milliseconds: 4200),
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -24,
+            bottom: -36,
+            child: IgnorePointer(
+              child: FloatY(
+                amplitude: 5,
+                phase: 0.5,
+                period: const Duration(milliseconds: 3600),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 12, 16, 20),
       decoration: BoxDecoration(
@@ -230,13 +309,13 @@ class _Header extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 s.mastersWord,
-                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const Spacer(),
               _BellButton(
                 p: p,
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const ClientNotificationsPage()),
+                  SmoothRoute<void>(builder: (_) => const ClientNotificationsPage()),
                 ),
               ),
             ],
@@ -245,11 +324,26 @@ class _Header extends StatelessWidget {
           // Stats row
           Row(
             children: [
-              Expanded(child: _stat(LucideIcons.users, '$mastersCount', s.mastersCountSuffix)),
+              Expanded(
+                child: Reveal(
+                  delay: const Duration(milliseconds: 150),
+                  child: _stat(LucideIcons.users, '$mastersCount', s.mastersCountSuffix, count: mastersCount.toDouble()),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _stat(LucideIcons.star, '4.8', s.statRatingShort)),
+              Expanded(
+                child: Reveal(
+                  delay: const Duration(milliseconds: 230),
+                  child: _stat(LucideIcons.star, '4.8', s.statRatingShort, count: 4.8, decimals: 1),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _stat(LucideIcons.clock, '15 ${s.minShort}', s.statReplyShort)),
+              Expanded(
+                child: Reveal(
+                  delay: const Duration(milliseconds: 310),
+                  child: _stat(LucideIcons.clock, '15 ${s.minShort}', s.statReplyShort, count: 15, suffix: ' ${s.minShort}'),
+                ),
+              ),
             ],
           ),
         ],
@@ -257,8 +351,19 @@ class _Header extends StatelessWidget {
     );
   }
 
-  Widget _stat(IconData icon, String value, String label) {
-    return Container(
+  Widget _stat(
+    IconData icon,
+    String value,
+    String label, {
+    double? count,
+    int decimals = 0,
+    String suffix = '',
+  }) {
+    return HoverLift(
+      radius: 14,
+      scale: 1.05,
+      glowColor: Colors.white,
+      child: Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
@@ -267,18 +372,30 @@ class _Header extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 18, color: Colors.white),
+          FloatY(amplitude: 1.5, child: Icon(icon, size: 18, color: Colors.white)),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
-          ),
+          // Цифры «набегают» от нуля
+          count == null
+              ? Text(
+                  value,
+                  style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+                )
+              : TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: count),
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, v, __) => Text(
+                    '${v.toStringAsFixed(decimals)}$suffix',
+                    style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                ),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 10, color: Colors.white.withValues(alpha: 0.85)),
+            style: GoogleFonts.manrope(fontSize: 10, color: Colors.white.withValues(alpha: 0.85)),
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -323,7 +440,7 @@ class _BellButton extends StatelessWidget {
               ),
               child: Text(
                 '3',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -364,16 +481,25 @@ class _FilterChips extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 40,
+      height: 52,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: chips.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final (key, label, icon) = chips[i];
           final on = key == selected;
-          return Material(
+          return Reveal(
+            delay: Duration(milliseconds: 140 + i * 60),
+            offsetY: 0,
+            offsetX: 20,
+            child: HoverLift(
+              radius: 20,
+              scale: 1.06,
+              lift: 2,
+              child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
@@ -409,7 +535,7 @@ class _FilterChips extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       label,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: on ? Colors.white : p.text,
@@ -418,6 +544,8 @@ class _FilterChips extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ),
             ),
           );
         },
@@ -456,7 +584,7 @@ class _AiPickCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       s.aiPickBadge,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: brandGreen,
@@ -467,7 +595,7 @@ class _AiPickCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   s.aiPickTitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: p.text,
@@ -477,7 +605,7 @@ class _AiPickCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   s.aiPickSub,
-                  style: GoogleFonts.inter(fontSize: 11, color: p.muted, height: 1.35),
+                  style: GoogleFonts.manrope(fontSize: 11, color: p.muted, height: 1.35),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -494,7 +622,7 @@ class _AiPickCard extends StatelessWidget {
                     icon: const Icon(LucideIcons.sparkles, size: 16),
                     label: Text(
                       s.aiPickBtn,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -578,7 +706,7 @@ class _MasterListCard extends StatelessWidget {
                         children: [
                           Text(
                             '${s.fromPrice} ${_money(m.priceMin)} ${s.priceUnit}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: brandGreen,
@@ -657,7 +785,7 @@ class _Photo extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       s.onlineWord,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -707,7 +835,7 @@ class _Info extends StatelessWidget {
                       m.fullName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: p.text,
@@ -725,7 +853,7 @@ class _Info extends StatelessWidget {
             const SizedBox(width: 2),
             Text(
               m.rating.toStringAsFixed(1),
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: p.text),
             ),
           ],
         ),
@@ -737,7 +865,7 @@ class _Info extends StatelessWidget {
                 m.profession(locale),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: brandGreen,
@@ -746,7 +874,7 @@ class _Info extends StatelessWidget {
             ),
             Text(
               '(${m.reviews} ${s.reviewsWord})',
-              style: GoogleFonts.inter(fontSize: 10.5, color: p.muted),
+              style: GoogleFonts.manrope(fontSize: 10.5, color: p.muted),
             ),
           ],
         ),
@@ -771,7 +899,7 @@ class _Info extends StatelessWidget {
           '${s.expWord} ${m.experienceYears}+ ${s.yearsShort}  ·  ${s.completedWord}: ${m.completedOrders}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(fontSize: 10.5, color: p.muted),
+          style: GoogleFonts.manrope(fontSize: 10.5, color: p.muted),
         ),
         const SizedBox(height: 8),
         Row(
@@ -870,7 +998,7 @@ class _Tag extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
+            style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
           ),
         ],
       ),
@@ -901,7 +1029,7 @@ class _ChatBtn extends StatelessWidget {
         icon: const Icon(LucideIcons.message_circle, size: 15),
         label: Text(
           s.chatBtn,
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -929,7 +1057,7 @@ class _CallBtn extends StatelessWidget {
         icon: const Icon(LucideIcons.phone, size: 15),
         label: Text(
           s.callBtn,
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
     );

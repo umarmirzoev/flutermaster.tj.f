@@ -30,20 +30,20 @@ class ServiceOrdersPage extends ConsumerWidget {
             : _ShopOrdersList(orders: shopOrders, catalog: catalog, p: p),
         error: (_, __) => shopOrders.isEmpty
             ? Center(
-                child: Text('Не удалось загрузить заказы', style: GoogleFonts.inter(color: p.muted)),
+                child: Text('Не удалось загрузить заказы', style: GoogleFonts.manrope(color: p.muted)),
               )
             : _ShopOrdersList(orders: shopOrders, catalog: catalog, p: p),
         data: (apiOrders) {
           if (apiOrders.isEmpty && shopOrders.isEmpty) {
             return Center(
-              child: Text('Заказов пока нет', style: GoogleFonts.inter(color: p.muted)),
+              child: Text('Заказов пока нет', style: GoogleFonts.manrope(color: p.muted)),
             );
           }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               if (apiOrders.isNotEmpty) ...[
-                Text('Услуги', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
+                Text('Услуги', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
                 const SizedBox(height: 10),
                 ...apiOrders.map((o) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -52,7 +52,7 @@ class ServiceOrdersPage extends ConsumerWidget {
               ],
               if (shopOrders.isNotEmpty) ...[
                 if (apiOrders.isNotEmpty) const SizedBox(height: 8),
-                Text('Магазин', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
+                Text('Магазин', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
                 const SizedBox(height: 10),
                 ...shopOrders.map((o) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -118,14 +118,14 @@ class _ShopOrderCard extends StatelessWidget {
                   products.isEmpty ? 'Заказ из магазина' : products,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                  style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                 ),
               ),
               _StatusChip(status: order.status),
             ],
           ),
           const SizedBox(height: 6),
-          Text(date, style: GoogleFonts.inter(fontSize: 12, color: p.muted)),
+          Text(date, style: GoogleFonts.manrope(fontSize: 12, color: p.muted)),
           if (order.address.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
@@ -133,7 +133,7 @@ class _ShopOrderCard extends StatelessWidget {
                 const Icon(LucideIcons.map_pin, size: 14, color: brandGreen),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(order.address, style: GoogleFonts.inter(fontSize: 12, color: p.muted)),
+                  child: Text(order.address, style: GoogleFonts.manrope(fontSize: 12, color: p.muted)),
                 ),
               ],
             ),
@@ -141,7 +141,7 @@ class _ShopOrderCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '${shopMoney(order.total)} с.',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: brandGreen),
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: brandGreen),
           ),
         ],
       ),
@@ -172,7 +172,7 @@ class _OrderCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   order.title,
-                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                  style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                 ),
               ),
               _StatusChip(status: order.statusCode?.toString() ?? order.status),
@@ -185,7 +185,7 @@ class _OrderCard extends StatelessWidget {
                 const Icon(LucideIcons.map_pin, size: 14, color: brandGreen),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(order.address, style: GoogleFonts.inter(fontSize: 12, color: p.muted)),
+                  child: Text(order.address, style: GoogleFonts.manrope(fontSize: 12, color: p.muted)),
                 ),
               ],
             ),
@@ -193,7 +193,7 @@ class _OrderCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '${order.payableAmount?.toStringAsFixed(0) ?? order.price.toStringAsFixed(0)} с.',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: brandGreen),
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: brandGreen),
           ),
         ],
       ),
@@ -218,7 +218,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status == 'Новый' ? 'Новый' : resolved.label,
-        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: resolved.color),
+        style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: resolved.color),
       ),
     );
   }

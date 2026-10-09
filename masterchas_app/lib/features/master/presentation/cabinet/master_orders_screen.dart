@@ -100,7 +100,7 @@ class _OrdersList extends ConsumerWidget {
             if (i > 0) const SizedBox(height: 16),
             Text(
               sections[i].title,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: masterNavy,
@@ -148,7 +148,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               active ? 'Нет активных заказов' : 'Пока нет заказов',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: masterNavy,

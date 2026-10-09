@@ -1,4 +1,4 @@
-package tj.masterchas.masterchas_app
+package tj.masterchas.app
 
 import io.flutter.embedding.android.FlutterActivity
 

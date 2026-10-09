@@ -17,6 +17,7 @@ final adminMenuItems = <AdminMenuItem>[
     route: '/admin/orders',
     children: [
       const AdminMenuChild(label: 'Все заказы', route: '/admin/orders'),
+      const AdminMenuChild(label: 'SOS', route: '/admin/orders/sos'),
       const AdminMenuChild(label: 'Новые', route: '/admin/orders/new'),
       const AdminMenuChild(label: 'В работе', route: '/admin/orders/in-progress'),
       const AdminMenuChild(label: 'Выполнено', route: '/admin/orders/completed'),

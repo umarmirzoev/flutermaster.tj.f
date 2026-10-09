@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_locale.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/l10n/home_strings.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../home/presentation/home_palette.dart';
@@ -41,35 +42,72 @@ class MasterDetailPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _NameBlock(m: m, s: s, p: p, locale: locale),
+                  Reveal(
+                    delay: const Duration(milliseconds: 220),
+                    child: _NameBlock(m: m, s: s, p: p, locale: locale),
+                  ),
                   const SizedBox(height: 16),
-                  _StatsRow(m: m, s: s, p: p, onReviews: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => MasterReviewsPage(master: m),
+                  Reveal(
+                    delay: const Duration(milliseconds: 300),
+                    child: _StatsRow(m: m, s: s, p: p, onReviews: () {
+                      Navigator.of(context).push(
+                        SmoothRoute<void>(
+                          builder: (_) => MasterReviewsPage(master: m),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 20),
+                  Reveal(
+                    delay: const Duration(milliseconds: 380),
+                    child: _Section(title: s.aboutTitle, p: p, child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: p.cardBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border(left: BorderSide(color: brandGreen, width: 3)),
                       ),
-                    );
-                  }),
-                  const SizedBox(height: 18),
-                  _Section(title: s.aboutTitle, p: p, child: Text(
-                    m.bio,
-                    style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.5),
-                  )),
-                  const SizedBox(height: 18),
-                  _PortfolioGallery(m: m, p: p),
-                  const SizedBox(height: 18),
-                  _ServicesPrices(m: m, s: s, p: p, locale: locale),
-                  const SizedBox(height: 18),
-                  _Section(
+                      child: Text(
+                        m.bio,
+                        style: GoogleFonts.manrope(fontSize: 13.5, color: p.text, height: 1.55),
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 20),
+                  Reveal(
+                    delay: const Duration(milliseconds: 460),
+                    child: _PortfolioGallery(m: m, p: p),
+                  ),
+                  const SizedBox(height: 20),
+                  Reveal(
+                    delay: const Duration(milliseconds: 540),
+                    child: _ServicesPrices(m: m, s: s, p: p, locale: locale),
+                  ),
+                  const SizedBox(height: 20),
+                  Reveal(
+                    delay: const Duration(milliseconds: 620),
+                    child: _Section(
                     title: s.districtsTitle,
                     p: p,
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: m.districts
-                          .map((d) => _Pill(label: d, icon: LucideIcons.map_pin, p: p))
-                          .toList(),
+                      children: [
+                        for (final (i, d) in m.districts.indexed)
+                          Reveal(
+                            delay: Duration(milliseconds: 680 + i * 60),
+                            offsetY: 10,
+                            child: HoverLift(
+                              radius: 20,
+                              scale: 1.06,
+                              lift: 2,
+                              child: _Pill(label: d, icon: LucideIcons.map_pin, p: p),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
                   ),
                 ],
               ),
@@ -104,9 +142,15 @@ class _PhotoHeader extends StatelessWidget {
         children: [
           Hero(
             tag: 'master-photo-${m.fullName}',
-            child: m.imageBytes != null
-                ? Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
-                : Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.12, end: 1.0),
+              duration: const Duration(milliseconds: 1400),
+              curve: Curves.easeOutCubic,
+              builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+              child: m.imageBytes != null
+                  ? Image.memory(m.imageBytes!, fit: BoxFit.cover, alignment: Alignment.topCenter)
+                  : Image.asset(m.image, fit: BoxFit.cover, alignment: Alignment.topCenter),
+            ),
           ),
           Container(
             decoration: BoxDecoration(
@@ -126,6 +170,7 @@ class _PhotoHeader extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Material(
                     color: Colors.black.withValues(alpha: 0.35),
@@ -150,7 +195,11 @@ class _PhotoHeader extends StatelessWidget {
             Positioned(
               left: 16,
               bottom: 14,
-              child: Container(
+              child: Reveal(
+                delay: const Duration(milliseconds: 450),
+                offsetY: 0,
+                offsetX: -20,
+                child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: brandGreen,
@@ -159,15 +208,11 @@ class _PhotoHeader extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 6),
+                    const LiveDot(),
+                    const SizedBox(width: 4),
                     Text(
                       s.onlineWord,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -175,6 +220,7 @@ class _PhotoHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
               ),
             ),
         ],
@@ -202,7 +248,7 @@ class _NameBlock extends ConsumerWidget {
             Flexible(
               child: Text(
                 m.fullName,
-                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
               ),
             ),
             const SizedBox(width: 6),
@@ -212,7 +258,7 @@ class _NameBlock extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           m.categoriesLabel(locale),
-          style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: brandGreen),
+          style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w600, color: brandGreen),
         ),
         const SizedBox(height: 8),
         Row(
@@ -221,12 +267,12 @@ class _NameBlock extends ConsumerWidget {
             const SizedBox(width: 4),
             Text(
               stats.averageRating.toStringAsFixed(1),
-              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
             ),
             const SizedBox(width: 4),
             Text(
               '(${stats.count} ${s.reviewsWord})',
-              style: GoogleFonts.inter(fontSize: 12.5, color: p.muted),
+              style: GoogleFonts.manrope(fontSize: 12.5, color: p.muted),
             ),
             const SizedBox(width: 10),
             if (m.isTop)
@@ -243,7 +289,7 @@ class _NameBlock extends ConsumerWidget {
                     const SizedBox(width: 3),
                     Text(
                       s.badgeTop,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFFB7791F),
@@ -286,23 +332,26 @@ class _StatsRow extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 20, color: brandGreen),
+            FloatY(amplitude: 1.5, child: Icon(icon, size: 20, color: brandGreen)),
             const SizedBox(height: 6),
             Text(
               value,
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 10, color: p.muted, height: 1.2),
+              style: GoogleFonts.manrope(fontSize: 10, color: p.muted, height: 1.2),
             ),
           ],
         ),
       );
       return Expanded(
-        child: onTap == null
+        child: HoverLift(
+          radius: 14,
+          scale: 1.05,
+          child: onTap == null
             ? child
             : Material(
                 color: Colors.transparent,
@@ -312,6 +361,7 @@ class _StatsRow extends ConsumerWidget {
                   child: child,
                 ),
               ),
+        ),
       );
     }
 
@@ -346,7 +396,7 @@ class _Section extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
         ),
         const SizedBox(height: 10),
         child,
@@ -378,7 +428,7 @@ class _PortfolioGallery extends StatelessWidget {
           children: [
             Text(
               'Портфолио работ',
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
             ),
             const SizedBox(width: 8),
             Container(
@@ -389,7 +439,7 @@ class _PortfolioGallery extends StatelessWidget {
               ),
               child: Text(
                 '${images.length}',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: brandGreen),
+                style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w800, color: brandGreen),
               ),
             ),
           ],
@@ -402,7 +452,14 @@ class _PortfolioGallery extends StatelessWidget {
             itemCount: images.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, i) {
-              return GestureDetector(
+              return Reveal(
+                delay: Duration(milliseconds: 500 + i * 80),
+                offsetY: 0,
+                offsetX: 24,
+                child: HoverLift(
+                radius: 16,
+                scale: 1.05,
+                child: GestureDetector(
                 onTap: () => _openFullscreen(context, images, i),
                 child: Hero(
                   tag: 'portfolio-${m.fullName}-$i',
@@ -429,6 +486,8 @@ class _PortfolioGallery extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+              ),
               );
             },
           ),
@@ -453,7 +512,7 @@ class _PortfolioGallery extends StatelessWidget {
   }
 }
 
-class _FullscreenGallery extends StatelessWidget {
+class _FullscreenGallery extends StatefulWidget {
   const _FullscreenGallery({
     required this.images,
     required this.initialIndex,
@@ -467,8 +526,24 @@ class _FullscreenGallery extends StatelessWidget {
   final dynamic imageBytes;
 
   @override
+  State<_FullscreenGallery> createState() => _FullscreenGalleryState();
+}
+
+class _FullscreenGalleryState extends State<_FullscreenGallery> {
+  late final PageController controller = PageController(initialPage: widget.initialIndex);
+
+  List<String> get images => widget.images;
+  String get heroPrefix => widget.heroPrefix;
+  dynamic get imageBytes => widget.imageBytes;
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = PageController(initialPage: initialIndex);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -533,7 +608,7 @@ class _ServicesPrices extends StatelessWidget {
       children: [
         Text(
           s.servicesPricesTitle,
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
         ),
         const SizedBox(height: 12),
         for (final cat in cats) ...[
@@ -588,12 +663,12 @@ class _CategoryServices extends StatelessWidget {
                 Expanded(
                   child: Text(
                     cat.name(locale),
-                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w800, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 14.5, fontWeight: FontWeight.w800, color: p.text),
                   ),
                 ),
                 Text(
                   '${cat.services.length} ${s.servicesCountWord}',
-                  style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                  style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                 ),
               ],
             ),
@@ -625,12 +700,14 @@ class _ServicePriceRow extends StatelessWidget {
   final AppLocale locale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(radius: 12, scale: 1.015, lift: 2, child: _buildRow(context));
+
+  Widget _buildRow(BuildContext context) {
     final unitSuffix = svc.unit == 'шт' ? '' : '/${svc.unitLabel(locale)}';
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute<void>(
+          SmoothRoute<void>(
             builder: (_) => BookingPage(
               master: m,
               serviceName: svc.name(locale),
@@ -647,13 +724,13 @@ class _ServicePriceRow extends StatelessWidget {
             Expanded(
               child: Text(
                 svc.name(locale),
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w500, color: p.text),
               ),
             ),
             const SizedBox(width: 10),
             Text(
               '${s.fromPrice} ${_money(svc.priceMin)} ${s.priceUnit}$unitSuffix',
-              style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w800, color: brandGreen),
+              style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w800, color: brandGreen),
             ),
             const SizedBox(width: 6),
             Icon(LucideIcons.chevron_right, size: 16, color: p.muted),
@@ -699,7 +776,7 @@ class _Pill extends StatelessWidget {
           ],
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
+            style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
           ),
         ],
       ),
@@ -726,11 +803,21 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final svc = selectedService ?? defaultServiceForMaster(m);
 
-    return Container(
+    return Reveal(
+      delay: const Duration(milliseconds: 350),
+      offsetY: 40,
+      child: Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       decoration: BoxDecoration(
         color: p.cardBg,
         border: Border(top: BorderSide(color: p.border)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -740,7 +827,12 @@ class _BottomBar extends StatelessWidget {
               child: SizedBox(
                 height: 48,
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text('Запишитесь к мастеру — чат с ним появится автоматически во вкладке «Чаты».'),
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: brandGreen,
                     side: const BorderSide(color: brandGreen),
@@ -749,7 +841,7 @@ class _BottomBar extends StatelessWidget {
                   icon: const Icon(LucideIcons.message_circle, size: 18),
                   label: Text(
                     s.chatBtn,
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -757,13 +849,20 @@ class _BottomBar extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: SizedBox(
+              child: HoverLift(
+                radius: 12,
+                scale: 1.03,
+                lift: 2,
+                child: ShineSweep(
+                radius: 12,
+                delay: const Duration(milliseconds: 1500),
+                child: SizedBox(
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     if (svc == null) return;
                     Navigator.of(context).push(
-                      MaterialPageRoute<void>(
+                      SmoothRoute<void>(
                         builder: (_) => BookingPage(
                           master: m,
                           serviceName: svc.name(locale),
@@ -782,13 +881,16 @@ class _BottomBar extends StatelessWidget {
                   icon: const Icon(LucideIcons.calendar_check, size: 18),
                   label: Text(
                     s.bookBtn,
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                 ),
+              ),
+              ),
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }

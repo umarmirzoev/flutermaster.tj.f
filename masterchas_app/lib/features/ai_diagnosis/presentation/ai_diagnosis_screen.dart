@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_design.dart';
 import '../../home/presentation/home_palette.dart';
 import '../../masters/presentation/masters_page.dart';
-import '../data/ai_photo_analyzer.dart';
+import '../data/ai_photo_api.dart';
+import '../../../core/widgets/motion.dart';
 
-/// AI диагностика по фото — анализ цвета, яркости и текстуры снимка.
+/// AI диагностика по фото — настоящий ИИ (Claude) через edge-функцию ai-photo-diagnosis, та же что на сайте.
+/// Отвечает: что сломано и какой мастер нужен, либо что ничего не сломано.
 class AiDiagnosisScreen extends StatefulWidget {
   const AiDiagnosisScreen({super.key});
 
@@ -18,13 +19,13 @@ class AiDiagnosisScreen extends StatefulWidget {
   State<AiDiagnosisScreen> createState() => _AiDiagnosisScreenState();
 }
 
-enum _Step { intro, analyzing, result, rejected }
+enum _Step { intro, analyzing, result, ok, rejected }
 
 class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
     with TickerProviderStateMixin {
   _Step _step = _Step.intro;
   Uint8List? _photo;
-  AiPhotoDiagnosis? _diagnosis;
+  AiRemoteDiagnosis? _diagnosis;
   String? _rejection;
   String? _error;
   late final AnimationController _scanController;
@@ -63,26 +64,28 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
     });
     HapticFeedback.mediumImpact();
 
-    await Future<void>.delayed(const Duration(milliseconds: 1800));
-    if (!mounted) return;
-
     try {
-      final result = analyzeRepairPhoto(bytes);
+      final result = await AiPhotoApi.diagnose(bytes);
+      if (!mounted) return;
       HapticFeedback.mediumImpact();
-      if (!result.isRecognized) {
-        setState(() {
-          _rejection = result.rejectionMessage;
-          _step = _Step.rejected;
-        });
-        return;
-      }
       setState(() {
-        _diagnosis = result.diagnosis;
-        _step = _Step.result;
+        _diagnosis = result;
+        switch (result.status) {
+          case AiPhotoStatus.broken:
+            _step = _Step.result;
+          case AiPhotoStatus.ok:
+            _step = _Step.ok;
+          case AiPhotoStatus.unclear:
+            _rejection = result.problemDetail.isNotEmpty
+                ? result.problemDetail
+                : 'ИИ не смог понять, что на фото. Сфотографируйте поломку ближе и при хорошем свете.';
+            _step = _Step.rejected;
+        }
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Ошибка анализа: $e';
+        _error = e is AiPhotoException ? e.message : 'Не удалось проанализировать фото. Попробуйте ещё раз.';
         _step = _Step.intro;
         _photo = null;
       });
@@ -93,7 +96,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
     final category = _diagnosis?.masterCategory;
     if (category == null) return;
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => MastersPage(initialFilter: category),
       ),
     );
@@ -113,6 +116,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                 _Step.intro => _buildIntro(p),
                 _Step.analyzing => _buildAnalyzing(p),
                 _Step.result => _buildResult(p),
+                _Step.ok => _buildOk(p),
                 _Step.rejected => _buildRejected(p),
               },
             ),
@@ -133,7 +137,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           ),
           Text(
             'AI диагностика',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 18,
               fontWeight: FontWeight.w800,
               color: p.text,
@@ -153,7 +157,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                 const SizedBox(width: 4),
                 Text(
                   'AI',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -187,7 +191,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                 const SizedBox(height: 12),
                 Text(
                   'Сфотографируйте проблему —\nAI подскажет решение',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -196,8 +200,8 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Трещина, поломка, протечка — AI проанализирует фото и определит тип поломки и нужного мастера',
-                  style: GoogleFonts.inter(
+                  'Трещина, протечка, сгоревшая розетка — ИИ посмотрит на фото, скажет что сломано и какой мастер нужен. А если всё целое — так и скажет.',
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.9),
                     height: 1.4,
@@ -208,17 +212,17 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: GoogleFonts.inter(fontSize: 13, color: AppDesign.accentRed)),
+            Text(_error!, style: GoogleFonts.manrope(fontSize: 13, color: AppDesign.accentRed)),
           ],
           const SizedBox(height: 24),
           Text(
             'Что определит AI:',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
           ),
           const SizedBox(height: 14),
           _feature(LucideIcons.search, 'Тип поломки', 'Определит что именно сломано', p),
           const SizedBox(height: 10),
-          _feature(LucideIcons.gauge, 'Сложность', 'Оценит масштаб работы', p),
+          _feature(LucideIcons.circle_check, 'Всё ли в порядке', 'Скажет, если ничего не сломано', p),
           const SizedBox(height: 10),
           _feature(LucideIcons.users, 'Нужный мастер', 'Подберёт категорию специалиста', p),
           const SizedBox(height: 10),
@@ -249,7 +253,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                     const SizedBox(width: 8),
                     Text(
                       'Выбрать из галереи',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: p.text,
@@ -260,86 +264,8 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
               ),
             ),
           ),
-          const SizedBox(height: 28),
-          _adminLinks(p),
-        ],
-      ),
-    );
-  }
 
-  Widget _adminLinks(HomePalette p) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: p.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Кабинеты управления',
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Вход для администраторов платформы',
-            style: GoogleFonts.inter(fontSize: 12, color: p.muted),
-          ),
-          const SizedBox(height: 12),
-          _adminLinkTile(
-            p: p,
-            icon: LucideIcons.shield,
-            title: 'Админ-панель',
-            sub: '/admin/login',
-            onTap: () => context.go('/admin/login'),
-          ),
-          const SizedBox(height: 8),
-          _adminLinkTile(
-            p: p,
-            icon: LucideIcons.crown,
-            title: 'Супер-админ',
-            sub: '/superadmin/dashboard',
-            onTap: () => context.go('/superadmin/dashboard'),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _adminLinkTile({
-    required HomePalette p,
-    required IconData icon,
-    required String title,
-    required String sub,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: p.pageBg,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: AppDesign.accentPurple),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
-                    Text(sub, style: GoogleFonts.inter(fontSize: 11, color: p.muted)),
-                  ],
-                ),
-              ),
-              Icon(LucideIcons.external_link, size: 16, color: p.muted),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -363,11 +289,11 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
               ),
               Text(
                 sub,
-                style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
               ),
             ],
           ),
@@ -431,12 +357,12 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           const SizedBox(height: 36),
           Text(
             'AI анализирует фото...',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: p.text),
           ),
           const SizedBox(height: 8),
           Text(
-            'Считываем цвет, текстуру и признаки поломки',
-            style: GoogleFonts.inter(fontSize: 14, color: p.muted),
+            'Ищем признаки поломки и подбираем мастера',
+            style: GoogleFonts.manrope(fontSize: 14, color: p.muted),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -478,13 +404,13 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           const SizedBox(height: 16),
           Text(
             'Не опознано',
-            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
           ),
           const SizedBox(height: 10),
           Text(
             _rejection ?? 'Не удалось определить проблему на фото.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 14, color: p.muted, height: 1.45),
+            style: GoogleFonts.manrope(fontSize: 14, color: p.muted, height: 1.45),
           ),
           const SizedBox(height: 28),
           GradientButton(
@@ -535,8 +461,8 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                         const Icon(LucideIcons.circle_check, size: 18, color: AppDesign.brand),
                         const SizedBox(width: 6),
                         Text(
-                          'Анализ готов · ${d.confidence}%',
-                          style: GoogleFonts.inter(
+                          'Анализ готов',
+                          style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppDesign.brand,
@@ -547,7 +473,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                     const SizedBox(height: 4),
                     Text(
                       d.problemTitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: p.text,
@@ -562,14 +488,18 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           const SizedBox(height: 12),
           Text(
             d.problemDetail,
-            style: GoogleFonts.inter(fontSize: 13, color: p.muted, height: 1.4),
+            style: GoogleFonts.manrope(fontSize: 13, color: p.muted, height: 1.4),
           ),
+          if (d.advice.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _adviceBox(d.advice, p),
+          ],
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _resultStat(LucideIcons.gauge, 'Сложность', d.complexity, AppDesign.accentOrange, p)),
+              Expanded(child: _resultStat(LucideIcons.gauge, 'Срочность', d.urgencyLabel, d.urgency == 'high' ? AppDesign.accentRed : AppDesign.accentOrange, p)),
               const SizedBox(width: 12),
-              Expanded(child: _resultStat(LucideIcons.clock, 'Время', d.timeEstimate, AppDesign.accentBlue, p)),
+              Expanded(child: _resultStat(LucideIcons.wrench, 'Мастер', d.masterCategory, AppDesign.accentBlue, p)),
             ],
           ),
           const SizedBox(height: 12),
@@ -590,14 +520,14 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                     children: [
                       Text(
                         'Примерная стоимость',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                       Text(
                         d.priceRange,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -612,7 +542,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           const SizedBox(height: 20),
           Text(
             'Рекомендуемый мастер:',
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
           ),
           const SizedBox(height: 12),
           Container(
@@ -640,11 +570,11 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
                     children: [
                       Text(
                         d.masterCategory,
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                       ),
                       Text(
                         '${d.mastersNearby} мастеров в каталоге',
-                        style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                        style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                       ),
                     ],
                   ),
@@ -669,13 +599,107 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
               }),
               child: Text(
                 'Сфотографировать заново',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: p.muted,
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _adviceBox(String text, HomePalette p) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppDesign.accentOrange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(LucideIcons.lightbulb, size: 18, color: AppDesign.accentOrange),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: GoogleFonts.manrope(fontSize: 13, color: p.text, height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOk(HomePalette p) {
+    final d = _diagnosis;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          if (_photo != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.memory(_photo!, width: 220, height: 220, fit: BoxFit.cover),
+            ),
+          const SizedBox(height: 24),
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              gradient: AppDesign.brandGradient,
+              shape: BoxShape.circle,
+              boxShadow: AppDesign.brandGlow(intensity: 0.3),
+            ),
+            child: const Icon(LucideIcons.circle_check, size: 38, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            (d?.problemTitle.isNotEmpty ?? false) ? d!.problemTitle : 'Ничего не сломано',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            d?.problemDetail ?? '',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(fontSize: 14, color: p.muted, height: 1.45),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppDesign.brand.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Мастер не нужен',
+              style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: AppDesign.brand),
+            ),
+          ),
+          if (d != null && d.advice.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            _adviceBox(d.advice, p),
+          ],
+          const SizedBox(height: 14),
+          Text(
+            'Проблема всё же есть (не включается, шумит, капает)? Сфотографируйте её ещё раз поближе.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(fontSize: 12, color: p.muted, height: 1.4),
+          ),
+          const SizedBox(height: 24),
+          GradientButton(
+            label: 'Сфотографировать другое',
+            icon: LucideIcons.camera,
+            gradient: AppDesign.aiGradient,
+            glowColor: AppDesign.accentPurple,
+            onPressed: () => setState(() {
+              _step = _Step.intro;
+              _photo = null;
+              _diagnosis = null;
+            }),
           ),
         ],
       ),
@@ -697,11 +721,11 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen>
           const SizedBox(height: 8),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+            style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
           ),
           Text(
             value,
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
           ),
         ],
       ),

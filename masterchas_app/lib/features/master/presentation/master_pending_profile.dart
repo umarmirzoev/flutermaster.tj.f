@@ -60,7 +60,7 @@ class MasterPendingProfile extends ConsumerWidget {
                           ? 'Ваша заявка на рассмотрении'
                           : 'Заявка одобрена',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: masterNavy,
@@ -73,7 +73,7 @@ class MasterPendingProfile extends ConsumerWidget {
                               'После одобрения откроется полный кабинет мастера.'
                           : 'Обновите профиль — кабинет уже доступен.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         color: const Color(0xFF6B7280),
                         height: 1.45,
@@ -106,7 +106,7 @@ class MasterPendingProfile extends ConsumerWidget {
                           isPending
                               ? 'Статус: на рассмотрении'
                               : 'Статус: одобрено',
-                          style: GoogleFonts.inter(),
+                          style: GoogleFonts.manrope(),
                         ),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -121,7 +121,7 @@ class MasterPendingProfile extends ConsumerWidget {
                   ),
                   child: Text(
                     'Проверить статус',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -135,7 +135,7 @@ class MasterPendingProfile extends ConsumerWidget {
                   },
                   child: Text(
                     'Демо: одобрить заявку',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       color: masterNavy,
                       fontWeight: FontWeight.w600,
                     ),
@@ -175,7 +175,7 @@ class _Header extends StatelessWidget {
               children: [
                 Text(
                   profile.shortName,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -184,7 +184,7 @@ class _Header extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   masterPrimaryCategory(profile),
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -236,7 +236,7 @@ class _InfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: masterNavy,
@@ -244,7 +244,7 @@ class _InfoTile extends StatelessWidget {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: const Color(0xFF6B7280),
                   ),

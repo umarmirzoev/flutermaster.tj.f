@@ -67,7 +67,7 @@ Future<void> showAddProductSheet(BuildContext context, WidgetRef ref) async {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Добавить товар', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('Добавить товар', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 16),
                   TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Название товара', border: OutlineInputBorder())),
                   const SizedBox(height: 12),
@@ -82,7 +82,7 @@ Future<void> showAddProductSheet(BuildContext context, WidgetRef ref) async {
                   const SizedBox(height: 12),
                   TextField(controller: descCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'О товаре', border: OutlineInputBorder())),
                   const SizedBox(height: 14),
-                  Text('Фото', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('Фото', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 72,
@@ -190,7 +190,7 @@ Future<void> showAddMasterSheet(BuildContext context, WidgetRef ref) async {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Добавить мастера', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('Добавить мастера', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 16),
                   TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Имя мастера', border: OutlineInputBorder())),
                   const SizedBox(height: 12),
@@ -203,7 +203,7 @@ Future<void> showAddMasterSheet(BuildContext context, WidgetRef ref) async {
                     onChanged: (v) => setLocal(() => specialization = v ?? specialization),
                   ),
                   const SizedBox(height: 14),
-                  Text('Фото', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('Фото', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 56,

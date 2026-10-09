@@ -8,6 +8,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/providers/theme_mode_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/calls/call_host.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,8 @@ class MasterChasApp extends ConsumerWidget {
         Locale('zh'),
       ],
       routerConfig: router,
+      // Входящие звонки в приложении — на любом экране.
+      builder: (context, child) => CallHost(child: child ?? const SizedBox.shrink()),
     );
   }
 }

@@ -259,8 +259,10 @@ List<AdminOrder> filterOrders(
   AdminOrderStatus? status,
   String? query,
   AdminOrderStatus Function(AdminOrder order)? resolveStatus,
+  bool sosOnly = false,
 }) {
   return orders.where((o) {
+    if (sosOnly && !o.isSos) return false;
     final effective = resolveStatus?.call(o) ?? o.status;
     if (status != null && effective != status) return false;
     if (query == null || query.isEmpty) return true;

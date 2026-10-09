@@ -170,7 +170,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : Text('Сохранить', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+                  : Text('Сохранить', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
         ],
@@ -188,7 +188,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.muted)),
+        Text(label, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: p.muted)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,

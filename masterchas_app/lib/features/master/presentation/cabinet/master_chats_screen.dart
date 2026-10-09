@@ -8,6 +8,7 @@ import '../../../chat/models/api_conversation.dart';
 import '../../../chat/presentation/chat_thread_screen.dart';
 import '../../../chat/providers/chat_provider.dart';
 import 'master_cabinet_shell.dart';
+import '../../../../core/widgets/motion.dart';
 
 class MasterChatsScreen extends ConsumerWidget {
   const MasterChatsScreen({super.key});
@@ -56,11 +57,11 @@ class _ChatTile extends StatelessWidget {
       ),
       title: Text(
         conversation.title,
-        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
       ),
       subtitle: const Text('Диалог по заказу'),
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
+        SmoothRoute<void>(
           builder: (_) => ChatThreadScreen(
             conversation: conversation,
             isLocal: conversation.isLocal,
@@ -94,7 +95,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               'Нет сообщений',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: masterNavy,

@@ -10,6 +10,7 @@ import '../../../chat/providers/chat_provider.dart';
 import '../../../orders/models/api_order.dart';
 import '../../../orders/providers/order_workflow_provider.dart';
 import '../../../orders/utils/order_status.dart';
+import '../../../../core/widgets/motion.dart';
 
 /// Карточка заказа со статусом «ожидает ответа мастера» — принять или отклонить.
 class MasterPendingOrderCard extends ConsumerWidget {
@@ -29,7 +30,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Отклонить заказ?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
         ),
         content: TextField(
           controller: controller,
@@ -67,7 +68,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Заказ отклонён', style: GoogleFonts.inter()),
+        content: Text('Заказ отклонён', style: GoogleFonts.manrope()),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -91,13 +92,13 @@ class MasterPendingOrderCard extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Заказ принят', style: GoogleFonts.inter()),
+        content: Text('Заказ принят', style: GoogleFonts.manrope()),
         behavior: SnackBarBehavior.floating,
       ),
     );
 
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => ChatThreadScreen(
           conversation: ApiConversation(
             id: localChat.id,
@@ -161,7 +162,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
                   children: [
                     Text(
                       order.title,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: compact ? 14 : 15,
                         fontWeight: FontWeight.w700,
                         color: masterNavy,
@@ -173,7 +174,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
                         order.address,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: const Color(0xFF6B7280),
                         ),
@@ -183,7 +184,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         'Клиент: ${entry.clientName}',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: const Color(0xFF6B7280),
                         ),
@@ -194,7 +195,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
               ),
               Text(
                 '${order.price.toStringAsFixed(0)} с.',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: masterNavy,
@@ -212,7 +213,7 @@ class MasterPendingOrderCard extends ConsumerWidget {
             ),
             child: Text(
               statusLabel,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: statusCode == 3 ? Colors.orange.shade800 : status.color,
@@ -244,15 +245,40 @@ class MasterPendingOrderCard extends ConsumerWidget {
               ],
             ),
           ],
-          if (order.isMasterAccepted && entry?.conversationId != null) ...[
+          if (order.isMasterAccepted) ...[
             const SizedBox(height: 10),
             TextButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                // Сначала ищем общий серверный чат по заказу — он есть и у клиента.
+                final serverChats = await ref.read(conversationsProvider.future);
+                ApiConversation? serverChat;
+                for (final c in serverChats) {
+                  if (!c.isLocal && c.matchesOrder(order.id)) {
+                    serverChat = c;
+                    break;
+                  }
+                }
+                if (!context.mounted) return;
+                if (serverChat != null) {
+                  Navigator.of(context).push(
+                    SmoothRoute<void>(
+                      builder: (_) => ChatThreadScreen(conversation: serverChat!),
+                    ),
+                  );
+                  return;
+                }
+
+                final localId = entry?.conversationId;
                 final localChat =
-                    workflow.conversations[entry!.conversationId!];
-                if (localChat == null) return;
+                    localId == null ? null : workflow.conversations[localId];
+                if (localChat == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Чат по этому заказу ещё не создан')),
+                  );
+                  return;
+                }
                 Navigator.of(context).push(
-                  MaterialPageRoute<void>(
+                  SmoothRoute<void>(
                     builder: (_) => ChatThreadScreen(
                       conversation: ApiConversation(
                         id: localChat.id,

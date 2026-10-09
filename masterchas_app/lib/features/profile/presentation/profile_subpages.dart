@@ -16,6 +16,7 @@ import '../../masters/providers/master_favorites_provider.dart';
 import '../data/profile_l10n.dart';
 import 'change_password_page.dart';
 import 'profile_shell.dart';
+import '../../../core/widgets/motion.dart';
 
 // ─── Payment methods ─────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
               onPressed: () => setState(() => _showForm = true),
               backgroundColor: brandGreen,
               icon: const Icon(LucideIcons.plus, color: Colors.white),
-              label: Text(l.addCard, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+              label: Text(l.addCard, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: Colors.white)),
             )
           : null,
       body: ListView(
@@ -125,7 +126,7 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => setState(() => _showForm = false),
-                    child: Text('OK', style: GoogleFonts.inter(color: p.muted)),
+                    child: Text('OK', style: GoogleFonts.manrope(color: p.muted)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -133,7 +134,7 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
                   child: ElevatedButton(
                     onPressed: () => _save(l),
                     style: ElevatedButton.styleFrom(backgroundColor: brandGreen, foregroundColor: Colors.white),
-                    child: Text(l.save, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                    child: Text(l.save, style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -161,7 +162,7 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
                   children: [
                     Row(
                       children: [
-                        Text(c.brand, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                        Text(c.brand, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
                         const Spacer(),
                         IconButton(
                           onPressed: () => ref.read(shopCardsProvider.notifier).removeAt(i),
@@ -172,10 +173,10 @@ class _PaymentMethodsPageState extends ConsumerState<PaymentMethodsPage> {
                     const SizedBox(height: 12),
                     Text(
                       '•••• •••• •••• ${c.last4}',
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 2),
+                      style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 2),
                     ),
                     const SizedBox(height: 8),
-                    Text('${c.holder}  ·  ${c.expiry}', style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
+                    Text('${c.holder}  ·  ${c.expiry}', style: GoogleFonts.manrope(fontSize: 12, color: Colors.white70)),
                   ],
                 ),
               );
@@ -209,12 +210,12 @@ class _CardPreview extends StatelessWidget {
         children: [
           const Icon(LucideIcons.credit_card, color: Colors.white, size: 28),
           const Spacer(),
-          Text(display, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 2)),
+          Text(display, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 2)),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: Text(holder.isEmpty ? 'NAME' : holder.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, color: Colors.white))),
-              Text(expiry.isEmpty ? 'MM/YY' : expiry, style: GoogleFonts.inter(fontSize: 11, color: Colors.white)),
+              Expanded(child: Text(holder.isEmpty ? 'NAME' : holder.toUpperCase(), style: GoogleFonts.manrope(fontSize: 11, color: Colors.white))),
+              Text(expiry.isEmpty ? 'MM/YY' : expiry, style: GoogleFonts.manrope(fontSize: 11, color: Colors.white)),
             ],
           ),
         ],
@@ -305,7 +306,7 @@ class _AddressesPageState extends ConsumerState<AddressesPage> {
               onPressed: () => setState(() => _showForm = true),
               backgroundColor: brandGreen,
               icon: const Icon(LucideIcons.plus, color: Colors.white),
-              label: Text(l.addAddress, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+              label: Text(l.addAddress, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: Colors.white)),
             )
           : null,
       body: ListView(
@@ -328,7 +329,7 @@ class _AddressesPageState extends ConsumerState<AddressesPage> {
               child: ElevatedButton(
                 onPressed: () => _save(l),
                 style: ElevatedButton.styleFrom(backgroundColor: brandGreen, foregroundColor: Colors.white),
-                child: Text(l.save, style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+                child: Text(l.save, style: GoogleFonts.manrope(fontWeight: FontWeight.w800)),
               ),
             ),
             const SizedBox(height: 20),
@@ -360,12 +361,12 @@ class _AddressesPageState extends ConsumerState<AddressesPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(a.title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
+                          Text(a.title, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
                           const SizedBox(height: 4),
-                          Text(a.oneLine, style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.3)),
+                          Text(a.oneLine, style: GoogleFonts.manrope(fontSize: 13, color: p.text, height: 1.3)),
                           if (a.comment.isNotEmpty) ...[
                             const SizedBox(height: 4),
-                            Text(a.comment, style: GoogleFonts.inter(fontSize: 11.5, color: p.muted, fontStyle: FontStyle.italic)),
+                            Text(a.comment, style: GoogleFonts.manrope(fontSize: 11.5, color: p.muted, fontStyle: FontStyle.italic)),
                           ],
                         ],
                       ),
@@ -410,10 +411,10 @@ class SecurityPage extends ConsumerWidget {
             height: 48,
             child: OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ChangePasswordPage()),
+                SmoothRoute<void>(builder: (_) => const ChangePasswordPage()),
               ),
               icon: Icon(LucideIcons.key_round, color: p.text),
-              label: Text(l.changePin, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: p.text)),
+              label: Text(l.changePin, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: p.text)),
             ),
           ),
         ],
@@ -467,7 +468,7 @@ class _ToggleTile extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: brandGreen),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: p.text))),
+          Expanded(child: Text(label, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: p.text))),
           Switch(value: value, activeTrackColor: brandGreen, onChanged: (_) => onChanged()),
         ],
       ),
@@ -516,7 +517,7 @@ class _SupportPageState extends ConsumerState<SupportPage> {
             ],
           ),
           const SizedBox(height: 20),
-          Text(l.writeSupport, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text)),
+          Text(l.writeSupport, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text)),
           const SizedBox(height: 10),
           profileField(p: p, label: '', controller: _msgCtrl, maxLines: 4),
           const SizedBox(height: 12),
@@ -530,11 +531,11 @@ class _SupportPageState extends ConsumerState<SupportPage> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: brandGreen, content: Text(l.messageSent)));
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), foregroundColor: Colors.white),
-              child: Text(l.send, style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+              child: Text(l.send, style: GoogleFonts.manrope(fontWeight: FontWeight.w800)),
             ),
           ),
           const SizedBox(height: 24),
-          Text(l.faqTitle, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text)),
+          Text(l.faqTitle, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text)),
           const SizedBox(height: 10),
           _FaqTile(q: l.faq1q, a: l.faq1a, p: p),
           _FaqTile(q: l.faq2q, a: l.faq2a, p: p),
@@ -573,13 +574,13 @@ class _FaqTileState extends State<_FaqTile> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(widget.q, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: widget.p.text))),
+                  Expanded(child: Text(widget.q, style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w700, color: widget.p.text))),
                   Icon(_open ? LucideIcons.chevron_up : LucideIcons.chevron_down, size: 18, color: widget.p.muted),
                 ],
               ),
               if (_open) ...[
                 const SizedBox(height: 8),
-                Text(widget.a, style: GoogleFonts.inter(fontSize: 13, color: widget.p.muted, height: 1.4)),
+                Text(widget.a, style: GoogleFonts.manrope(fontSize: 13, color: widget.p.muted, height: 1.4)),
               ],
             ],
           ),
@@ -618,7 +619,7 @@ class FavoritesPage extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: m)),
+                      SmoothRoute<void>(builder: (_) => MasterDetailPage(master: m)),
                     ),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
@@ -638,9 +639,9 @@ class FavoritesPage extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(m.fullName, style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: p.text)),
+                                Text(m.fullName, style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: p.text)),
                                 const SizedBox(height: 2),
-                                Text(m.profession(locale), style: GoogleFonts.inter(fontSize: 12, color: brandGreen)),
+                                Text(m.profession(locale), style: GoogleFonts.manrope(fontSize: 12, color: brandGreen)),
                               ],
                             ),
                           ),
@@ -690,13 +691,32 @@ class OrdersPage extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Text(date, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
+                          Text(date, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
                           const Spacer(),
-                          Text('${shopMoney(o.total)} ${l.unit}', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w900, color: brandGreen)),
+                          Text('${shopMoney(o.total)} ${l.unit}', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w900, color: brandGreen)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('${o.count} ${l.itemsWord}', style: GoogleFonts.inter(fontSize: 12, color: p.muted)),
+                      Row(
+                        children: [
+                          Text('${o.count} ${l.itemsWord}', style: GoogleFonts.manrope(fontSize: 12, color: p.muted)),
+                          const SizedBox(width: 10),
+                          Icon(
+                            o.paymentMethod.startsWith('Карт') ? LucideIcons.credit_card : LucideIcons.banknote,
+                            size: 13,
+                            color: brandGreen,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              o.paymentMethod,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.manrope(fontSize: 12, color: p.muted, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
                       if (o.address.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Row(
@@ -704,7 +724,7 @@ class OrdersPage extends ConsumerWidget {
                             const Icon(LucideIcons.map_pin, size: 13, color: brandGreen),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(o.address, style: GoogleFonts.inter(fontSize: 11.5, color: p.muted)),
+                              child: Text(o.address, style: GoogleFonts.manrope(fontSize: 11.5, color: p.muted)),
                             ),
                           ],
                         ),
@@ -753,7 +773,7 @@ class OrdersPage extends ConsumerWidget {
   Widget _chip(String t, Color c) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-        child: Text(t, style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w700, color: c)),
+        child: Text(t, style: GoogleFonts.manrope(fontSize: 10.5, fontWeight: FontWeight.w700, color: c)),
       );
 }
 
@@ -804,7 +824,7 @@ class SpentPage extends ConsumerWidget {
           const SizedBox(height: 10),
           _SummaryCard(label: l.totalBonus, value: '+$bonus', color: brandGreen, p: p, wide: true),
           const SizedBox(height: 20),
-          Text(l.chartTitle, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text)),
+          Text(l.chartTitle, style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text)),
           const SizedBox(height: 14),
           Container(
             height: 180,
@@ -819,7 +839,7 @@ class SpentPage extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         if (dayTotals[d]! > 0)
-                          Text('${shopMoney(dayTotals[d]!)}', style: GoogleFonts.inter(fontSize: 8, color: p.muted)),
+                          Text('${shopMoney(dayTotals[d]!)}', style: GoogleFonts.manrope(fontSize: 8, color: p.muted)),
                         const SizedBox(height: 4),
                         SizedBox(
                           height: 120 * (dayTotals[d]! / maxVal),
@@ -837,7 +857,7 @@ class SpentPage extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text('${d.day}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: p.muted)),
+                        Text('${d.day}', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w600, color: p.muted)),
                       ],
                     ),
                   ),
@@ -857,15 +877,15 @@ class SpentPage extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Text(date, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
+                      Text(date, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
                       const Spacer(),
-                      Text('${shopMoney(o.total)} ${l.unit}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
+                      Text('${shopMoney(o.total)} ${l.unit}', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '${l.perDay}: ${shopMoney(o.total)} ${l.unit} · ${l.discountWord}: ${shopMoney(o.discount)} · ${l.bonusWord}: +${o.bonus}',
-                    style: GoogleFonts.inter(fontSize: 11, color: p.muted, height: 1.35),
+                    style: GoogleFonts.manrope(fontSize: 11, color: p.muted, height: 1.35),
                   ),
                 ],
               ),
@@ -907,8 +927,8 @@ class _SummaryCard extends StatelessWidget {
             child: Icon(LucideIcons.wallet, size: 16, color: color),
           ),
           const SizedBox(height: 10),
-          Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: p.text)),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, color: p.muted)),
+          Text(value, style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w900, color: p.text)),
+          Text(label, style: GoogleFonts.manrope(fontSize: 11, color: p.muted)),
         ],
       ),
     );
@@ -955,9 +975,9 @@ class _ProductListTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(prod.name(locale), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
+                  Text(prod.name(locale), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text)),
                   const SizedBox(height: 4),
-                  Text('${shopMoney(prod.price)} ${l.unit}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: brandGreen)),
+                  Text('${shopMoney(prod.price)} ${l.unit}', style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: brandGreen)),
                 ],
               ),
             ),
@@ -990,7 +1010,7 @@ class _EmptyBox extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: p.muted),
             const SizedBox(height: 12),
-            Text(text, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: p.muted)),
+            Text(text, textAlign: TextAlign.center, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: p.muted)),
           ],
         ),
       ),

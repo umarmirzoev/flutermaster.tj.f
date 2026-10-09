@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_result.dart';
+import '../../../core/network/dio_provider.dart';
 import '../../../core/realtime/signalr_provider.dart';
 import '../../../core/storage/secure_storage_provider.dart';
 import '../data/admin_credentials.dart';
@@ -65,11 +66,14 @@ class AuthNotifier extends Notifier<AuthState> {
             isAuthenticated: true,
             isInitialized: true,
             phone: phone,
-            displayName: savedName?.trim().isNotEmpty == true ? savedName!.trim() : 'Пользователь',
+            displayName: savedName?.trim().isNotEmpty == true
+                ? savedName!.trim()
+                : (await storage.readNameForPhone(phone) ?? 'Пользователь'),
             isGuest: false,
             isMaster: isMaster,
             role: role,
           );
+          _syncNameFromServer();
           try {
             await ref.read(signalRServiceProvider).connect();
           } catch (_) {}
@@ -89,13 +93,31 @@ class AuthNotifier extends Notifier<AuthState> {
     required String code,
   }) async {
     final credential = lookupMasterCredential(phone: phone, code: code);
+    final storage = ref.read(secureStorageProvider);
+
+    // 1) Настоящий вход через сервер: код — это пароль мастера.
+    //    Только с серверной сессией мастер получает заказы и пишет клиентам в чат.
+    final api = await ref.read(authRepositoryProvider).login(phone, code);
+    if (api is ApiSuccess<AuthSession> && api.data.isMaster) {
+      await _applyApiSession(api.data, storage);
+      if (credential != null) {
+        await _persistMaster(buildMasterProfileFromCredential(credential));
+      }
+      try {
+        await ref.read(signalRServiceProvider).connect();
+      } catch (_) {}
+      return;
+    }
+
+    // 2) Сервер недоступен — офлайн-вход по встроенному списку (без чата и заказов).
     if (credential == null) {
-      throw Exception('Неверный номер или код входа');
+      throw Exception(
+        api is ApiError<AuthSession> ? api.message : 'Неверный номер или код входа',
+      );
     }
 
     final profile = buildMasterProfileFromCredential(credential);
     final phoneFormatted = formatTjPhone(localDigitsFromPhone(phone));
-    final storage = ref.read(secureStorageProvider);
     await storage.writePhone(phoneFormatted);
     await _persistMaster(profile);
   }
@@ -221,16 +243,48 @@ class AuthNotifier extends Notifier<AuthState> {
     }
     await storage.writeRole(session.role);
 
+    // Имя, которое этот номер уже задавал на этом устройстве (не стирается при выходе).
+    String? knownName;
+    try {
+      knownName = await ref.read(secureStorageProvider).readNameForPhone(phone);
+    } catch (_) {}
+
     state = state.copyWith(
       isAuthenticated: true,
       isInitialized: true,
       phone: phone,
-      displayName: 'Пользователь',
+      displayName: knownName ?? 'Пользователь',
       isGuest: false,
       isMaster: isMaster,
       role: session.role,
       clearMasterProfile: !isMaster,
     );
+    if (knownName != null) {
+      try {
+        await ref.read(secureStorageProvider).writeDisplayName(knownName);
+      } catch (_) {}
+    }
+    // Подтягиваем имя с сервера — так оно одинаковое на всех устройствах.
+    _syncNameFromServer();
+  }
+
+  /// Берёт имя из профиля на сервере (GET /profile/me) и сохраняет локально.
+  Future<void> _syncNameFromServer() async {
+    try {
+      final res = await ref.read(dioProvider).get<dynamic>('/profile/me');
+      var data = res.data;
+      if (data is Map && data['data'] is Map) data = data['data'];
+      if (data is! Map) return;
+      final name = '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim();
+      if (name.isEmpty || !state.isAuthenticated) return;
+      state = state.copyWith(displayName: name);
+      final storage = ref.read(secureStorageProvider);
+      await storage.writeDisplayName(name);
+      final phone = state.phone;
+      if (phone != null) await storage.writeNameForPhone(phone, name);
+    } catch (_) {
+      // Сервер без /profile/me или нет сети — оставляем локальное имя.
+    }
   }
 
   Future<void> _restoreLegacySession(String token, dynamic storage) async {
@@ -437,7 +491,35 @@ class AuthNotifier extends Notifier<AuthState> {
     if (trimmed.isEmpty) return;
 
     await ref.read(secureStorageProvider).writeDisplayName(trimmed);
+    final phone = state.phone;
+    if (phone != null) {
+      try {
+        await ref.read(secureStorageProvider).writeNameForPhone(phone, trimmed);
+      } catch (_) {}
+    }
     state = state.copyWith(displayName: trimmed, isGuest: false);
+
+    // Сохраняем имя на сервере — его увидит собеседник в чате.
+    final parts = trimmed.split(RegExp(r'\s+'));
+    try {
+      await ref.read(dioProvider).put('/profile/me', data: {
+        'firstName': parts.first,
+        'lastName': parts.length > 1 ? parts.sublist(1).join(' ') : '',
+      });
+    } catch (_) {}
+  }
+
+  /// Удаляет аккаунт на сервере и выходит. Возвращает текст ошибки или null.
+  Future<String?> deleteAccount() async {
+    try {
+      await ref.read(dioProvider).delete('/profile/me');
+    } catch (e) {
+      return 'Не удалось удалить аккаунт. Проверьте интернет и попробуйте снова.';
+    }
+    try {
+      await signOut();
+    } catch (_) {}
+    return null;
   }
 
   Future<void> signOut() async {

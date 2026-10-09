@@ -82,7 +82,7 @@ class _MasterIncomeScreenState extends ConsumerState<MasterIncomeScreen> {
               children: [
                 Text(
                   'За месяц',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: const Color(0xFF6B7280),
                   ),
@@ -90,7 +90,7 @@ class _MasterIncomeScreenState extends ConsumerState<MasterIncomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   formatSomoni(profile.monthlyIncome),
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: masterNavy,
@@ -101,7 +101,7 @@ class _MasterIncomeScreenState extends ConsumerState<MasterIncomeScreen> {
                   earnings.isEmpty
                       ? 'Доход появится после выполнения заказов'
                       : 'Всего записей: ${earnings.length}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: const Color(0xFF6B7280),
                   ),
@@ -149,7 +149,7 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: masterNavy,
@@ -157,7 +157,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280)),
+            style: GoogleFonts.manrope(fontSize: 11, color: const Color(0xFF6B7280)),
           ),
         ],
       ),

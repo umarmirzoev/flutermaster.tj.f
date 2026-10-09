@@ -126,7 +126,7 @@ class _WheelOfFortuneSheetState extends ConsumerState<WheelOfFortuneSheet>
                 const SizedBox(width: 8),
                 Text(
                   s.wheelTitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: p.text,
@@ -137,7 +137,7 @@ class _WheelOfFortuneSheetState extends ConsumerState<WheelOfFortuneSheet>
             const SizedBox(height: 4),
             Text(
               _spun && _spin.isCompleted ? s.wheelCongrats : s.wheelSpinPrompt,
-              style: GoogleFonts.inter(fontSize: 13, color: p.muted),
+              style: GoogleFonts.manrope(fontSize: 13, color: p.muted),
             ),
             const SizedBox(height: 24),
             // Wheel
@@ -211,7 +211,7 @@ class _WheelOfFortuneSheetState extends ConsumerState<WheelOfFortuneSheet>
                             const SizedBox(width: 10),
                             Text(
                               s.wheelPrizeLabel(prize.label),
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: prize.color,
@@ -248,7 +248,7 @@ class _WheelOfFortuneSheetState extends ConsumerState<WheelOfFortuneSheet>
             const SizedBox(height: 8),
             Text(
               s.wheelComeBackTomorrow,
-              style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+              style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
             ),
           ],
         ),
@@ -297,7 +297,7 @@ class _WheelPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: prizes[i].label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w800,
             color: Colors.white,

@@ -93,7 +93,7 @@ class StoriesReel extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 s.mastersWorksTitle,
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
               ),
             ],
           ),
@@ -170,7 +170,7 @@ class _StoryBubble extends StatelessWidget {
               story.masterName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).brightness == Brightness.dark
@@ -342,7 +342,7 @@ class _StoryViewerState extends ConsumerState<StoryViewer> with SingleTickerProv
                             children: [
                               Text(
                                 _story.masterName,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
@@ -350,7 +350,7 @@ class _StoryViewerState extends ConsumerState<StoryViewer> with SingleTickerProv
                               ),
                               Text(
                                 _story.profession,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 12,
                                   color: Colors.white.withValues(alpha: 0.8),
                                 ),
@@ -373,7 +373,7 @@ class _StoryViewerState extends ConsumerState<StoryViewer> with SingleTickerProv
                       children: [
                         Text(
                           slide.caption,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,

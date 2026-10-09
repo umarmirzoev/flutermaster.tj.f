@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:masterchas_app/core/widgets/motion.dart';
+import 'package:masterchas_app/features/home/presentation/widgets/ai_call_sheet.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:masterchas_app/core/l10n/app_locale.dart';
@@ -19,9 +21,14 @@ import 'package:masterchas_app/features/masters/providers/master_reviews_provide
 import 'package:masterchas_app/features/services/data/services_catalog.dart';
 import 'package:masterchas_app/features/services/presentation/category_detail_page.dart';
 import 'package:masterchas_app/features/shop/presentation/shop_page.dart';
+import 'package:masterchas_app/features/shop/data/shop_data.dart' show ShopProduct, buildShopProductImage;
+import 'package:masterchas_app/features/shop/state/shop_state.dart' show shopCartProvider;
+import 'package:masterchas_app/core/providers/catalog_provider.dart' show shopCatalogProvider;
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:masterchas_app/features/auth/providers/auth_provider.dart';
 import 'package:masterchas_app/features/auth/providers/master_registration_draft_provider.dart';
 import 'package:masterchas_app/features/chat/presentation/chats_list_page.dart';
+import 'package:masterchas_app/features/chat/providers/chat_provider.dart' show unreadChatsTotalProvider;
 import 'package:masterchas_app/features/profile/presentation/profile_page.dart';
 import 'package:masterchas_app/features/sos/presentation/sos_emergency_screen.dart';
 import 'package:masterchas_app/features/auction/presentation/auction_screen.dart';
@@ -101,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _openCategory(ServiceCategory cat) {
     final locale = ref.read(localeProvider);
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => CategoryDetailPage(category: cat, locale: locale),
       ),
     );
@@ -111,13 +118,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _openNotifications() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const ClientNotificationsPage()),
+      SmoothRoute<void>(builder: (_) => const ClientNotificationsPage()),
     );
   }
 
   void _openMastersFiltered(HomeMasterFilter filter) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => MastersPage(
           initialFilter: filter.category,
           initialDistrict: filter.district,
@@ -146,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Text(
                     text,
-                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                   ),
                 );
 
@@ -177,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                         Text(
                           label,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: selected ? Colors.white : p.text,
@@ -221,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Text(
                           s.filterMastersTitle,
-                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
+                          style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
                         ),
                         const Spacer(),
                         if (draft.isActive)
@@ -229,7 +236,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             onPressed: () => setSheetState(() => draft = const HomeMasterFilter()),
                             child: Text(
                               s.resetBtn,
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: brandGreen),
+                              style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: brandGreen),
                             ),
                           ),
                       ],
@@ -314,7 +321,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         child: Text(
                           s.showMastersBtn,
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
@@ -335,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Color? color,
     double height = 1.3,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.manrope(
         fontSize: size,
         fontWeight: weight,
         color: color ?? p.text,
@@ -411,6 +418,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        var actionIndex = 0;
         Widget action({
           required IconData icon,
           required Color color,
@@ -418,45 +426,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           required String sub,
           required VoidCallback onTap,
         }) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: p.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: p.border),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(icon, color: color, size: 26),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(title, style: _s(p, size: 16, weight: FontWeight.w800)),
-                            const SizedBox(height: 3),
-                            Text(sub, style: _s(p, size: 12, color: p.muted, height: 1.3)),
-                          ],
+          final i = actionIndex++;
+          return Reveal(
+            delay: Duration(milliseconds: 90 + 80 * i),
+            offsetY: 22,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: HoverLift(
+                radius: 18,
+                glowColor: color,
+                child: Material(
+                  color: p.cardBg,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(18),
+                    splashColor: color.withValues(alpha: 0.12),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: color.withValues(alpha: 0.22)),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [p.cardBg, color.withValues(alpha: 0.06)],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Icon(LucideIcons.chevron_right, size: 20, color: p.muted),
-                    ],
+                      child: Row(
+                        children: [
+                          FloatY(
+                            amplitude: 2.5,
+                            phase: i * 0.3,
+                            child: Container(
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [color, Color.lerp(color, Colors.black, 0.18)!],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 5)),
+                                ],
+                              ),
+                              child: Icon(icon, color: Colors.white, size: 25),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(title, style: _s(p, size: 16, weight: FontWeight.w800)),
+                                const SizedBox(height: 3),
+                                Text(sub, style: _s(p, size: 12, color: p.muted, height: 1.3)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(LucideIcons.arrow_right, size: 16, color: color),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -482,7 +524,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(s.fabTitle, style: _s(p, size: 20, weight: FontWeight.w800)),
+                Reveal(
+                  offsetY: 10,
+                  child: Row(
+                    children: [
+                      FloatY(
+                        amplitude: 2,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: brandGreen.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: const Icon(LucideIcons.sparkles, size: 18, color: brandGreen),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(s.fabTitle, style: _s(p, size: 20, weight: FontWeight.w800))),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 action(
                   icon: LucideIcons.wrench,
@@ -492,7 +554,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () {
                     Navigator.pop(ctx);
                     Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const MastersPage()),
+                      SmoothRoute<void>(builder: (_) => const MastersPage()),
                     );
                   },
                 ),
@@ -519,7 +581,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () {
                     Navigator.pop(ctx);
                     Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const ShopPage()),
+                      SmoothRoute<void>(builder: (_) => const ShopPage()),
                     );
                   },
                 ),
@@ -602,61 +664,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onShowAllServices: _openServicesTab,
                       )
                     else ...[
-                    ActiveOrderBanner(
+                    Reveal(
+                      delay: const Duration(milliseconds: 60),
+                      child: ActiveOrderBanner(
                       p: p,
                       s: s,
                       onTap: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    UrgentRequestsFeed(p: p),
-                    const SizedBox(height: 12),
-                    _TrustRow(s: s, p: p),
-                    const SizedBox(height: 12),
-                    _WowFeaturesRow(s: s, p: p),
-                    const SizedBox(height: 18),
-                    DailyBonusCard(
-                      onTap: () => WheelOfFortuneSheet.show(context),
-                    ),
-                    const SizedBox(height: 18),
-                    StoriesReel(p: p),
-                    const SizedBox(height: 12),
-                    _PromoRow(s: s, p: p),
-                    const SizedBox(height: 18),
-                    _Categories(
+                    )),
+                    const SizedBox(height: 14),
+                    Reveal(
+                      delay: const Duration(milliseconds: 140),
+                      child: _WowFeaturesRow(s: s, p: p)),
+                    const SizedBox(height: 22),
+                    Reveal(
+                      delay: const Duration(milliseconds: 220),
+                      child: _Categories(
                       s: s,
                       p: p,
                       locale: locale,
                       onCategory: _openCategory,
                       onShowAll: _openServicesTab,
-                    ),
-                    const SizedBox(height: 16),
-                    _DiscountBanner(s: s, p: p),
-                    const SizedBox(height: 18),
-                    _HowItWorks(s: s, p: p),
+                    )),
                     const SizedBox(height: 22),
-                    _PopularMasters(s: s, p: p, locale: locale, filter: _masterFilter),
+                    Reveal(
+                      delay: const Duration(milliseconds: 300),
+                      child: _PopularMasters(s: s, p: p, locale: locale, filter: _masterFilter)),
                     const SizedBox(height: 22),
-                    _AllMastersSection(s: s, p: p, locale: locale, filter: _masterFilter),
+                    Reveal(
+                      delay: const Duration(milliseconds: 380),
+                      child: _PromoRow(s: s, p: p)),
                     const SizedBox(height: 22),
-                    _ClientReviews(s: s, p: p),
+                    Reveal(
+                      delay: const Duration(milliseconds: 460),
+                      child: _DiscountBanner(s: s, p: p)),
                     const SizedBox(height: 22),
-                    _AiBigBanner(s: s, p: p, onPick: () => showAiMasterPickerSheet(context)),
-                    const SizedBox(height: 16),
-                    _StatsRow(s: s, p: p),
+                    Reveal(
+                      delay: const Duration(milliseconds: 120),
+                      child: _HowItWorks(s: s, p: p)),
                     const SizedBox(height: 22),
-                    _ToolsShop(
+                    Reveal(
+                      delay: const Duration(milliseconds: 120),
+                      child: _ClientReviews(s: s, p: p)),
+                    const SizedBox(height: 22),
+                    Reveal(
+                      delay: const Duration(milliseconds: 120),
+                      child: _TrustRow(s: s, p: p)),
+                    const SizedBox(height: 22),
+                    Reveal(
+                      delay: const Duration(milliseconds: 120),
+                      child: _ToolsShop(
                       s: s,
                       p: p,
                       onOpenShop: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const ShopPage()),
+                        SmoothRoute<void>(builder: (_) => const ShopPage()),
                       ),
-                    ),
+                    )),
                     const SizedBox(height: 22),
-                    _MoreFeatures(s: s, p: p),
-                    const SizedBox(height: 18),
-                    _DiscountBanner2(s: s, p: p),
-                    const SizedBox(height: 18),
-                    _AllToolsCard(s: s, p: p),
                     const SizedBox(height: 24),
                     ],
                   ],
@@ -670,15 +733,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const ProfilePage(),
         ],
       ),
-      floatingActionButton: SizedBox(
-        width: 56,
-        height: 56,
-        child: FloatingActionButton(
-          onPressed: () => _showActionSheet(s),
-          backgroundColor: brandGreen,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(LucideIcons.plus, color: Colors.white, size: 28),
+      floatingActionButton: PulseRing(
+        color: brandGreen,
+        child: HoverLift(
+          radius: 28,
+          scale: 1.1,
+          lift: 2,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: FloatingActionButton(
+              onPressed: () => _showActionSheet(s),
+              backgroundColor: brandGreen,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(LucideIcons.plus, color: Colors.white, size: 28),
+            ),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -710,7 +781,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TextStyle ts({required double size, FontWeight w = FontWeight.w400, Color? c}) =>
-        GoogleFonts.inter(fontSize: size, fontWeight: w, color: c ?? p.text);
+        GoogleFonts.manrope(fontSize: size, fontWeight: w, color: c ?? p.text);
 
     return Row(
       children: [
@@ -850,12 +921,15 @@ class _SearchBarState extends State<_SearchBar> with SingleTickerProviderStateMi
               controller: widget.controller,
               onChanged: widget.onChanged,
               cursorColor: brandGreen,
-              style: GoogleFonts.inter(fontSize: 14, color: widget.p.text),
+              style: GoogleFonts.manrope(fontSize: 14, color: widget.p.text),
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
                 hintText: currentHint,
-                hintStyle: GoogleFonts.inter(fontSize: 13, color: widget.p.muted),
+                hintStyle: GoogleFonts.manrope(fontSize: 13, color: widget.p.muted),
               ),
             ),
           ),
@@ -955,7 +1029,7 @@ class _HomeSearchResults extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 '«$query»',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
               ),
             ],
           ),
@@ -969,7 +1043,7 @@ class _HomeSearchResults extends StatelessWidget {
         if (matchedCats.isNotEmpty) ...[
           Text(
             s.categories,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
           ),
           const SizedBox(height: 10),
           ...matchedCats.map(
@@ -988,7 +1062,7 @@ class _HomeSearchResults extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             s.navServices,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
           ),
           const SizedBox(height: 10),
           ...matchedServices.map(
@@ -1009,7 +1083,7 @@ class _HomeSearchResults extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             s.popularMasters,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
           ),
           const SizedBox(height: 10),
           ...matchedMasters.map(
@@ -1032,7 +1106,7 @@ class _HomeSearchResults extends StatelessWidget {
             children: [
               Text(
                 s.all,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
               ),
               const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
             ],
@@ -1086,7 +1160,7 @@ class _HomeSearchCategoryRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   cat.name(locale),
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+                  style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
                 ),
               ),
               Icon(LucideIcons.chevron_right, size: 18, color: p.muted),
@@ -1112,14 +1186,16 @@ class _HomeSearchMasterRow extends StatelessWidget {
   final AppLocale locale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return Material(
       color: p.cardBg,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: master)),
+            SmoothRoute<void>(builder: (_) => MasterDetailPage(master: master)),
           );
         },
         borderRadius: BorderRadius.circular(14),
@@ -1144,12 +1220,12 @@ class _HomeSearchMasterRow extends StatelessWidget {
                       master.fullName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w700, color: p.text),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       master.profession(locale),
-                      style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                      style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                     ),
                   ],
                 ),
@@ -1162,7 +1238,7 @@ class _HomeSearchMasterRow extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(
                     master.rating.toStringAsFixed(1),
-                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text),
                   ),
                 ],
               ),
@@ -1222,7 +1298,7 @@ class _TrustRow extends StatelessWidget {
                     label,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       color: p.text,
@@ -1267,7 +1343,11 @@ class _AiCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+        child: ShineSweep(delay: const Duration(milliseconds: 800), child: _buildCard(context)),
+      );
+
+  Widget _buildCard(BuildContext context) {
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
@@ -1305,7 +1385,7 @@ class _AiCard extends StatelessWidget {
                       ),
                       child: Text(
                         s.badgeNew,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 8,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -1316,7 +1396,7 @@ class _AiCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       s.aiTitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -1326,7 +1406,7 @@ class _AiCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       s.aiSubtitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 9.5,
                         color: Colors.white.withValues(alpha: 0.75),
                         height: 1.3,
@@ -1378,12 +1458,14 @@ class _MasterCard extends StatelessWidget {
 
   void _openMasters(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const MastersPage()),
+      SmoothRoute<void>(builder: (_) => const MastersPage()),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
@@ -1420,7 +1502,7 @@ class _MasterCard extends StatelessWidget {
                   children: [
                     Text(
                       s.masterTitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: p.text,
@@ -1430,7 +1512,7 @@ class _MasterCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       s.masterSubtitle,
-                      style: GoogleFonts.inter(fontSize: 9.5, color: p.muted, height: 1.3),
+                      style: GoogleFonts.manrope(fontSize: 9.5, color: p.muted, height: 1.3),
                     ),
                   ],
                 ),
@@ -1506,7 +1588,7 @@ class _Categories extends StatelessWidget {
           children: [
             Text(
               s.categories,
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
             ),
             const Spacer(),
             GestureDetector(
@@ -1516,7 +1598,7 @@ class _Categories extends StatelessWidget {
                 children: [
                   Text(
                     s.all,
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
+                    style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: brandGreen),
                   ),
                   const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
                 ],
@@ -1526,14 +1608,24 @@ class _Categories extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 88,
+          height: 100,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.symmetric(vertical: 6),
             itemCount: cats.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (_, i) {
               final c = cats[i];
-              return Material(
+              return Reveal(
+                delay: Duration(milliseconds: 520 + i * 80),
+                offsetY: 0,
+                offsetX: 30,
+                child: HoverLift(
+                  radius: 16,
+                  scale: 1.06,
+                  glowColor: c.$3,
+                  child: Material(
                 color: p.cardBg,
                 borderRadius: BorderRadius.circular(16),
                 elevation: Theme.of(context).brightness == Brightness.light ? 1 : 0,
@@ -1553,7 +1645,19 @@ class _Categories extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(c.$1, color: c.$3, size: 24),
+                        FloatY(
+                          amplitude: 2.5,
+                          phase: i * 0.18,
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: c.$3.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(c.$1, color: c.$3, size: 21),
+                          ),
+                        ),
                         const SizedBox(height: 5),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1562,7 +1666,7 @@ class _Categories extends StatelessWidget {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                               color: p.text,
@@ -1573,6 +1677,8 @@ class _Categories extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
+              ),
                 ),
               );
             },
@@ -1590,7 +1696,11 @@ class _DiscountBanner extends StatelessWidget {
   final HomePalette p;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+        child: ShineSweep(delay: const Duration(milliseconds: 1500), child: _buildCard(context)),
+      );
+
+  Widget _buildCard(BuildContext context) {
     return Container(
       height: 132,
       decoration: BoxDecoration(
@@ -1635,7 +1745,7 @@ class _DiscountBanner extends StatelessWidget {
                   ),
                   child: Text(
                     s.discountBadge,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 8.5,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -1645,7 +1755,7 @@ class _DiscountBanner extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   s.discountTitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -1661,7 +1771,7 @@ class _DiscountBanner extends StatelessWidget {
                   ),
                   child: Text(
                     s.promoCodeLabel,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       color: p.promoCodeText,
@@ -1697,7 +1807,7 @@ class _HowItWorks extends StatelessWidget {
       children: [
         Text(
           s.howItWorks,
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
         ),
         const SizedBox(height: 12),
         Row(
@@ -1714,7 +1824,7 @@ class _HowItWorks extends StatelessWidget {
                     decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle),
                     child: Text(
                       '${i + 1}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -1727,7 +1837,7 @@ class _HowItWorks extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: p.text,
@@ -1740,7 +1850,7 @@ class _HowItWorks extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(fontSize: 9, color: p.muted, height: 1.35),
+                    style: GoogleFonts.manrope(fontSize: 9, color: p.muted, height: 1.35),
                   ),
                 ],
               ),
@@ -1817,7 +1927,25 @@ class _BottomNav extends StatelessWidget {
                   color: on ? brandGreen.withValues(alpha: 0.1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 22, color: c),
+                child: i == 2
+                    ? Consumer(
+                        builder: (context, ref, _) {
+                          final unread = ref.watch(unreadChatsTotalProvider).value ?? 0;
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Icon(icon, size: 22, color: c),
+                              if (unread > 0)
+                                Positioned(
+                                  right: -10,
+                                  top: -8,
+                                  child: UnreadBadge(count: unread, size: 18),
+                                ),
+                            ],
+                          );
+                        },
+                      )
+                    : Icon(icon, size: 22, color: c),
               ),
               const SizedBox(height: 2),
               FittedBox(
@@ -1825,7 +1953,7 @@ class _BottomNav extends StatelessWidget {
                 child: Text(
                   label,
                   maxLines: 1,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: on ? FontWeight.w700 : FontWeight.w500,
                     color: c,
@@ -1859,7 +1987,7 @@ class _SectionHeader extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
           ),
         ),
         const SizedBox(width: 8),
@@ -1871,7 +1999,7 @@ class _SectionHeader extends StatelessWidget {
             children: [
               Text(
                 action,
-                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
+                style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
               ),
               const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
             ],
@@ -1918,14 +2046,14 @@ class _ActiveFilterBar extends StatelessWidget {
             chips.join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
           ),
         ),
         TextButton(
           onPressed: onClear,
           child: Text(
             s.resetBtn,
-            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: brandGreen),
+            style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w700, color: brandGreen),
           ),
         ),
       ],
@@ -1955,7 +2083,7 @@ class _PopularMasters extends StatelessWidget {
 
     void openMasters() {
       Navigator.of(context).push(
-        MaterialPageRoute<void>(
+        SmoothRoute<void>(
           builder: (_) => MastersPage(
             initialFilter: filter.category,
             initialDistrict: filter.district,
@@ -1981,7 +2109,7 @@ class _PopularMasters extends StatelessWidget {
             child: Center(
               child: Text(
                 s.nothingFoundMasters,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: p.muted),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: p.muted),
               ),
             ),
           )
@@ -2015,12 +2143,14 @@ class _PopularMasterCard extends StatelessWidget {
 
   void _open(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: m)),
+      SmoothRoute<void>(builder: (_) => MasterDetailPage(master: m)),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return Material(
       color: p.cardBg,
       borderRadius: BorderRadius.circular(16),
@@ -2067,7 +2197,7 @@ class _PopularMasterCard extends StatelessWidget {
                             const SizedBox(width: 3),
                             Text(
                               m.isTop ? s.badgeTop : s.badgeVerified,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: m.isTop ? const Color(0xFF1C1C1C) : Colors.white,
@@ -2098,7 +2228,7 @@ class _PopularMasterCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               '${s.arrivalPrefix} 20 ${s.minShort}',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -2121,7 +2251,7 @@ class _PopularMasterCard extends StatelessWidget {
                       m.fullName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text, height: 1.2),
+                      style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text, height: 1.2),
                     ),
                     const SizedBox(height: 5),
                     Row(
@@ -2130,7 +2260,7 @@ class _PopularMasterCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Text(
                           m.rating.toStringAsFixed(1),
-                          style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text),
+                          style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text),
                         ),
                         const SizedBox(width: 4),
                         Flexible(
@@ -2138,7 +2268,7 @@ class _PopularMasterCard extends StatelessWidget {
                             '(${m.reviews} ${s.reviewsWord})',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                            style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                           ),
                         ),
                       ],
@@ -2148,12 +2278,12 @@ class _PopularMasterCard extends StatelessWidget {
                       m.profession(locale),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                      style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       '${s.fromPrice} ${m.priceMin} ${s.priceUnit}',
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: brandGreen),
+                      style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: brandGreen),
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
@@ -2172,7 +2302,7 @@ class _PopularMasterCard extends StatelessWidget {
                         icon: const Icon(LucideIcons.phone, size: 15),
                         label: Text(
                           s.callBtn,
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -2206,7 +2336,7 @@ class _AllMastersSection extends StatelessWidget {
   Widget build(BuildContext context) {
     void openMasters() {
       Navigator.of(context).push(
-        MaterialPageRoute<void>(
+        SmoothRoute<void>(
           builder: (_) => MastersPage(
             initialFilter: filter.category,
             initialDistrict: filter.district,
@@ -2234,7 +2364,7 @@ class _AllMastersSection extends StatelessWidget {
             child: Center(
               child: Text(
                 s.nothingFoundMasters,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: p.muted),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: p.muted),
               ),
             ),
           )
@@ -2265,12 +2395,14 @@ class _AllMasterRow extends StatelessWidget {
 
   void _open(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => MasterDetailPage(master: m)),
+      SmoothRoute<void>(builder: (_) => MasterDetailPage(master: m)),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return Material(
       color: p.cardBg,
       borderRadius: BorderRadius.circular(14),
@@ -2298,19 +2430,19 @@ class _AllMasterRow extends StatelessWidget {
                       m.fullName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       m.profession(locale),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                      style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${s.fromPrice} ${m.priceMin} ${s.priceUnit}',
-                      style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: brandGreen),
+                      style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w700, color: brandGreen),
                     ),
                   ],
                 ),
@@ -2374,14 +2506,14 @@ class _ClientReviews extends ConsumerWidget {
           action: s.allReviews,
           p: p,
           onAction: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const AllReviewsPage()),
+            SmoothRoute<void>(builder: (_) => const AllReviewsPage()),
           ),
         ),
         const SizedBox(height: 12),
         SizedBox(
           height: 162,
           child: reviews.isEmpty
-              ? Center(child: Text(s.noReviewsYet, style: GoogleFonts.inter(color: p.muted)))
+              ? Center(child: Text(s.noReviewsYet, style: GoogleFonts.manrope(color: p.muted)))
               : ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: reviews.length,
@@ -2404,7 +2536,9 @@ class _ReviewCard extends StatelessWidget {
   final HomePalette p;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return Container(
       width: 280,
       padding: const EdgeInsets.all(14),
@@ -2428,7 +2562,7 @@ class _ReviewCard extends StatelessWidget {
                 ),
                 child: Text(
                   r.author.characters.first,
-                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: r.accent),
+                  style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: r.accent),
                 ),
               ),
               const SizedBox(width: 10),
@@ -2437,7 +2571,7 @@ class _ReviewCard extends StatelessWidget {
                 children: [
                   Text(
                     r.author,
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text),
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -2451,7 +2585,7 @@ class _ReviewCard extends StatelessWidget {
               const Spacer(),
               Text(
                 r.date,
-                style: GoogleFonts.inter(fontSize: 10, color: p.muted),
+                style: GoogleFonts.manrope(fontSize: 10, color: p.muted),
               ),
             ],
           ),
@@ -2461,7 +2595,7 @@ class _ReviewCard extends StatelessWidget {
               r.body,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(fontSize: 12.5, color: p.text, height: 1.4),
+              style: GoogleFonts.manrope(fontSize: 12.5, color: p.text, height: 1.4),
             ),
           ),
         ],
@@ -2480,7 +2614,11 @@ class _AiBigBanner extends StatelessWidget {
   final VoidCallback onPick;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+        child: ShineSweep(delay: const Duration(milliseconds: 2900), child: _buildCard(context)),
+      );
+
+  Widget _buildCard(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -2511,7 +2649,7 @@ class _AiBigBanner extends StatelessWidget {
                   children: [
                     Text(
                       s.aiBigTitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: p.text,
@@ -2521,7 +2659,7 @@ class _AiBigBanner extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       s.aiBigSub,
-                      style: GoogleFonts.inter(fontSize: 11, color: p.muted, height: 1.3),
+                      style: GoogleFonts.manrope(fontSize: 11, color: p.muted, height: 1.3),
                     ),
                   ],
                 ),
@@ -2554,7 +2692,7 @@ class _AiBigBanner extends StatelessWidget {
               child: Text(
                 s.aiBigBtn,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, height: 1.2),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, height: 1.2),
               ),
             ),
           ),
@@ -2581,7 +2719,7 @@ class _AiBigBanner extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 8.5, color: p.muted, height: 1.2),
+            style: GoogleFonts.manrope(fontSize: 8.5, color: p.muted, height: 1.2),
           ),
         ],
       ),
@@ -2638,14 +2776,14 @@ class _StatsRow extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   value,
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+                  style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
                 ),
                 const SizedBox(height: 1),
                 Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 9.5, color: p.muted, height: 1.15),
+                  style: GoogleFonts.manrope(fontSize: 9.5, color: p.muted, height: 1.15),
                 ),
               ],
             ),
@@ -2658,15 +2796,7 @@ class _StatsRow extends StatelessWidget {
 
 // ─── Tools shop ─────────────────────────────────────────────────────────────
 
-class _ProductData {
-  const _ProductData({required this.name, required this.image, required this.price});
-
-  final String name;
-  final String image;
-  final int price;
-}
-
-class _ToolsShop extends StatelessWidget {
+class _ToolsShop extends ConsumerWidget {
   const _ToolsShop({required this.s, required this.p, required this.onOpenShop});
 
   final HomeStrings s;
@@ -2674,13 +2804,12 @@ class _ToolsShop extends StatelessWidget {
   final VoidCallback onOpenShop;
 
   @override
-  Widget build(BuildContext context) {
-    final products = <_ProductData>[
-      _ProductData(name: s.prodDrill, image: 'assets/images/tool_drill.png', price: 520),
-      _ProductData(name: s.prodHammer, image: 'assets/images/tool_hammer.png', price: 120),
-      _ProductData(name: s.prodToolSet, image: 'assets/images/tool_set.png', price: 290),
-      _ProductData(name: s.prodLevel, image: 'assets/images/tool_level.png', price: 85),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Настоящие товары магазина — те же, что в разделе «Магазин».
+    final catalog = ref.watch(shopCatalogProvider);
+    final locale = ref.watch(localeProvider);
+    final count = catalog.length < 8 ? catalog.length : 8;
+    if (count == 0) return const SizedBox.shrink();
 
     return Column(
       children: [
@@ -2690,9 +2819,53 @@ class _ToolsShop extends StatelessWidget {
           height: 268,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: products.length,
+            clipBehavior: Clip.none,
+            itemCount: count,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => _ProductCard(prod: products[i], s: s, p: p),
+            itemBuilder: (_, i) {
+              final product = catalog[i];
+              return _ProductCard(
+                product: product,
+                name: product.name(locale),
+                s: s,
+                p: p,
+                onOpen: () => Navigator.of(context).push(
+                  SmoothRoute<void>(builder: (_) => ShopPage(initialProduct: product)),
+                ),
+                onAdd: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(shopCartProvider.notifier).add(i);
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(
+                        backgroundColor: brandGreen,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(milliseconds: 2500),
+                        content: Row(
+                          children: [
+                            const Icon(LucideIcons.circle_check, color: Colors.white, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '«${product.name(locale)}» в корзине',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                        action: SnackBarAction(
+                          label: 'Открыть',
+                          textColor: Colors.white,
+                          onPressed: onOpenShop,
+                        ),
+                      ),
+                    );
+                },
+              );
+            },
           ),
         ),
       ],
@@ -2700,79 +2873,164 @@ class _ToolsShop extends StatelessWidget {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.prod, required this.s, required this.p});
+class _ProductCard extends StatefulWidget {
+  const _ProductCard({
+    required this.product,
+    required this.name,
+    required this.s,
+    required this.p,
+    required this.onOpen,
+    required this.onAdd,
+  });
 
-  final _ProductData prod;
+  final ShopProduct product;
+  final String name;
   final HomeStrings s;
   final HomePalette p;
+  final VoidCallback onOpen;
+  final VoidCallback onAdd;
+
+  @override
+  State<_ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<_ProductCard> {
+  bool _added = false;
+
+  void _add() {
+    widget.onAdd();
+    setState(() => _added = true);
+    Future<void>.delayed(const Duration(milliseconds: 1400), () {
+      if (mounted) setState(() => _added = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      decoration: BoxDecoration(
+    final p = widget.p;
+    final prod = widget.product;
+    return HoverLift(
+      child: Material(
         color: p.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.border),
-        boxShadow: Theme.of(context).brightness == Brightness.light
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            color: p.productImageBg,
-            padding: const EdgeInsets.all(10),
-            child: Image.asset(prod.image, fit: BoxFit.contain),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onOpen,
+          child: Container(
+            width: 160,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: p.border),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: 34,
-                  child: Text(
-                    prod.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
+                Stack(
                   children: [
-                    Expanded(
-                      child: Text(
-                        '${prod.price} ${s.priceUnit}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                    Container(
+                      height: 140,
+                      width: double.infinity,
+                      color: p.productImageBg,
+                      padding: const EdgeInsets.all(10),
+                      child: Hero(
+                        tag: 'home-prod-${prod.image}-${prod.ru}',
+                        child: buildShopProductImage(prod),
                       ),
                     ),
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: const BoxDecoration(color: brandGreen, shape: BoxShape.circle),
-                      child: const Icon(LucideIcons.plus, size: 17, color: Colors.white),
-                    ),
+                    if (prod.discountPercent > 0)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '−${prod.discountPercent}%',
+                            style: GoogleFonts.manrope(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white),
+                          ),
+                        ),
+                      ),
                   ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 34,
+                        child: Text(
+                          widget.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (prod.oldPrice > prod.price)
+                                  Text(
+                                    '${prod.oldPrice} ${widget.s.priceUnit}',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 10.5,
+                                      color: p.muted,
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                                Text(
+                                  '${prod.price} ${widget.s.priceUnit}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'В корзину',
+                            child: GestureDetector(
+                              onTap: _add,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: _added ? const Color(0xFF2E9E4F) : brandGreen,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(color: brandGreen.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 3)),
+                                  ],
+                                ),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                                  child: Icon(
+                                    _added ? LucideIcons.check : LucideIcons.plus,
+                                    key: ValueKey(_added),
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2800,7 +3058,7 @@ class _MoreFeatures extends StatelessWidget {
       children: [
         Text(
           s.moreFeatures,
-          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
+          style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -2836,7 +3094,7 @@ class _MoreFeatures extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text, height: 1.15),
+                      style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w700, color: p.text, height: 1.15),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -2844,7 +3102,7 @@ class _MoreFeatures extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 10, color: p.muted, height: 1.2),
+                      style: GoogleFonts.manrope(fontSize: 10, color: p.muted, height: 1.2),
                     ),
                   ],
                 ),
@@ -2866,7 +3124,11 @@ class _DiscountBanner2 extends StatelessWidget {
   final HomePalette p;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(
+        child: ShineSweep(delay: const Duration(milliseconds: 2200), child: _buildCard(context)),
+      );
+
+  Widget _buildCard(BuildContext context) {
     return Container(
       height: 128,
       decoration: BoxDecoration(
@@ -2893,7 +3155,7 @@ class _DiscountBanner2 extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '20%',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -2924,7 +3186,7 @@ class _DiscountBanner2 extends StatelessWidget {
               children: [
                 Text(
                   s.disc2Title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -2934,7 +3196,7 @@ class _DiscountBanner2 extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   s.disc2Sub,
-                  style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white70),
+                  style: GoogleFonts.manrope(fontSize: 10.5, color: Colors.white70),
                 ),
                 const Spacer(),
                 Container(
@@ -2945,7 +3207,7 @@ class _DiscountBanner2 extends StatelessWidget {
                   ),
                   child: Text(
                     'MASTER20',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF2E7D32),
@@ -2971,7 +3233,9 @@ class _AllToolsCard extends StatelessWidget {
   final HomePalette p;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     final items = [
       s.toolPower,
       s.toolHand,
@@ -3000,12 +3264,12 @@ class _AllToolsCard extends StatelessWidget {
                   children: [
                     Text(
                       s.allToolsTitle,
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       s.allToolsSub,
-                      style: GoogleFonts.inter(fontSize: 11, color: p.muted, height: 1.3),
+                      style: GoogleFonts.manrope(fontSize: 11, color: p.muted, height: 1.3),
                     ),
                   ],
                 ),
@@ -3034,7 +3298,7 @@ class _AllToolsCard extends StatelessWidget {
                         label,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 11, color: p.text, height: 1.2),
+                        style: GoogleFonts.manrope(fontSize: 11, color: p.text, height: 1.2),
                       ),
                     ),
                   ],
@@ -3078,7 +3342,7 @@ class _ServicesPageState extends State<_ServicesPage> {
 
   void _openCategory(ServiceCategory cat) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => CategoryDetailPage(category: cat, locale: widget.locale),
       ),
     );
@@ -3112,6 +3376,13 @@ class _ServicesPageState extends State<_ServicesPage> {
       padding: const EdgeInsets.only(bottom: 108),
       children: [
         // Premium green header
+        Reveal(
+          offsetY: -18,
+          duration: const Duration(milliseconds: 550),
+          child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+          child: Stack(
+          children: [
         Container(
           padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 18, 20, 22),
           decoration: BoxDecoration(
@@ -3141,7 +3412,10 @@ class _ServicesPageState extends State<_ServicesPage> {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(LucideIcons.layout_grid, color: Colors.white, size: 22),
+                    child: const FloatY(
+                      amplitude: 2,
+                      child: Icon(LucideIcons.layout_grid, color: Colors.white, size: 22),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3150,11 +3424,11 @@ class _ServicesPageState extends State<_ServicesPage> {
                       children: [
                         Text(
                           s.navServices,
-                          style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                          style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
                         ),
                         Text(
                           s.servicesSubtitle,
-                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
+                          style: GoogleFonts.manrope(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
                         ),
                       ],
                     ),
@@ -3194,12 +3468,15 @@ class _ServicesPageState extends State<_ServicesPage> {
                         controller: _controller,
                         onChanged: (v) => setState(() => _query = v),
                         cursorColor: brandGreen,
-                        style: GoogleFonts.inter(fontSize: 14, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 14, color: p.text),
                         decoration: InputDecoration(
                           isCollapsed: true,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
                           hintText: s.servicesSearch,
-                          hintStyle: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                          hintStyle: GoogleFonts.manrope(fontSize: 13, color: p.muted),
                         ),
                       ),
                     ),
@@ -3225,11 +3502,97 @@ class _ServicesPageState extends State<_ServicesPage> {
             ],
           ),
         ),
+            // декоративные «пузыри» в шапке
+            Positioned(
+              right: -30,
+              top: -20,
+              child: IgnorePointer(
+                child: FloatY(
+                  amplitude: 6,
+                  period: const Duration(milliseconds: 4200),
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 70,
+              top: MediaQuery.paddingOf(context).top + 6,
+              child: IgnorePointer(
+                child: FloatY(
+                  amplitude: 4,
+                  phase: 0.4,
+                  period: const Duration(milliseconds: 3000),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.10),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+        if (q.isEmpty) ...[
+          Reveal(
+            delay: const Duration(milliseconds: 120),
+            child: _PopularServicesStrip(
+              p: p,
+              locale: locale,
+              onOpen: _openCategory,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Reveal(
+            delay: const Duration(milliseconds: 200),
+            child: Row(
+              children: [
+                Text(
+                  'Все категории',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: p.text,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: brandGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${serviceCatalog.length}',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: brandGreen,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (nothingFound)
           Padding(
             padding: const EdgeInsets.only(top: 40),
@@ -3240,7 +3603,7 @@ class _ServicesPageState extends State<_ServicesPage> {
                   const SizedBox(height: 10),
                   Text(
                     '«$_query»',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
                   ),
                 ],
               ),
@@ -3257,8 +3620,8 @@ class _ServicesPageState extends State<_ServicesPage> {
               crossAxisSpacing: 12,
               childAspectRatio: 0.82,
             ),
-            itemBuilder: (_, i) => FadeSlideIn(
-              delay: Duration(milliseconds: 40 * (i % 9)),
+            itemBuilder: (_, i) => Reveal(
+              delay: Duration(milliseconds: 260 + 55 * (i % 12)),
               child: _ServiceCard(
                 cat: matchedCats[i],
                 s: s,
@@ -3269,21 +3632,198 @@ class _ServicesPageState extends State<_ServicesPage> {
           ),
         if (matchedServices.isNotEmpty) ...[
           const SizedBox(height: 18),
-          ...matchedServices.map(
-            (pair) => Padding(
+          ...matchedServices.indexed.map(
+            (e) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: _ServiceResultRow(
-                cat: pair.$1,
-                svc: pair.$2,
+              child: Reveal(
+                delay: Duration(milliseconds: 40 * (e.$1 % 10)),
+                offsetY: 14,
+                child: _ServiceResultRow(
+                cat: e.$2.$1,
+                svc: e.$2.$2,
                 s: s,
                 p: p,
                 locale: locale,
-                onTap: () => _openCategory(pair.$1),
+                onTap: () => _openCategory(e.$2.$1),
+              ),
               ),
             ),
           ),
         ],
+        const SizedBox(height: 22),
+        Reveal(
+          delay: const Duration(milliseconds: 150),
+          child: HoverLift(
+            glowColor: const Color(0xFF10B981),
+            child: ShineSweep(
+              delay: const Duration(milliseconds: 1200),
+              child: GestureDetector(
+                onTap: () => AiCallSheet.show(context),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF34D399), Color(0xFF10B981), Color(0xFF0D9488)],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const FloatY(
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Icon(LucideIcons.bot, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Не нашли нужную услугу?',
+                              style: GoogleFonts.manrope(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Позвоните ИИ-диспетчеру — подберём мастера за минуту',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12.5,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(LucideIcons.chevron_right, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// «Популярное» — горизонтальная лента частых услуг с ценой.
+class _PopularServicesStrip extends StatelessWidget {
+  const _PopularServicesStrip({
+    required this.p,
+    required this.locale,
+    required this.onOpen,
+  });
+
+  final HomePalette p;
+  final AppLocale locale;
+  final ValueChanged<ServiceCategory> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <(ServiceCategory, ServiceItem)>[
+      for (final cat in serviceCatalog.take(8))
+        if (cat.services.isNotEmpty) (cat, cat.services.first),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(LucideIcons.flame, size: 18, color: Color(0xFFF97316)),
+            const SizedBox(width: 6),
+            Text(
+              'Популярное',
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: p.text,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final (cat, svc) = items[i];
+              return Reveal(
+                delay: Duration(milliseconds: 160 + i * 70),
+                offsetY: 0,
+                offsetX: 26,
+                child: HoverLift(
+                  glowColor: cat.color,
+                  radius: 16,
+                  child: GestureDetector(
+                    onTap: () => onOpen(cat),
+                    child: Container(
+                      width: 168,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            cat.color.withValues(alpha: 0.16),
+                            cat.color.withValues(alpha: 0.04),
+                          ],
+                        ),
+                        border: Border.all(color: cat.color.withValues(alpha: 0.25)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(cat.icon, size: 18, color: cat.color),
+                              const Spacer(),
+                              Text(
+                                'от ${svc.priceAvg} с.',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: cat.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            svc.name(locale),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: p.text,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -3309,7 +3849,9 @@ class _ServiceResultRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return Material(
       color: p.cardBg,
       borderRadius: BorderRadius.circular(14),
@@ -3344,12 +3886,12 @@ class _ServiceResultRow extends StatelessWidget {
                       svc.name(locale),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w700, color: p.text),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       cat.name(locale),
-                      style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                      style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                     ),
                   ],
                 ),
@@ -3357,7 +3899,7 @@ class _ServiceResultRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${svc.priceAvg} ${s.priceUnit}',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: brandGreen),
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: brandGreen),
               ),
             ],
           ),
@@ -3386,39 +3928,55 @@ class _ServiceCard extends StatefulWidget {
 
 class _ServiceCardState extends State<_ServiceCard> {
   bool _pressed = false;
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     final cat = widget.cat;
     final p = widget.p;
-    return GestureDetector(
+    final minPrice = cat.services.isEmpty
+        ? null
+        : cat.services.map((e) => e.priceAvg).reduce((a, b) => a < b ? a : b);
+    final active = _hover || _pressed;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute<void>(
+          SmoothRoute<void>(
             builder: (_) => CategoryDetailPage(category: cat, locale: widget.locale),
           ),
         );
       },
-      child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1.0,
-        duration: const Duration(milliseconds: 150),
+      child: AnimatedSlide(
+        offset: Offset(0, _hover && !_pressed ? -0.03 : 0),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: AnimatedScale(
+        scale: _pressed ? 0.94 : (_hover ? 1.05 : 1.0),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: const Duration(milliseconds: 220),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: p.cardBg,
+            color: active ? Color.alphaBlend(cat.color.withValues(alpha: 0.06), p.cardBg) : p.cardBg,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: _pressed ? cat.color.withValues(alpha: 0.5) : p.border,
+              color: active ? cat.color.withValues(alpha: 0.55) : p.border,
+              width: active ? 1.4 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: cat.color.withValues(alpha: _pressed ? 0.2 : 0.08),
-                blurRadius: _pressed ? 16 : 10,
-                offset: const Offset(0, 4),
+                color: cat.color.withValues(alpha: active ? 0.28 : 0.08),
+                blurRadius: active ? 22 : 10,
+                offset: Offset(0, active ? 10 : 4),
+                spreadRadius: active ? -2 : 0,
               ),
             ],
           ),
@@ -3446,7 +4004,15 @@ class _ServiceCardState extends State<_ServiceCard> {
                     ),
                   ],
                 ),
-                child: Icon(cat.icon, size: 25, color: Colors.white),
+                child: FloatY(
+                  amplitude: 1.8,
+                  phase: (cat.ru.length % 10) / 10,
+                  child: AnimatedRotation(
+                    turns: _hover ? -0.04 : 0,
+                    duration: const Duration(milliseconds: 260),
+                    child: Icon(cat.icon, size: 25, color: Colors.white),
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -3454,16 +4020,32 @@ class _ServiceCardState extends State<_ServiceCard> {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: p.text, height: 1.1),
+                style: GoogleFonts.manrope(fontSize: 11.5, fontWeight: FontWeight.w700, color: p.text, height: 1.1),
               ),
               const SizedBox(height: 3),
-              Text(
-                '${cat.services.length} ${widget.s.servicesCountWord}',
-                style: GoogleFonts.inter(fontSize: 9.5, color: p.muted),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: _hover && minPrice != null
+                    ? Text(
+                        'от $minPrice с.',
+                        key: const ValueKey('price'),
+                        style: GoogleFonts.manrope(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: cat.color,
+                        ),
+                      )
+                    : Text(
+                        '${cat.services.length} ${widget.s.servicesCountWord}',
+                        key: const ValueKey('count'),
+                        style: GoogleFonts.manrope(fontSize: 9.5, color: p.muted),
+                      ),
               ),
             ],
           ),
         ),
+      ),
+      ),
       ),
     );
   }
@@ -3479,13 +4061,68 @@ class _ChatsTabPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              s.navChats,
-              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: p.text),
+        Reveal(
+          offsetY: 12,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                FloatY(
+                  amplitude: 2.5,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF57B55E), Color(0xFF2E9E4F)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(color: const Color(0xFF57B55E).withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 5)),
+                      ],
+                    ),
+                    child: const Icon(LucideIcons.message_circle, color: Colors.white, size: 21),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.navChats,
+                        style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800, color: p.text, height: 1.1),
+                      ),
+                      const SizedBox(height: 2),
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final unread = ref.watch(unreadChatsTotalProvider).asData?.value ?? 0;
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: Row(
+                              key: ValueKey(unread),
+                              children: [
+                                const LiveDot(color: Color(0xFF57B55E), size: 7),
+                                const SizedBox(width: 6),
+                                Text(
+                                  unread > 0 ? '$unread непрочитанных' : 'Все сообщения прочитаны',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: unread > 0 ? const Color(0xFFEF4444) : p.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -3520,7 +4157,7 @@ class _PlaceholderPage extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: p.text),
           ),
         ],
       ),
@@ -3529,7 +4166,7 @@ class _PlaceholderPage extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WOW FEATURES ROW — SOS, Аукцион, AI-диагностика
+// WOW FEATURES ROW — SOS, ИИ-звонок, AI-диагностика
 // ═══════════════════════════════════════════════════════════════════════════
 class _WowFeaturesRow extends StatelessWidget {
   const _WowFeaturesRow({required this.s, required this.p});
@@ -3551,21 +4188,23 @@ class _WowFeaturesRow extends StatelessWidget {
               gradient: AppDesign.sosGradient,
               glow: AppDesign.accentRed,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const SosEmergencyScreen()),
+                SmoothRoute<void>(builder: (_) => const SosEmergencyScreen()),
               ),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: _WowCard(
-              icon: LucideIcons.gavel,
+              icon: LucideIcons.phone,
               title: s.auctionTitle,
               subtitle: s.auctionSubtitle,
-              gradient: AppDesign.goldGradient,
-              glow: AppDesign.accentOrange,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const AuctionScreen()),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF34D399), Color(0xFF10B981), Color(0xFF0D9488)],
               ),
+              glow: AppDesign.accentTeal,
+              onTap: () => AiCallSheet.show(context),
             ),
           ),
           const SizedBox(width: 10),
@@ -3577,7 +4216,7 @@ class _WowFeaturesRow extends StatelessWidget {
               gradient: AppDesign.aiGradient,
               glow: AppDesign.accentPurple,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const AiDiagnosisScreen()),
+                SmoothRoute<void>(builder: (_) => const AiDiagnosisScreen()),
               ),
             ),
           ),
@@ -3610,30 +4249,48 @@ class _WowCard extends StatefulWidget {
 
 class _WowCardState extends State<_WowCard> {
   bool _pressed = false;
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
+      child: AnimatedSlide(
+        offset: Offset(0, _hover && !_pressed ? -0.04 : 0),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        child: AnimatedScale(
+        scale: _pressed ? 0.95 : (_hover ? 1.05 : 1.0),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: widget.glow.withValues(alpha: _pressed ? 0.2 : (_hover ? 0.55 : 0.35)),
+                blurRadius: _hover ? 26 : 16,
+                offset: Offset(0, _hover ? 10 : 6),
+                spreadRadius: -2,
+              ),
+            ],
+          ),
+          child: ShineSweep(
+          radius: 18,
+          delay: Duration(milliseconds: widget.title.length * 137 % 1500),
+          child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: widget.gradient,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: widget.glow.withValues(alpha: _pressed ? 0.2 : 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-                spreadRadius: -2,
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -3646,14 +4303,21 @@ class _WowCardState extends State<_WowCard> {
                   color: Colors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 20),
+                child: FloatY(
+                  amplitude: 2,
+                  child: AnimatedRotation(
+                    turns: _hover ? -0.03 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(widget.icon, color: Colors.white, size: 20),
+                  ),
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -3663,7 +4327,7 @@ class _WowCardState extends State<_WowCard> {
                     widget.subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 10,
                       color: Colors.white.withValues(alpha: 0.85),
                     ),
@@ -3672,7 +4336,11 @@ class _WowCardState extends State<_WowCard> {
               ),
             ],
           ),
+          ),
+          ),
         ),
+      ),
+      ),
       ),
     );
   }
@@ -3787,7 +4455,7 @@ class _HeroHeaderState extends State<_HeroHeader>
                   children: [
                     Text(
                       _greeting(widget.s),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -3800,7 +4468,7 @@ class _HeroHeaderState extends State<_HeroHeader>
                         const SizedBox(width: 4),
                         Text(
                           widget.s.city,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -3858,12 +4526,15 @@ class _HeroHeaderState extends State<_HeroHeader>
                     controller: widget.controller,
                     onChanged: widget.onChanged,
                     cursorColor: brandGreen,
-                    style: GoogleFonts.inter(fontSize: 14, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 14, color: p.text),
                     decoration: InputDecoration(
                       isCollapsed: true,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
                       hintText: hasQuery ? widget.s.searchPlaceholder : _hints[_hintIndex],
-                      hintStyle: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                      hintStyle: GoogleFonts.manrope(fontSize: 13, color: p.muted),
                     ),
                   ),
                 ),

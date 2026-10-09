@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorageService {
@@ -21,6 +23,40 @@ class SecureStorageService {
   static const shopAddressesKey = 'shop_addresses';
 
   final FlutterSecureStorage _storage;
+
+  // Настройки устройства (тема, язык) и имена по номеру — не удаляются при выходе из аккаунта.
+  static const themeModeKey = 'app_theme_mode';
+  static const localeKey = 'app_locale';
+  static const namesByPhoneKey = 'display_names_by_phone';
+
+  Future<String?> readSetting(String key) => _storage.read(key: key);
+
+  Future<void> writeSetting(String key, String value) => _storage.write(key: key, value: value);
+
+  Future<Map<String, String>> readNamesByPhone() async {
+    try {
+      final raw = await _storage.read(key: namesByPhoneKey);
+      if (raw == null || raw.isEmpty) return {};
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map.map((k, v) => MapEntry(k, v.toString()));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> writeNameForPhone(String phone, String name) async {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty || name.trim().isEmpty) return;
+    final map = await readNamesByPhone();
+    map[digits] = name.trim();
+    await _storage.write(key: namesByPhoneKey, value: jsonEncode(map));
+  }
+
+  Future<String?> readNameForPhone(String? phone) async {
+    final digits = (phone ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    return (await readNamesByPhone())[digits];
+  }
 
   Future<String?> readToken() => _storage.read(key: authTokenKey);
 

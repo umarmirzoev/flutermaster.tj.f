@@ -12,6 +12,8 @@ import '../../orders/models/api_order.dart';
 import '../../orders/providers/order_workflow_provider.dart';
 import '../../orders/providers/orders_provider.dart';
 import '../../orders/utils/address_validator.dart';
+import '../../profile/presentation/profile_subpages.dart' show PaymentMethodsPage;
+import '../../../core/widgets/motion.dart';
 import '../data/shop_data.dart';
 import '../providers/shop_admin_orders_provider.dart';
 import '../state/shop_state.dart';
@@ -40,6 +42,16 @@ Future<bool> completeShopCheckout({
   if (address == null || address.trim().isEmpty) return false;
   if (!context.mounted) return false;
 
+  // Как будете платить: наличными или одной из сохранённых карт.
+  final payment = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => _PaymentMethodSheet(total: total, unit: l.priceUnit),
+  );
+  if (payment == null) return false;
+  if (!context.mounted) return false;
+
   final orderId = 'SH-${DateTime.now().millisecondsSinceEpoch}';
   final bonus = (total * 0.01).round();
   final order = ShopOrder(
@@ -50,6 +62,7 @@ Future<bool> completeShopCheckout({
     discount: discount,
     bonus: bonus,
     address: address.trim(),
+    paymentMethod: payment,
   );
 
   await ref.read(shopOrdersProvider.notifier).add(order);
@@ -79,7 +92,7 @@ Future<bool> completeShopCheckout({
         final apiResult = await repo.createOrder(
           serviceId: resolved.id,
           title: '$kind: $productsLine',
-          description: 'Заказ товаров из магазина Master.tj',
+          description: 'Заказ товаров из магазина Master.tj. Оплата: $payment',
           address: order.address,
           price: total.toDouble(),
         );
@@ -111,8 +124,8 @@ Future<bool> completeShopCheckout({
         backgroundColor: brandGreen,
         behavior: SnackBarBehavior.floating,
         content: Text(
-          l.orderPlaced,
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+          '${l.orderPlaced} · $payment',
+          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
     );
@@ -202,12 +215,12 @@ class _ShopAddressSheetState extends ConsumerState<_ShopAddressSheet> {
               const SizedBox(height: 16),
               Text(
                 widget.l.deliveryAddress,
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
               ),
               const SizedBox(height: 6),
               Text(
                 widget.l.deliveryAddressSub,
-                style: GoogleFonts.inter(fontSize: 13, color: p.muted, height: 1.35),
+                style: GoogleFonts.manrope(fontSize: 13, color: p.muted, height: 1.35),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -240,12 +253,206 @@ class _ShopAddressSheetState extends ConsumerState<_ShopAddressSheet> {
                   ),
                   child: Text(
                     widget.l.checkout,
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Выбор способа оплаты: наличные или сохранённая карта (можно сразу добавить новую).
+class _PaymentMethodSheet extends ConsumerStatefulWidget {
+  const _PaymentMethodSheet({required this.total, required this.unit});
+
+  final int total;
+  final String unit;
+
+  @override
+  ConsumerState<_PaymentMethodSheet> createState() => _PaymentMethodSheetState();
+}
+
+class _PaymentMethodSheetState extends ConsumerState<_PaymentMethodSheet> {
+  static const _cash = 'Наличными';
+  String _selected = _cash;
+
+  String _cardLabel(PaymentCard c) => 'Картой ${c.brand} •• ${c.last4}';
+
+  Future<void> _addCard() async {
+    final before = ref.read(shopCardsProvider).length;
+    await Navigator.of(context).push(SmoothRoute<void>(builder: (_) => const PaymentMethodsPage()));
+    if (!mounted) return;
+    final cards = ref.read(shopCardsProvider);
+    // Только что добавленную карту сразу выбираем.
+    if (cards.length > before) setState(() => _selected = _cardLabel(cards.last));
+  }
+
+  Widget _option({
+    required HomePalette p,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required String title,
+    String? subtitle,
+    int index = 0,
+  }) {
+    final selected = _selected == value;
+    return Reveal(
+      delay: Duration(milliseconds: 40 + 60 * index),
+      offsetY: 12,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: HoverLift(
+          radius: 16,
+          lift: 2,
+          scale: 1.01,
+          glowColor: color,
+          child: GestureDetector(
+            onTap: () => setState(() => _selected = value),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: selected ? color.withValues(alpha: 0.08) : p.cardBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: selected ? color : p.border, width: selected ? 1.8 : 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, color: color, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: GoogleFonts.manrope(fontSize: 14.5, fontWeight: FontWeight.w800, color: p.text)),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(subtitle, style: GoogleFonts.manrope(fontSize: 11.5, color: p.muted)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                    child: Icon(
+                      selected ? LucideIcons.circle_check : LucideIcons.circle,
+                      key: ValueKey(selected),
+                      color: selected ? color : p.muted,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = HomePalette.of(context);
+    final cards = ref.watch(shopCardsProvider);
+    var i = 0;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+      decoration: BoxDecoration(
+        color: p.pageBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: p.border, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text('Как будете оплачивать?', style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
+                  const Spacer(),
+                  const Icon(LucideIcons.wallet, color: brandGreen, size: 20),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _option(
+                    p: p,
+                    index: i++,
+                    value: _cash,
+                    icon: LucideIcons.banknote,
+                    color: brandGreen,
+                    title: 'Наличными при получении',
+                    subtitle: 'Оплата курьеру или мастеру',
+                  ),
+                  for (final c in cards)
+                    _option(
+                      p: p,
+                      index: i++,
+                      value: _cardLabel(c),
+                      icon: LucideIcons.credit_card,
+                      color: const Color(0xFF3B82F6),
+                      title: '${c.brand} •• ${c.last4}',
+                      subtitle: '${c.holder.isEmpty ? 'Карта' : c.holder} · до ${c.expiry}',
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: TextButton.icon(
+                      onPressed: _addCard,
+                      icon: const Icon(LucideIcons.plus, size: 18, color: brandGreen),
+                      label: Text(
+                        cards.isEmpty ? 'Добавить карту' : 'Добавить другую карту',
+                        style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: brandGreen),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              decoration: BoxDecoration(color: p.cardBg, border: Border(top: BorderSide(color: p.border))),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, _selected),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: brandGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(
+                    'Подтвердить заказ · ${shopMoney(widget.total)} ${widget.unit}',
+                    style: GoogleFonts.manrope(fontSize: 15.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

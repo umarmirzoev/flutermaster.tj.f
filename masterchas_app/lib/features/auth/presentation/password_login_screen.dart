@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,12 +6,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/providers/home_tab_provider.dart';
+import '../../../core/widgets/motion.dart';
 import '../data/master_credentials.dart';
 import '../providers/auth_provider.dart';
 import '../utils/phone_formatter.dart';
+import 'auth_widgets.dart';
+import 'forgot_password_screen.dart';
 
 const _authGreen = Color(0xFF57B55E);
-const _hintGrey = Color(0xFF9CA3AF);
 const _bodyGrey = Color(0xFF6B7280);
 const _titleColor = Color(0xFF111827);
 
@@ -100,157 +102,190 @@ class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMaster = widget.role == 'Master';
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => context.pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(
-                    LucideIcons.chevron_left,
-                    color: _authGreen,
-                    size: 28,
+      backgroundColor: const Color(0xFFFAFBFC),
+      body: Stack(
+        children: [
+          const Positioned.fill(child: AuthBackdrop()),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Reveal(
+                        offsetY: 0,
+                        offsetX: -16,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AuthBackButton(
+                            onTap: () => context.canPop() ? context.pop() : context.go('/login'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Reveal(
+                        delay: Duration(milliseconds: 80),
+                        offsetY: -12,
+                        child: Center(child: AuthHeroIcon(icon: LucideIcons.lock_keyhole)),
+                      ),
+                      const SizedBox(height: 22),
+                      Reveal(
+                        delay: const Duration(milliseconds: 150),
+                        child: Text(
+                          'С возвращением!',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w800, color: _titleColor, height: 1.15),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Reveal(
+                        delay: const Duration(milliseconds: 210),
+                        child: Text(
+                          isMaster
+                              ? 'Войдите по номеру и паролю (или 4-значному коду мастера)'
+                              : 'Войдите по номеру телефона и паролю',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.manrope(fontSize: 14.5, color: _bodyGrey, height: 1.4),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Reveal(
+                        delay: const Duration(milliseconds: 280),
+                        child: AuthGlowField(
+                          controller: _phoneController,
+                          label: 'Номер телефона',
+                          hint: '900 00 00 00',
+                          icon: LucideIcons.phone,
+                          prefixText: '+992 ',
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(9),
+                          ],
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Reveal(
+                        delay: const Duration(milliseconds: 340),
+                        child: AuthGlowField(
+                          controller: _passwordController,
+                          label: 'Пароль',
+                          hint: 'Введите пароль',
+                          icon: LucideIcons.lock,
+                          obscure: _obscurePassword,
+                          onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
+                          textInputAction: TextInputAction.done,
+                          onChanged: (_) => setState(() {}),
+                          onSubmitted: (_) => _onLogin(),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            SmoothRoute<void>(
+                              builder: (_) => ForgotPasswordScreen(initialPhone: _phoneController.text.trim()),
+                            ),
+                          ),
+                          child: Text(
+                            'Забыли пароль?',
+                            style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w700, color: _authGreen),
+                          ),
+                        ),
+                      ),
+                      AuthErrorBox(message: _error),
+                      const SizedBox(height: 16),
+                      Reveal(
+                        delay: const Duration(milliseconds: 400),
+                        child: AuthPrimaryButton(
+                          label: 'Войти',
+                          loadingLabel: 'Входим...',
+                          icon: LucideIcons.log_in,
+                          enabled: _canLogin,
+                          loading: _isSubmitting,
+                          onTap: _onLogin,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Reveal(
+                        delay: const Duration(milliseconds: 470),
+                        child: _RegisterLink(
+                          onTap: () => context.push(
+                            '/login/register',
+                            extra: {
+                              'phone': _phoneController.text.trim(),
+                              'role': widget.role,
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Вход',
-                style: GoogleFonts.inter(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: _titleColor,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: 28),
-              _AuthInputField(
-                controller: _phoneController,
-                hint: '900 00 00 00',
-                icon: LucideIcons.phone,
-                keyboardType: TextInputType.phone,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 14),
-              _AuthInputField(
-                controller: _passwordController,
-                hint: 'Пароль',
-                icon: LucideIcons.lock,
-                obscureText: _obscurePassword,
-                onChanged: (_) => setState(() {}),
-                suffix: IconButton(
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                  icon: Icon(
-                    _obscurePassword ? LucideIcons.eye_off : LucideIcons.eye,
-                    color: _authGreen,
-                    size: 22,
-                  ),
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  style: GoogleFonts.inter(color: Colors.red, fontSize: 14),
-                ),
-              ],
-              const Spacer(),
-              SizedBox(
-                height: 52,
-                child: FilledButton(
-                  onPressed: _canLogin ? _onLogin : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _authGreen,
-                    disabledBackgroundColor: _authGreen.withValues(alpha: 0.45),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    _isSubmitting ? 'Вход...' : 'Войти',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => context.push(
-                  '/login/register',
-                  extra: {
-                    'phone': _phoneController.text.trim(),
-                    'role': widget.role,
-                  },
-                ),
-                child: Text(
-                  'Нет аккаунта? Зарегистрироваться',
-                  style: GoogleFonts.inter(color: _authGreen),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _AuthInputField extends StatelessWidget {
-  const _AuthInputField({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    required this.onChanged,
-    this.obscureText = false,
-    this.suffix,
-    this.keyboardType,
-  });
+class _RegisterLink extends StatelessWidget {
+  const _RegisterLink({required this.onTap});
 
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final ValueChanged<String> onChanged;
-  final bool obscureText;
-  final Widget? suffix;
-  final TextInputType? keyboardType;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-      style: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: _titleColor,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(color: _hintGrey),
-        prefixIcon: Icon(icon, color: _authGreen, size: 22),
-        suffixIcon: suffix,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: _authGreen.withValues(alpha: 0.55), width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _authGreen, width: 1.8),
+    return HoverLift(
+      radius: 16,
+      lift: 2,
+      glowColor: _authGreen,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _authGreen.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _authGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(LucideIcons.user_plus, size: 18, color: _authGreen),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Нет аккаунта?', style: GoogleFonts.manrope(fontSize: 12.5, color: _bodyGrey)),
+                      Text('Зарегистрироваться за 30 секунд', style: GoogleFonts.manrope(fontSize: 14.5, fontWeight: FontWeight.w800, color: _titleColor)),
+                    ],
+                  ),
+                ),
+                const Icon(LucideIcons.arrow_right, size: 18, color: _authGreen),
+              ],
+            ),
+          ),
         ),
       ),
     );

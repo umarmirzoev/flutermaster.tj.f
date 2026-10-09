@@ -47,7 +47,7 @@ class _MasterWorkZoneScreenState extends ConsumerState<MasterWorkZoneScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Зона работы сохранена', style: GoogleFonts.inter()),
+          content: Text('Зона работы сохранена', style: GoogleFonts.manrope()),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -74,7 +74,7 @@ class _MasterWorkZoneScreenState extends ConsumerState<MasterWorkZoneScreen> {
                 Expanded(
                   child: Text(
                     'Выберите районы Душанбе, в которых вы готовы принимать заказы',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       color: masterNavy,
                       height: 1.4,
@@ -109,7 +109,7 @@ class _MasterWorkZoneScreenState extends ConsumerState<MasterWorkZoneScreen> {
                 }),
                 title: Text(
                   district,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontWeight: FontWeight.w700,
                     color: masterNavy,
                   ),
@@ -134,7 +134,7 @@ class _MasterWorkZoneScreenState extends ConsumerState<MasterWorkZoneScreen> {
               ),
               child: Text(
                 _saving ? 'Сохранение...' : 'Сохранить зону',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

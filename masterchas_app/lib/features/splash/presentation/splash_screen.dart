@@ -100,6 +100,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late final AnimationController _gradientController;
   late final AnimationController _pulseController;
   late final AnimationController _particleController;
+  late final AnimationController _orbitController;
 
   late final Animation<double> _titleFade;
   late final Animation<double> _titleScale;
@@ -153,6 +154,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(seconds: 1),
     )..repeat();
     _particleController.addListener(_updateParticles);
+
+    // Медленное вращение кольца иконок вокруг логотипа
+    _orbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 36),
+    )..repeat();
 
     _titleFade = CurvedAnimation(parent: _textController, curve: Curves.easeOut);
     _titleScale = Tween<double>(begin: 0.9, end: 1).animate(
@@ -339,12 +346,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _pulseController.dispose();
     _particleController.removeListener(_updateParticles);
     _particleController.dispose();
+    _orbitController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
       backgroundColor: splashBackground,
@@ -389,48 +396,71 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       CustomPaint(painter: _ParticlePainter(_particles)),
                 ),
 
-                // ── Icons ──
-                ...List.generate(_icons.length, (index) {
-                  final icon = _icons[index];
-                  return AnimatedBuilder(
-                    animation: Listenable.merge([
-                      _iconFadeAnimations[index],
-                      _iconSlideAnimations[index],
-                    ]),
-                    builder: (context, child) {
-                      final fade = _iconFadeAnimations[index].value;
-                      if (fade <= 0) return const SizedBox.shrink();
+                // ── Кольцо иконок услуг, медленно вращается вокруг логотипа ──
+                LayoutBuilder(
+                  builder: (context, box) {
+                    final radius = min(box.maxWidth, box.maxHeight) * 0.36;
+                    return AnimatedBuilder(
+                      animation: Listenable.merge([_orbitController, _iconsController, _pulseController]),
+                      builder: (context, _) {
+                        final rot = _orbitController.value * 2 * pi;
+                        return Stack(
+                          children: List.generate(_icons.length, (index) {
+                            final icon = _icons[index];
+                            final appear = _iconFadeAnimations[index].value;
+                            if (appear <= 0) return const SizedBox.shrink();
+                            final angle = rot + index * 2 * pi / _icons.length;
+                            final bob = sin(_pulseController.value * pi + index) * 4;
+                            final r = radius * (0.7 + 0.3 * appear) + (index.isEven ? 0 : radius * 0.12);
+                            final dx = cos(angle) * r;
+                            final dy = sin(angle) * r * 1.15 + bob;
+                            final bubble = 52.0 + (index % 3) * 6;
+                            return Positioned(
+                              left: box.maxWidth / 2 + dx - bubble / 2,
+                              top: box.maxHeight / 2 + dy - bubble / 2,
+                              child: Opacity(
+                                opacity: appear.clamp(0.0, 1.0),
+                                child: Transform.scale(
+                                  scale: 0.4 + 0.6 * Curves.easeOutBack.transform(appear.clamp(0.0, 1.0)),
+                                  child: Container(
+                                    width: bubble,
+                                    height: bubble,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withValues(alpha: 0.12),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4)),
+                                      ],
+                                    ),
+                                    child: Opacity(
+                                      opacity: icon.finalOpacity.clamp(0.8, 1.0),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: icon.builder(bubble * 0.46),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                    );
+                  },
+                ),
 
-                      final dx = icon.alignment.x * size.width * 0.42;
-                      final dy = icon.alignment.y * size.height * 0.34 +
-                          _iconSlideAnimations[index].value;
-
-                      return Align(
-                        alignment: Alignment.center,
-                        child: Transform.translate(
-                          offset: Offset(dx, dy),
-                          child: Opacity(
-                            opacity: fade * icon.finalOpacity,
-                            child: IconTheme(
-                              data: const IconThemeData(color: Colors.white, opacity: 1),
-                              child: icon.builder(icon.size),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-
-                // ── Center content with pulse glow ──
+                // ── Логотип в центре ──
                 Center(
                   child: AnimatedBuilder(
-                    animation: _textController,
+                    animation: Listenable.merge([_textController, _exitController]),
                     builder: (context, child) {
                       return Opacity(
                         opacity: _titleFade.value,
                         child: Transform.scale(
-                          scale: _titleScale.value,
+                          scale: _titleScale.value * (1 + _exitController.value * 0.15),
                           child: child,
                         ),
                       );
@@ -438,67 +468,70 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Pulse glow behind text
                         AnimatedBuilder(
                           animation: _pulseController,
                           builder: (context, child) {
                             final pulse = _pulseController.value;
                             return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
+                              width: 96,
+                              height: 96,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
+                                color: Colors.white,
+                                shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.white.withValues(
-                                      alpha: 0.08 + pulse * 0.12,
-                                    ),
-                                    blurRadius: 40 + pulse * 30,
-                                    spreadRadius: 10 + pulse * 15,
+                                    color: Colors.white.withValues(alpha: 0.25 + pulse * 0.2),
+                                    blurRadius: 30 + pulse * 30,
+                                    spreadRadius: 4 + pulse * 10,
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
-                              child: child,
+                              child: Transform.rotate(
+                                angle: sin(pulse * pi) * 0.12,
+                                child: child,
+                              ),
                             );
                           },
-                          child: Column(
-                            children: [
-                              // Logo text with shimmer-like shadow
-                              Text(
-                                'Master.tj',
-                                style: GoogleFonts.inter(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  height: 1.1,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                    Shadow(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      blurRadius: 40,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'для клиентов',
-                                style: GoogleFonts.inter(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
-                              ),
-                            ],
+                          child: const Icon(LucideIcons.wrench, size: 44, color: splashBackground),
+                        ),
+                        const SizedBox(height: 18),
+                        ShaderMask(
+                          shaderCallback: (rect) => const LinearGradient(
+                            colors: [Colors.white, Color(0xFFE8FFE9), Colors.white],
+                          ).createShader(rect),
+                          child: Text(
+                            'Master.tj',
+                            style: GoogleFonts.manrope(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              height: 1.1,
+                              letterSpacing: 0.5,
+                              shadows: [
+                                Shadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 18, offset: const Offset(0, 4)),
+                              ],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                          ),
+                          child: Text(
+                            'Мастера рядом · 24/7',
+                            style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w700, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 26),
                         _LoadingDots(controller: _dotsController),
                       ],
                     ),
@@ -521,7 +554,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Text(
                       'Найди мастера • Закажи услугу • Купи инструмент',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withValues(alpha: 0.7),

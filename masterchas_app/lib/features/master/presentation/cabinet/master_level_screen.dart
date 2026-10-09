@@ -53,7 +53,7 @@ class MasterLevelScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   current.name,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -62,7 +62,7 @@ class MasterLevelScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   '$orders выполненных заказов',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -73,7 +73,7 @@ class MasterLevelScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           Text(
             next.name != current.name ? 'До ${next.name}' : 'Максимальный уровень',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: masterNavy,
@@ -94,12 +94,12 @@ class MasterLevelScreen extends ConsumerWidget {
             next.name != current.name
                 ? '${(progress * 100).round()}% · осталось ${(next.min - orders).clamp(0, next.min)} заказов'
                 : 'Вы достигли высшего уровня',
-            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+            style: GoogleFonts.manrope(fontSize: 12, color: const Color(0xFF6B7280)),
           ),
           const SizedBox(height: 24),
           Text(
             'Все уровни',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: masterNavy,
@@ -129,7 +129,7 @@ class MasterLevelScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       l.name,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontWeight: FontWeight.w700,
                         color: masterNavy,
                       ),
@@ -137,7 +137,7 @@ class MasterLevelScreen extends ConsumerWidget {
                   ),
                   Text(
                     '${l.min}+ заказов',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: const Color(0xFF6B7280),
                     ),

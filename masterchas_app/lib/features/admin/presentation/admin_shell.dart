@@ -9,6 +9,7 @@ import '../models/admin_models.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_provider.dart';
 import '../theme/admin_theme.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class AdminShell extends ConsumerStatefulWidget {
   const AdminShell({super.key, required this.child});
@@ -49,7 +50,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     return Theme(
       data: ThemeData(
         scaffoldBackgroundColor: AdminTheme.pageBg,
-        fontFamily: GoogleFonts.inter().fontFamily,
+        fontFamily: GoogleFonts.manrope().fontFamily,
       ),
       child: Scaffold(
         backgroundColor: AdminTheme.pageBg,
@@ -123,7 +124,7 @@ class _Sidebar extends StatelessWidget {
           child: Row(
             children: [
               if (!collapsed) ...[
-                Text('Master Chas', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                Text('Master Chas', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
                 const Spacer(),
               ],
               Icon(LucideIcons.panel_left, size: 18, color: Colors.white.withValues(alpha: 0.7)),
@@ -163,7 +164,7 @@ class _Sidebar extends StatelessWidget {
                 Icon(collapsed ? LucideIcons.panel_left_open : LucideIcons.panel_left_close, size: 16, color: Colors.white54),
                 if (!collapsed) ...[
                   const SizedBox(width: 8),
-                  Text('Свернуть', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
+                  Text('Свернуть', style: GoogleFonts.manrope(fontSize: 12, color: Colors.white54)),
                 ],
               ],
             ),
@@ -213,12 +214,12 @@ class _NavItem extends StatelessWidget {
                   Icon(item.icon, size: 18, color: Colors.white),
                   if (!collapsed) ...[
                     const SizedBox(width: 10),
-                    Expanded(child: Text(item.label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white))),
+                    Expanded(child: Text(item.label, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white))),
                     if (item.badge != null)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: AdminTheme.red, borderRadius: BorderRadius.circular(10)),
-                        child: Text('${item.badge}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                        child: Text('${item.badge}', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
                       ),
                     if (item.children.isNotEmpty)
                       Icon(expanded ? LucideIcons.chevron_down : LucideIcons.chevron_right, size: 14, color: Colors.white54),
@@ -237,6 +238,7 @@ class _NavItem extends StatelessWidget {
                   InkWell(
                     onTap: () => onChildTap(child.route),
                     borderRadius: BorderRadius.circular(6),
+                    hoverColor: Colors.white.withValues(alpha: 0.08),
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -244,7 +246,7 @@ class _NavItem extends StatelessWidget {
                         color: location == child.route ? AdminTheme.sidebarHover : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(child.label, style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
+                      child: Text(child.label, style: GoogleFonts.manrope(fontSize: 12, color: Colors.white70)),
                     ),
                   ),
               ],
@@ -273,6 +275,15 @@ class _TopBar extends ConsumerWidget {
   final ValueChanged<String> onResultTap;
   final VoidCallback onDismissSearch;
 
+  Widget _animIcon(Widget child) => HoverLift(
+        builder: (context, hovering) => AnimatedScale(
+          scale: hovering ? 1.15 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          child: child,
+        ),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final query = ref.watch(adminUiProvider).searchQuery;
@@ -290,7 +301,7 @@ class _TopBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Text('Admin Dashboard', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AdminTheme.text)),
+          Text('Admin Dashboard', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: AdminTheme.text)),
           const SizedBox(width: 32),
           Expanded(
             child: Stack(
@@ -313,12 +324,15 @@ class _TopBar extends ConsumerWidget {
                           controller: searchCtrl,
                           onChanged: onSearchChanged,
                           onTap: onSearchTap,
-                          style: GoogleFonts.inter(fontSize: 13, color: AdminTheme.text),
+                          style: GoogleFonts.manrope(fontSize: 13, color: AdminTheme.text),
                           decoration: InputDecoration(
                             isCollapsed: true,
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
                             hintText: 'Поиск по заказам, пользователям, мастерам...',
-                            hintStyle: GoogleFonts.inter(fontSize: 13, color: AdminTheme.muted),
+                            hintStyle: GoogleFonts.manrope(fontSize: 13, color: AdminTheme.muted),
                           ),
                         ),
                       ),
@@ -347,8 +361,8 @@ class _TopBar extends ConsumerWidget {
                             final r = results[i] as Map<String, String>;
                             return ListTile(
                               dense: true,
-                              title: Text(r['label']!, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
-                              subtitle: Text(r['type']!, style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted)),
+                              title: Text(r['label']!, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+                              subtitle: Text(r['type']!, style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted)),
                               onTap: () => onResultTap(r['route']!),
                             );
                           },
@@ -360,7 +374,7 @@ class _TopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Stack(
+          _animIcon(Stack(
             children: [
               IconButton(icon: const Icon(LucideIcons.bell, size: 20, color: AdminTheme.text), onPressed: () {}),
               Positioned(
@@ -371,37 +385,37 @@ class _TopBar extends ConsumerWidget {
                   height: 16,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(color: AdminTheme.red, shape: BoxShape.circle),
-                  child: Text('17', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                  child: Text('17', style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
                 ),
               ),
             ],
-          ),
-          IconButton(icon: const Icon(LucideIcons.message_circle, size: 20, color: AdminTheme.text), onPressed: () => context.go('/admin/chats')),
-          IconButton(
+          )),
+          _animIcon(IconButton(icon: const Icon(LucideIcons.message_circle, size: 20, color: AdminTheme.text), onPressed: () => context.go('/admin/chats'))),
+          _animIcon(IconButton(
             icon: const Icon(LucideIcons.refresh_cw, size: 20, color: AdminTheme.text),
             onPressed: () => ref.read(adminDataProvider.notifier).refresh(),
-          ),
-          IconButton(
+          )),
+          _animIcon(IconButton(
             icon: const Icon(LucideIcons.log_out, size: 20, color: AdminTheme.text),
             onPressed: () async {
               await ref.read(authProvider.notifier).signOut();
               if (context.mounted) context.go('/admin/login');
             },
-          ),
+          )),
           const SizedBox(width: 8),
           Row(
             children: [
               CircleAvatar(
                 radius: 18,
                 backgroundColor: AdminTheme.green.withValues(alpha: 0.15),
-                child: Text('A', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AdminTheme.green)),
+                child: Text('A', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: AdminTheme.green)),
               ),
               const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Admin', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
-                  Text('Администратор', style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted)),
+                  Text('Admin', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+                  Text('Администратор', style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted)),
                 ],
               ),
               const Icon(LucideIcons.chevron_down, size: 14, color: AdminTheme.muted),

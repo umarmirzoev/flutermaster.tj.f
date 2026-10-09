@@ -34,6 +34,9 @@ class AdminOrder {
   final String? masterUserId;
   final String? masterPhone;
   final String? address;
+
+  /// SOS-заявки с сайта: заголовок заказа начинается с «SOS».
+  bool get isSos => service.trimLeft().toUpperCase().startsWith('SOS');
 }
 
 class AdminMaster {

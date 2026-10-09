@@ -92,16 +92,25 @@ class AdminRepository {
         final acceptedAt = json['acceptedAt']?.toString();
         final createdAt = json['createdAt']?.toString();
 
-        final masterName = masterId != null
-              ? (nameById[masterId.toLowerCase()] ?? _shortId(masterId))
-              : '—';
+        final title = (json['title'] as String?)?.trim() ?? '';
+        final description = (json['description'] as String?)?.trim() ?? '';
+        final chosenMaster = _chosenMasterName(title, description);
+        final isAiAgent = masterId == null || masterId.toLowerCase() == _aiAgentUserId;
+
+        // Если заказ висит на ИИ-агенте, но клиент выбрал конкретного мастера —
+        // показываем имя выбранного мастера, а не «ИИ-Агент».
+        final masterName = !isAiAgent
+              ? (nameById[masterId!.toLowerCase()] ?? _shortId(masterId!))
+              : chosenMaster != null
+                  ? '$chosenMaster (выбран клиентом)'
+                  : (masterId != null ? (nameById[masterId.toLowerCase()] ?? _shortId(masterId)) : '—');
 
         return AdminOrder(
           id: id.length > 8 ? '${id.substring(0, 8)}…' : id,
           fullId: id,
           client: nameById[clientId.toLowerCase()] ?? _shortId(clientId),
           master: masterName,
-          service: json['title'] as String? ?? json['description'] as String? ?? 'Услуга',
+          service: _serviceLabel(title, description),
           status: _mapOrderStatus(statusCode),
           date: formatAdminDateTimeFromRaw(createdAt ?? acceptedAt ?? scheduled),
           amount: amount,
@@ -195,6 +204,7 @@ class AdminRepository {
               phone: phone,
               roles: roles,
               status: _readInt(json['status']),
+              createdAt: json['createdAt']?.toString(),
             ),
           );
         }
@@ -321,7 +331,7 @@ class AdminRepository {
         phone: c.phone,
         orders: clientOrders.length,
         spent: spent,
-        joined: '—',
+        joined: formatAdminDateTimeFromRaw(c.createdAt),
         isVip: spent >= 5000,
       );
     }).toList();
@@ -386,6 +396,33 @@ class AdminRepository {
 
   String _shortId(String id) => id.length > 8 ? id.substring(0, 8) : id;
 
+  static const _aiAgentUserId = '11111111-1111-1111-1111-111111111001';
+  static final _masterRe = RegExp(r'(?:Выбранный мастер|Мастер):\s*([^.(\n]+)');
+  static final _serviceNoiseRe = RegExp(
+    r'(👪 Для близкого:[^.]*\.[^.]*\.(\s*Заказчик:[^.]*\.)?|(?:Выбранный мастер|Мастер):\s*[^.]*\.|—\s*Мастер:[^.]*)',
+  );
+
+  /// Имя мастера, которого клиент выбрал на сайте («Мастер: X» / «Выбранный мастер: X»).
+  String? _chosenMasterName(String title, String description) {
+    for (final text in [title, description]) {
+      final m = _masterRe.firstMatch(text);
+      final name = m?.group(1)?.trim();
+      if (name != null && name.isNotEmpty) return name;
+    }
+    return null;
+  }
+
+  /// Название услуги. Старые заказы с сайта имели заголовок «Мастер: X» — тогда берём
+  /// услугу из описания, убрав служебные части.
+  String _serviceLabel(String title, String description) {
+    if (title.isNotEmpty && !title.startsWith('Мастер:')) return title;
+    final cleaned = description.replaceAll(_serviceNoiseRe, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (cleaned.isEmpty) return 'Услуга не указана';
+    final firstSentence = cleaned.split('.').first.trim();
+    final label = firstSentence.isEmpty ? cleaned : firstSentence;
+    return label.length > 60 ? '${label.substring(0, 57)}…' : label;
+  }
+
   String _formatTime(String? raw) {
     if (raw == null || raw.isEmpty) return '—';
     final date = DateTime.tryParse(raw);
@@ -401,6 +438,7 @@ class _AdminUserRow {
     required this.phone,
     required this.roles,
     required this.status,
+    required this.createdAt,
   });
 
   final String id;
@@ -408,6 +446,7 @@ class _AdminUserRow {
   final String phone;
   final List<String> roles;
   final int status;
+  final String? createdAt;
 }
 
 final adminRepositoryProvider = Provider<AdminRepository>(

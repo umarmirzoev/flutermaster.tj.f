@@ -43,10 +43,10 @@ class AdminLineChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+            Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
             SizedBox(
               height: height,
-              child: Center(child: Text('Нет данных для графика', style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.muted))),
+              child: Center(child: Text('Нет данных для графика', style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.muted))),
             ),
           ],
         ),
@@ -59,7 +59,7 @@ class AdminLineChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+          Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
           const SizedBox(height: 12),
           SizedBox(
             height: height,
@@ -84,7 +84,7 @@ class AdminLineChartCard extends StatelessWidget {
                       getTitlesWidget: (v, _) {
                         final i = v.toInt();
                         if (i < 0 || i >= points.length) return const SizedBox.shrink();
-                        return Text(points[i].label, style: GoogleFonts.inter(fontSize: 9, color: AdminTheme.muted));
+                        return Text(points[i].label, style: GoogleFonts.manrope(fontSize: 9, color: AdminTheme.muted));
                       },
                     ),
                   ),
@@ -131,10 +131,10 @@ class AdminBarChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+            Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
             SizedBox(
               height: height,
-              child: Center(child: Text('Нет данных для графика', style: GoogleFonts.inter(fontSize: 12, color: AdminTheme.muted))),
+              child: Center(child: Text('Нет данных для графика', style: GoogleFonts.manrope(fontSize: 12, color: AdminTheme.muted))),
             ),
           ],
         ),
@@ -147,7 +147,7 @@ class AdminBarChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
+          Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: AdminTheme.text)),
           const SizedBox(height: 12),
           SizedBox(
             height: height,
@@ -171,7 +171,7 @@ class AdminBarChartCard extends StatelessWidget {
                       getTitlesWidget: (v, _) {
                         final i = v.toInt();
                         if (i < 0 || i >= points.length) return const SizedBox.shrink();
-                        return Text(points[i].label, style: GoogleFonts.inter(fontSize: 9, color: AdminTheme.muted));
+                        return Text(points[i].label, style: GoogleFonts.manrope(fontSize: 9, color: AdminTheme.muted));
                       },
                     ),
                   ),
@@ -237,12 +237,12 @@ class AdminStatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.inter(fontSize: 11.5, color: AdminTheme.muted)),
+                Text(label, style: GoogleFonts.manrope(fontSize: 11.5, color: AdminTheme.muted)),
                 const SizedBox(height: 2),
-                Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AdminTheme.text)),
+                Text(value, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: AdminTheme.text)),
                 Text(
                   change,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                     color: positive ? AdminTheme.green : AdminTheme.red,

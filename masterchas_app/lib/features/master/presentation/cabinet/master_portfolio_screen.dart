@@ -27,7 +27,7 @@ class MasterPortfolioScreen extends ConsumerWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Фото добавлено', style: GoogleFonts.inter()),
+          content: Text('Фото добавлено', style: GoogleFonts.manrope()),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -57,7 +57,7 @@ class MasterPortfolioScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Портфолио пусто',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: masterNavy,
@@ -67,7 +67,7 @@ class MasterPortfolioScreen extends ConsumerWidget {
                     Text(
                       'Добавьте фото выполненных работ — клиенты увидят их в вашем профиле',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         color: const Color(0xFF6B7280),
                         height: 1.45,
@@ -79,7 +79,7 @@ class MasterPortfolioScreen extends ConsumerWidget {
                       icon: const Icon(LucideIcons.plus, color: Colors.white),
                       label: Text(
                         'Добавить фото',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                       style: FilledButton.styleFrom(
                         backgroundColor: masterNavy,

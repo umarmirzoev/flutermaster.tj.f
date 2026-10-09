@@ -145,7 +145,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           const SizedBox(height: 8),
                           Text(
                             AddressValidator.invalidMessage,
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.red.shade700),
+                            style: GoogleFonts.manrope(fontSize: 12, color: Colors.red.shade700),
                           ),
                         ],
                         const SizedBox(height: 20),
@@ -375,7 +375,7 @@ class _Header extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             s.bookingTitle,
-            style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
           ),
         ],
       ),
@@ -419,7 +419,7 @@ class _MasterSummary extends StatelessWidget {
                         m.fullName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w800, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 14.5, fontWeight: FontWeight.w800, color: p.text),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -431,7 +431,7 @@ class _MasterSummary extends StatelessWidget {
                   serviceName ?? m.categories.first,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
+                  style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
                 ),
               ],
             ),
@@ -452,7 +452,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+      style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
     );
   }
 }
@@ -501,7 +501,7 @@ class _DatePicker extends StatelessWidget {
                   children: [
                     Text(
                       wd,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: on ? Colors.white.withValues(alpha: 0.9) : p.muted,
@@ -510,7 +510,7 @@ class _DatePicker extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${d.day}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: on ? Colors.white : p.text,
@@ -519,7 +519,7 @@ class _DatePicker extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       s.monthsShort[d.month - 1],
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w500,
                         color: on ? Colors.white.withValues(alpha: 0.85) : p.muted,
@@ -578,7 +578,7 @@ class _TimePicker extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     times[i],
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: on ? Colors.white : p.text,
@@ -625,13 +625,16 @@ class _AddressField extends StatelessWidget {
               controller: controller,
               onChanged: (_) => onChanged(),
               cursorColor: brandGreen,
-              style: GoogleFonts.inter(fontSize: 13.5, color: p.text),
+              style: GoogleFonts.manrope(fontSize: 13.5, color: p.text),
               decoration: InputDecoration(
                 isCollapsed: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
                 hintText: s.addressHint,
-                hintStyle: GoogleFonts.inter(fontSize: 13.5, color: p.muted),
+                hintStyle: GoogleFonts.manrope(fontSize: 13.5, color: p.muted),
               ),
             ),
           ),
@@ -661,13 +664,16 @@ class _CommentField extends StatelessWidget {
         controller: controller,
         maxLines: 3,
         cursorColor: brandGreen,
-        style: GoogleFonts.inter(fontSize: 13.5, color: p.text, height: 1.4),
+        style: GoogleFonts.manrope(fontSize: 13.5, color: p.text, height: 1.4),
         decoration: InputDecoration(
           isCollapsed: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          filled: false,
           hintText: s.commentHint,
-          hintStyle: GoogleFonts.inter(fontSize: 13.5, color: p.muted, height: 1.4),
+          hintStyle: GoogleFonts.manrope(fontSize: 13.5, color: p.muted, height: 1.4),
         ),
       ),
     );
@@ -695,7 +701,7 @@ class _PromoFieldState extends State<_PromoField> {
       children: [
         Text(
           'Промокод',
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
         ),
         const SizedBox(height: 10),
         Container(
@@ -722,13 +728,16 @@ class _PromoFieldState extends State<_PromoField> {
                   enabled: !_applied,
                   textCapitalization: TextCapitalization.characters,
                   cursorColor: brandGreen,
-                  style: GoogleFonts.inter(fontSize: 14, color: p.text, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.manrope(fontSize: 14, color: p.text, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
                     isCollapsed: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     hintText: 'MASTER20',
-                    hintStyle: GoogleFonts.inter(fontSize: 14, color: p.muted),
+                    hintStyle: GoogleFonts.manrope(fontSize: 14, color: p.muted),
                   ),
                 ),
               ),
@@ -742,7 +751,7 @@ class _PromoFieldState extends State<_PromoField> {
                       behavior: SnackBarBehavior.floating,
                       content: Text(
                         _applied ? 'Промокод применён! Скидка 20%' : 'Промокод убран',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                     ),
                   );
@@ -756,7 +765,7 @@ class _PromoFieldState extends State<_PromoField> {
                   ),
                   child: Text(
                     _applied ? 'Убрать' : 'Применить',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: _applied ? p.text : Colors.white,
@@ -810,7 +819,7 @@ class _ConfirmBar extends StatelessWidget {
             ),
             child: Text(
               s.confirmBtn,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -873,7 +882,7 @@ class _SuccessSheet extends StatelessWidget {
             Text(
               s.bookingDone,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text, height: 1.35),
+              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text, height: 1.35),
             ),
             const SizedBox(height: 14),
             Container(
@@ -910,7 +919,7 @@ class _SuccessSheet extends StatelessWidget {
                 ),
                 child: Text(
                   'OK',
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -928,7 +937,7 @@ class _SuccessSheet extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: p.text),
           ),
         ),
       ],

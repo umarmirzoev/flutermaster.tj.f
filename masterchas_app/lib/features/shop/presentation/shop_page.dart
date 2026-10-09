@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_locale.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/catalog_provider.dart';
 import '../../home/presentation/home_palette.dart';
@@ -13,7 +14,11 @@ import '../data/shop_data.dart';
 import '../state/shop_state.dart';
 
 class ShopPage extends ConsumerStatefulWidget {
-  const ShopPage({super.key});
+  const ShopPage({super.key, this.initialProduct});
+
+  /// Если задан — магазин сразу открывает карточку этого товара
+  /// (например, при нажатии на товар на главной).
+  final ShopProduct? initialProduct;
 
   @override
   ConsumerState<ShopPage> createState() => _ShopPageState();
@@ -26,6 +31,17 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   List<ShopProduct> _catalog = shopProducts;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialProduct;
+    if (initial != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openProduct(initial);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -52,7 +68,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           backgroundColor: color,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(milliseconds: 1400),
-          content: Text(text, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+          content: Text(text, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
         ),
       );
   }
@@ -81,7 +97,134 @@ class _ShopPageState extends ConsumerState<ShopPage> {
               const SizedBox(width: 10),
               Text(
                 l.addedToCart,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
+  /// Нажатие на баннер акции: сразу открываем товар из акции.
+  void _openPromo(int i, ShopL10n l) {
+    ShopProduct? find(bool Function(ShopProduct) test) {
+      for (final pr in _catalog) {
+        if (test(pr)) return pr;
+      }
+      return null;
+    }
+
+    switch (i) {
+      case 0:
+        // «Скидка до 30% на электроинструмент BERALI» — шуруповёрт BERALI.
+        final prod = find((pr) => pr.image.contains('tool_drill')) ??
+            find((pr) => pr.ru.contains('BERALI') && pr.discountPercent > 0) ??
+            find((pr) => pr.ru.contains('BERALI'));
+        if (prod != null) {
+          _openProduct(prod);
+        } else {
+          setState(() => _nav = 1);
+        }
+      case 2:
+        // «Сезонная распродажа» — газонокосилка (в магазине или в аренде).
+        final prod = find((pr) => pr.image.contains('shop_mower'));
+        if (prod != null) {
+          _openProduct(prod);
+          return;
+        }
+        for (final pr in rentalProducts) {
+          if (pr.image.contains('shop_mower')) {
+            _openRentalProduct(pr);
+            return;
+          }
+        }
+        setState(() {
+          _nav = 0;
+          _cat = 4;
+        });
+        _toTop();
+      default:
+        // «Бесплатная доставка» — показываем условия.
+        showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) {
+            final p = HomePalette.of(ctx);
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+              decoration: BoxDecoration(
+                color: p.pageBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: p.border, borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(height: 18),
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(color: brandGreen.withValues(alpha: 0.12), shape: BoxShape.circle),
+                      child: const Icon(LucideIcons.truck, color: brandGreen, size: 30),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(l.promoTitles[1], style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Доставка по Душанбе бесплатно при заказе ${l.promoSubs[1]}. Добавьте товары в корзину — скидка на доставку применится сама.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.manrope(fontSize: 13.5, color: p.muted, height: 1.4),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          setState(() => _nav = 0);
+                          _toTop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: brandGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: Text(l.promoBtns[0], style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+    }
+  }
+
+  void _addRental(int rentalIndex, ShopL10n l) {
+    if (rentalIndex < 0) return;
+    HapticFeedback.lightImpact();
+    ref.read(rentalCartProvider.notifier).add(rentalIndex);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: brandGreen,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(milliseconds: 1600),
+          content: Row(
+            children: [
+              const Icon(LucideIcons.circle_check, color: Colors.white, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Добавлено в корзину (аренда)',
+                  style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -105,7 +248,8 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
     final fav = ref.watch(shopFavoritesProvider);
     final rentalFav = ref.watch(rentalFavoritesProvider);
-    final cartCount = ref.watch(shopCartProvider).values.fold(0, (a, b) => a + b);
+    final int cartCount = ref.watch(shopCartProvider).values.fold<int>(0, (a, b) => a + b) +
+        ref.watch(rentalCartProvider).values.fold<int>(0, (a, b) => a + b);
 
     final hits = _filtered(ProductBadge.hit);
     final news = _filtered(ProductBadge.isNew);
@@ -124,7 +268,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
               l: l,
               p: p,
               cartCount: cartCount,
-              favCount: fav.length,
+              favCount: fav.length + rentalFav.length,
               controller: _searchCtrl,
               onCart: () => _openCart(l, locale),
               onFavorites: () => _openFavorites(l, locale),
@@ -135,7 +279,21 @@ class _ShopPageState extends ConsumerState<ShopPage> {
               }),
             ),
             Expanded(
-              child: searching
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                switchInCurve: Curves.easeOutCubic,
+                // Старый список убираем сразу — иначе два списка делят один ScrollController.
+                layoutBuilder: (current, previous) => current ?? const SizedBox.shrink(),
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween(begin: const Offset(0, 0.03), end: Offset.zero).animate(anim),
+                    child: child,
+                  ),
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey('${searching ? 'search' : 'tab'}-$_nav'),
+                  child: searching
                   ? _SearchResults(
                       results: results,
                       l: l,
@@ -168,7 +326,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                       p: p,
                       locale: locale,
                       fav: rentalFav,
-                      onAdd: (_) {},
+                      onAdd: (i) => _addRental(i, l),
                       onFav: _toggleRentalFav,
                       onOpen: _openRentalProduct,
                       headerIcon: LucideIcons.hammer,
@@ -178,38 +336,44 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                       padding: const EdgeInsets.only(bottom: 24),
                       children: [
                         const SizedBox(height: 8),
-                        _Categories(
-                          l: l,
-                          p: p,
-                          selected: _cat,
-                          onSelect: (i) => setState(() => _cat = i),
+                        Reveal(
+                          delay: const Duration(milliseconds: 60),
+                          offsetY: 0,
+                          offsetX: 30,
+                          child: _Categories(
+                            l: l,
+                            p: p,
+                            selected: _cat,
+                            onSelect: (i) => setState(() => _cat = i),
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        _Promos(
+                        Reveal(
+                          delay: const Duration(milliseconds: 140),
+                          child: _Promos(
                           l: l,
                           p: p,
-                          onTap: (i) {
-                            if (i == 0) {
-                              setState(() => _cat = 1);
-                              _toTop();
-                            } else if (i == 2) {
-                              setState(() => _cat = 4);
-                              _toTop();
-                            } else {
-                              _toast(l.promoSubs[1]);
-                            }
-                          },
+                          onSeeAll: () => setState(() => _nav = 1),
+                          onTap: (i) => _openPromo(i, l),
+                        ),
                         ),
                         const SizedBox(height: 20),
                         if (hits.isNotEmpty) ...[
-                          _SectionHeader(
+                          Reveal(
+                            delay: const Duration(milliseconds: 220),
+                            child: _SectionHeader(
                             title: l.bestSellers,
                             action: l.seeAll,
                             p: p,
                             onAction: () => _openAll(l.bestSellers, hits, l, p, locale),
                           ),
+                          ),
                           const SizedBox(height: 12),
-                          _ProductRow(
+                          Reveal(
+                            delay: const Duration(milliseconds: 260),
+                            offsetY: 0,
+                            offsetX: 30,
+                            child: _ProductRow(
                             products: hits,
                             l: l,
                             p: p,
@@ -219,19 +383,53 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                             onFav: _toggleFav,
                             onOpen: _openProduct,
                           ),
+                          ),
                           const SizedBox(height: 20),
                         ],
-                        _Brands(l: l, p: p, onTap: (name) => _toast(name)),
-                        const SizedBox(height: 20),
+                        if (deals.isNotEmpty) ...[
+                          Reveal(
+                            delay: const Duration(milliseconds: 120),
+                            child: _SectionHeader(
+                              title: '🔥 ${l.dealsTitle}',
+                              action: l.seeAll,
+                              p: p,
+                              onAction: () => setState(() => _nav = 1),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Reveal(
+                            delay: const Duration(milliseconds: 160),
+                            offsetY: 0,
+                            offsetX: 30,
+                            child: _ProductRow(
+                              products: deals,
+                              l: l,
+                              p: p,
+                              locale: locale,
+                              fav: fav,
+                              onAdd: (i) => _add(i, l),
+                              onFav: _toggleFav,
+                              onOpen: _openProduct,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         if (news.isNotEmpty) ...[
-                          _SectionHeader(
+                          Reveal(
+                            delay: const Duration(milliseconds: 120),
+                            child: _SectionHeader(
                             title: l.recommended,
                             action: l.seeAll,
                             p: p,
                             onAction: () => _openAll(l.recommended, news, l, p, locale),
                           ),
+                          ),
                           const SizedBox(height: 12),
-                          _ProductRow(
+                          Reveal(
+                            delay: const Duration(milliseconds: 160),
+                            offsetY: 0,
+                            offsetX: 30,
+                            child: _ProductRow(
                             products: news,
                             l: l,
                             p: p,
@@ -241,15 +439,18 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                             onFav: _toggleFav,
                             onOpen: _openProduct,
                           ),
+                          ),
                           const SizedBox(height: 20),
                         ],
-                        _Advantages(l: l, p: p),
-                        const SizedBox(height: 18),
-                        _Newsletter(l: l, p: p),
-                        const SizedBox(height: 18),
-                        _Footer(l: l),
+                        Reveal(
+                          delay: const Duration(milliseconds: 120),
+                          child: _Advantages(l: l, p: p),
+                        ),
+                        const SizedBox(height: 8),
                       ],
                     ),
+                ),
+              ),
             ),
           ],
         ),
@@ -265,7 +466,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
   void _openAll(String title, List<ShopProduct> products, ShopL10n l, HomePalette p, AppLocale locale) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => _AllProductsPage(
           title: title,
           products: products,
@@ -282,7 +483,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     final locale = ref.read(localeProvider);
     final l = ShopL10n.of(locale);
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => ProductDetailPage(
           product: prod,
           l: l,
@@ -299,7 +500,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     final l = ShopL10n.of(locale);
     final index = rentalProducts.indexOf(prod);
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      SmoothRoute<void>(
         builder: (_) => ProductDetailPage(
           product: prod,
           l: l,
@@ -308,7 +509,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           productIndex: index,
           priceUnit: l.rentPriceUnit,
           similarCatalog: rentalProducts,
-          onAdd: (_) {},
+          onAdd: (i) => _addRental(i, l),
           onOpen: _openRentalProduct,
         ),
       ),
@@ -317,8 +518,15 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
   void _openFavorites(ShopL10n l, AppLocale locale) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ShopFavoritesPage(l: l, locale: locale, onOpen: _openProduct),
+      SmoothRoute<void>(
+        builder: (_) => ShopFavoritesPage(
+          l: l,
+          locale: locale,
+          onOpen: _openProduct,
+          onOpenRental: _openRentalProduct,
+          onAdd: (i) => _add(i, l),
+          onAddRental: (i) => _addRental(i, l),
+        ),
       ),
     );
   }
@@ -385,7 +593,7 @@ class _TopBar extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 l.title,
-                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const Spacer(),
               _FavButton(p: p, count: favCount, onTap: onFavorites),
@@ -427,13 +635,16 @@ class _TopBar extends StatelessWidget {
                     controller: controller,
                     onChanged: onChanged,
                     textInputAction: TextInputAction.search,
-                    style: GoogleFonts.inter(fontSize: 14, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 14, color: p.text),
                     cursorColor: brandGreen,
                     decoration: InputDecoration(
                       isCollapsed: true,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
                       hintText: l.searchHint,
-                      hintStyle: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                      hintStyle: GoogleFonts.manrope(fontSize: 13, color: p.muted),
                     ),
                   ),
                 ),
@@ -521,7 +732,7 @@ class _FavButton extends StatelessWidget {
                   ),
                   child: Text(
                     '$count',
-                    style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ),
@@ -583,7 +794,7 @@ class _CartButton extends StatelessWidget {
                     ),
                     child: Text(
                       '$count',
-                      style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                      style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
                     ),
                   ),
                 ),
@@ -663,7 +874,7 @@ class _Categories extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 9,
                       fontWeight: on ? FontWeight.w800 : FontWeight.w500,
                       color: on ? color : p.muted,
@@ -682,11 +893,12 @@ class _Categories extends StatelessWidget {
 // ─── Promos ───────────────────────────────────────────────────────────────────
 
 class _Promos extends StatelessWidget {
-  const _Promos({required this.l, required this.p, required this.onTap});
+  const _Promos({required this.l, required this.p, required this.onTap, required this.onSeeAll});
 
   final ShopL10n l;
   final HomePalette p;
   final ValueChanged<int> onTap;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -700,7 +912,7 @@ class _Promos extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _SectionHeader(title: l.promosTitle, action: l.seeAll, p: p, onAction: () => onTap(0)),
+          child: _SectionHeader(title: l.promosTitle, action: l.seeAll, p: p, onAction: onSeeAll),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -710,7 +922,24 @@ class _Promos extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: cards.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => cards[i],
+            clipBehavior: Clip.none,
+            itemBuilder: (_, i) => Reveal(
+              delay: Duration(milliseconds: 180 + i * 90),
+              offsetY: 0,
+              offsetX: 30,
+              child: HoverLift(
+                radius: 18,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(i),
+                  child: ShineSweep(
+                    radius: 18,
+                    delay: Duration(milliseconds: 900 + i * 600),
+                    child: cards[i],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -752,7 +981,7 @@ class _Promos extends StatelessWidget {
                   l.promoTitles[i],
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: fg, height: 1.1),
+                  style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: fg, height: 1.1),
                 ),
               ),
               const SizedBox(height: 4),
@@ -762,7 +991,7 @@ class _Promos extends StatelessWidget {
                   l.promoSubs[i],
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     color: light ? Colors.white.withValues(alpha: 0.9) : p.muted,
                   ),
@@ -779,7 +1008,7 @@ class _Promos extends StatelessWidget {
                   ),
                   child: Text(
                     l.promoBtns[i],
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: light ? const Color(0xFF2E7D32) : Colors.white,
@@ -814,7 +1043,7 @@ class _SectionHeader extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
           ),
         ),
         GestureDetector(
@@ -824,7 +1053,7 @@ class _SectionHeader extends StatelessWidget {
             children: [
               Text(
                 action,
-                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
+                style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: brandGreen),
               ),
               const Icon(LucideIcons.chevron_right, size: 15, color: brandGreen),
             ],
@@ -916,7 +1145,9 @@ class _ProductCardState extends State<_ProductCard> {
   bool _pressed = false;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(radius: 18, scale: 1.04, child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     final prod = widget.prod;
     final l = widget.l;
     final p = widget.p;
@@ -970,7 +1201,7 @@ class _ProductCardState extends State<_ProductCard> {
                             ),
                             child: Text(
                               '-$discount%',
-                              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                              style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
                             ),
                           ),
                         if (prod.badge != ProductBadge.none) ...[
@@ -983,7 +1214,7 @@ class _ProductCardState extends State<_ProductCard> {
                             ),
                             child: Text(
                               prod.badge == ProductBadge.hit ? l.badgeHit : l.badgeNew,
-                              style: GoogleFonts.inter(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
+                              style: GoogleFonts.manrope(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
                             ),
                           ),
                         ],
@@ -1024,7 +1255,7 @@ class _ProductCardState extends State<_ProductCard> {
                         prod.name(locale),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                        style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -1034,7 +1265,7 @@ class _ProductCardState extends State<_ProductCard> {
                         const SizedBox(width: 3),
                         Text(
                           prod.rating.toStringAsFixed(1),
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
+                          style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
                         ),
                         const SizedBox(width: 5),
                         Flexible(
@@ -1042,7 +1273,7 @@ class _ProductCardState extends State<_ProductCard> {
                             '${prod.orders} ${l.ordersWord}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 9.5, color: p.muted),
+                            style: GoogleFonts.manrope(fontSize: 9.5, color: p.muted),
                           ),
                         ),
                       ],
@@ -1060,7 +1291,7 @@ class _ProductCardState extends State<_ProductCard> {
                                   '${shopMoney(prod.oldPrice)} ${l.priceUnit}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 10,
                                     color: p.muted,
                                     decoration: TextDecoration.lineThrough,
@@ -1070,7 +1301,7 @@ class _ProductCardState extends State<_ProductCard> {
                                 '${shopMoney(prod.price)} ${l.priceUnit}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                   color: prod.oldPrice > 0 ? const Color(0xFFEF4444) : p.text,
@@ -1153,7 +1384,7 @@ class _Brands extends StatelessWidget {
                   ),
                   child: Text(
                     b.name,
-                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w900, color: b.color, letterSpacing: 0.5),
+                    style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w900, color: b.color, letterSpacing: 0.5),
                   ),
                 ),
               );
@@ -1183,7 +1414,7 @@ class _Advantages extends StatelessWidget {
         children: [
           Text(
             l.advantagesTitle,
-            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
           ),
           const SizedBox(height: 12),
           GridView.count(
@@ -1222,14 +1453,14 @@ class _Advantages extends StatelessWidget {
                             l.advTitles[i],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
+                            style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             l.advSubs[i],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 9, color: p.muted),
+                            style: GoogleFonts.manrope(fontSize: 9, color: p.muted),
                           ),
                         ],
                       ),
@@ -1271,12 +1502,12 @@ class _Newsletter extends StatelessWidget {
         children: [
           Text(
             l.newsletterTitle,
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
           ),
           const SizedBox(height: 6),
           Text(
             l.newsletterSub,
-            style: GoogleFonts.inter(fontSize: 11.5, color: Colors.white.withValues(alpha: 0.9), height: 1.35),
+            style: GoogleFonts.manrope(fontSize: 11.5, color: Colors.white.withValues(alpha: 0.9), height: 1.35),
           ),
           const SizedBox(height: 14),
           Row(
@@ -1289,7 +1520,7 @@ class _Newsletter extends StatelessWidget {
                   decoration: BoxDecoration(color: p.headerCardBg, borderRadius: BorderRadius.circular(10)),
                   child: Text(
                     l.emailHint,
-                    style: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                    style: GoogleFonts.manrope(fontSize: 13, color: p.muted),
                   ),
                 ),
               ),
@@ -1304,7 +1535,7 @@ class _Newsletter extends StatelessWidget {
                         behavior: SnackBarBehavior.floating,
                         content: Text(
                           l.subscribed,
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ),
                     );
@@ -1317,7 +1548,7 @@ class _Newsletter extends StatelessWidget {
                   ),
                   child: Text(
                     l.subscribeBtn,
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1347,7 +1578,7 @@ class _Footer extends StatelessWidget {
         children: [
           Text(
             l.title,
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+            style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
           ),
           const SizedBox(height: 12),
           Row(
@@ -1356,7 +1587,7 @@ class _Footer extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '+992 90 123 45 67',
-                style: GoogleFonts.inter(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
+                style: GoogleFonts.manrope(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
               ),
             ],
           ),
@@ -1367,7 +1598,7 @@ class _Footer extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 l.storeAddress,
-                style: GoogleFonts.inter(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
+                style: GoogleFonts.manrope(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
               ),
             ],
           ),
@@ -1438,7 +1669,7 @@ class _ShopBottomNav extends StatelessWidget {
                         child: Text(
                           items[i].$2,
                           maxLines: 1,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 10,
                             fontWeight: on ? FontWeight.w700 : FontWeight.w500,
                             color: c,
@@ -1466,17 +1697,144 @@ class _CartSheet extends ConsumerWidget {
   final AppLocale locale;
 
   void _set(WidgetRef ref, int idx, int qty) => ref.read(shopCartProvider.notifier).setQty(idx, qty);
+  void _setRent(WidgetRef ref, int idx, int qty) => ref.read(rentalCartProvider.notifier).setQty(idx, qty);
+
+  Widget _row({
+    required BuildContext context,
+    required HomePalette p,
+    required ShopProduct prod,
+    required int qty,
+    required String unit,
+    required VoidCallback onMinus,
+    required VoidCallback onPlus,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: p.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: p.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            color: p.productImageBg,
+            padding: const EdgeInsets.all(4),
+            child: buildShopProductImage(prod, fit: BoxFit.contain),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  prod.name(locale),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${shopMoney(prod.price)} $unit',
+                  style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w800, color: brandGreen),
+                ),
+              ],
+            ),
+          ),
+          _qtyBtn(LucideIcons.minus, p, onMinus),
+          SizedBox(
+            width: 28,
+            child: Text(
+              '$qty',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
+            ),
+          ),
+          _qtyBtn(LucideIcons.plus, p, onPlus),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(HomePalette p, IconData icon, String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+        child: Row(
+          children: [
+            Icon(icon, size: 15, color: brandGreen),
+            const SizedBox(width: 6),
+            Text(text, style: GoogleFonts.manrope(fontSize: 13.5, fontWeight: FontWeight.w800, color: p.text)),
+          ],
+        ),
+      );
+
+  Widget _checkoutButton(String label, {required VoidCallback? onPressed}) => SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: brandGreen,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: brandGreen.withValues(alpha: 0.4),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          child: Text(label, style: GoogleFonts.manrope(fontSize: 15.5, fontWeight: FontWeight.w800)),
+        ),
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
     final cart = ref.watch(shopCartProvider);
+    final rentCart = ref.watch(rentalCartProvider);
     final catalog = ref.watch(shopCatalogProvider);
-    final entries = cart.entries.toList();
+    // Пропускаем позиции, которых уже нет в каталоге (например, товар удалили).
+    final entries = cart.entries.where((e) => e.key >= 0 && e.key < catalog.length).toList();
+    final rentEntries = rentCart.entries.where((e) => e.key >= 0 && e.key < rentalProducts.length).toList();
     final total = entries.fold<int>(0, (a, e) => a + catalog[e.key].price * e.value);
+    final rentTotal = rentEntries.fold<int>(0, (a, e) => a + rentalProducts[e.key].price * e.value);
+    final empty = entries.isEmpty && rentEntries.isEmpty;
+
+    Future<void> checkoutShop() async {
+      final discount = entries.fold<int>(0, (a, e) {
+        final pr = catalog[e.key];
+        return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
+      });
+      final ok = await completeShopCheckout(
+        context: context,
+        ref: ref,
+        items: {for (final e in entries) e.key: e.value},
+        total: total,
+        discount: discount,
+        catalog: catalog,
+        l: l,
+        clearCart: true,
+      );
+      if (ok && context.mounted && rentEntries.isEmpty) Navigator.pop(context);
+    }
+
+    Future<void> checkoutRent() async {
+      final ok = await completeShopCheckout(
+        context: context,
+        ref: ref,
+        items: {for (final e in rentEntries) e.key: e.value},
+        total: rentTotal,
+        discount: 0,
+        catalog: rentalProducts,
+        l: l,
+        kind: l.checkoutKindRent,
+      );
+      if (ok) {
+        ref.read(rentalCartProvider.notifier).clear();
+        if (context.mounted && entries.isEmpty) Navigator.pop(context);
+      }
+    }
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
       decoration: BoxDecoration(
         color: p.pageBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -1495,7 +1853,7 @@ class _CartSheet extends ConsumerWidget {
                 children: [
                   Text(
                     l.cartTitle,
-                    style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
+                    style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
                   ),
                   const Spacer(),
                   Icon(LucideIcons.shopping_cart, size: 20, color: p.muted),
@@ -1503,77 +1861,56 @@ class _CartSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            if (entries.isEmpty)
+            if (empty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 50),
                 child: Column(
                   children: [
                     Icon(LucideIcons.shopping_cart, size: 44, color: p.muted),
                     const SizedBox(height: 12),
-                    Text(l.cartEmpty, style: GoogleFonts.inter(fontSize: 14, color: p.muted, fontWeight: FontWeight.w600)),
+                    Text(l.cartEmpty, style: GoogleFonts.manrope(fontSize: 14, color: p.muted, fontWeight: FontWeight.w600)),
                   ],
                 ),
               )
             else
               Flexible(
-                child: ListView.separated(
+                child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shrinkWrap: true,
-                  itemCount: entries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    final idx = entries[i].key;
-                    final qty = entries[i].value;
-                    final prod = catalog[idx];
-                    return Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: p.cardBg,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: p.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            color: p.productImageBg,
-                            padding: const EdgeInsets.all(4),
-                            child: buildShopProductImage(prod, fit: BoxFit.contain),
+                  children: [
+                    if (entries.isNotEmpty) ...[
+                      if (rentEntries.isNotEmpty) _sectionTitle(p, LucideIcons.shopping_bag, 'Покупка'),
+                      for (final e in entries)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _row(
+                            context: context,
+                            p: p,
+                            prod: catalog[e.key],
+                            qty: e.value,
+                            unit: l.priceUnit,
+                            onMinus: () => _set(ref, e.key, e.value - 1),
+                            onPlus: () => _set(ref, e.key, e.value + 1),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  prod.name(locale),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${shopMoney(prod.price)} ${l.priceUnit}',
-                                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: brandGreen),
-                                ),
-                              ],
-                            ),
+                        ),
+                    ],
+                    if (rentEntries.isNotEmpty) ...[
+                      _sectionTitle(p, LucideIcons.hammer, '${l.navRent} (кол-во = суток)'),
+                      for (final e in rentEntries)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _row(
+                            context: context,
+                            p: p,
+                            prod: rentalProducts[e.key],
+                            qty: e.value,
+                            unit: l.rentPriceUnit,
+                            onMinus: () => _setRent(ref, e.key, e.value - 1),
+                            onPlus: () => _setRent(ref, e.key, e.value + 1),
                           ),
-                          _qtyBtn(LucideIcons.minus, p, () => _set(ref, idx, qty - 1)),
-                          SizedBox(
-                            width: 28,
-                            child: Text(
-                              '$qty',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
-                            ),
-                          ),
-                          _qtyBtn(LucideIcons.plus, p, () => _set(ref, idx, qty + 1)),
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                    ],
+                  ],
                 ),
               ),
             const SizedBox(height: 12),
@@ -1587,53 +1924,30 @@ class _CartSheet extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Text(l.total, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
+                      Text(l.total, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
                       const Spacer(),
                       Text(
-                        '${shopMoney(total)} ${l.priceUnit}',
-                        style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
+                        '${shopMoney(total + rentTotal)} ${l.priceUnit}',
+                        style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: entries.isEmpty
-                          ? null
-                          : () async {
-                              final discount = entries.fold<int>(0, (a, e) {
-                                final pr = catalog[e.key];
-                                return a + (pr.oldPrice > pr.price ? (pr.oldPrice - pr.price) * e.value : 0);
-                              });
-                              final ok = await completeShopCheckout(
-                                context: context,
-                                ref: ref,
-                                items: Map<int, int>.from(cart),
-                                total: total,
-                                discount: discount,
-                                catalog: catalog,
-                                l: l,
-                                clearCart: true,
-                              );
-                              if (ok && context.mounted) {
-                                Navigator.pop(context);
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: brandGreen,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: brandGreen.withValues(alpha: 0.4),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  if (empty)
+                    _checkoutButton(l.checkout, onPressed: null)
+                  else ...[
+                    if (entries.isNotEmpty)
+                      _checkoutButton(
+                        rentEntries.isNotEmpty ? 'Оформить покупку · ${shopMoney(total)} ${l.priceUnit}' : l.checkout,
+                        onPressed: checkoutShop,
                       ),
-                      child: Text(
-                        l.checkout,
-                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+                    if (entries.isNotEmpty && rentEntries.isNotEmpty) const SizedBox(height: 8),
+                    if (rentEntries.isNotEmpty)
+                      _checkoutButton(
+                        'Оформить аренду · ${shopMoney(rentTotal)} ${l.priceUnit}',
+                        onPressed: checkoutRent,
                       ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -1687,7 +2001,9 @@ class _ProductTile extends StatelessWidget {
   final String? priceUnit;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(radius: 16, scale: 1.02, child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     final discount = prod.discountPercent;
     final unit = priceUnit ?? l.priceUnit;
     return GestureDetector(
@@ -1723,7 +2039,7 @@ class _ProductTile extends StatelessWidget {
                       ),
                       child: Text(
                         '-$discount%',
-                        style: GoogleFonts.inter(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
+                        style: GoogleFonts.manrope(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ),
                   ),
@@ -1742,15 +2058,27 @@ class _ProductTile extends StatelessWidget {
                           prod.name(locale),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text, height: 1.2),
+                          style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text, height: 1.2),
                         ),
                       ),
                       GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: onFav,
-                        child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          size: 17,
-                          color: isFav ? const Color(0xFFEF4444) : p.muted,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 0, 2, 8),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            transitionBuilder: (c, a) => ScaleTransition(
+                              scale: CurvedAnimation(parent: a, curve: Curves.elasticOut),
+                              child: c,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              key: ValueKey(isFav),
+                              size: 22,
+                              color: isFav ? const Color(0xFFEF4444) : p.muted,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -1762,7 +2090,7 @@ class _ProductTile extends StatelessWidget {
                       const SizedBox(width: 3),
                       Text(
                         prod.rating.toStringAsFixed(1),
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: p.text),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
@@ -1770,7 +2098,7 @@ class _ProductTile extends StatelessWidget {
                           '${prod.orders} ${l.ordersWord}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 10, color: p.muted),
+                          style: GoogleFonts.manrope(fontSize: 10, color: p.muted),
                         ),
                       ),
                     ],
@@ -1786,7 +2114,7 @@ class _ProductTile extends StatelessWidget {
                             if (prod.oldPrice > 0)
                               Text(
                                 '${shopMoney(prod.oldPrice)} $unit',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 11,
                                   color: p.muted,
                                   decoration: TextDecoration.lineThrough,
@@ -1794,7 +2122,7 @@ class _ProductTile extends StatelessWidget {
                               ),
                             Text(
                               '${shopMoney(prod.price)} $unit',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: prod.oldPrice > 0 ? const Color(0xFFEF4444) : p.text,
@@ -1861,7 +2189,7 @@ class _SearchResults extends ConsumerWidget {
           children: [
             Icon(LucideIcons.search_x, size: 48, color: p.muted),
             const SizedBox(height: 12),
-            Text(l.notFound, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
+            Text(l.notFound, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600, color: p.muted)),
           ],
         ),
       );
@@ -1941,7 +2269,7 @@ class _TileListView extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
+                  style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
                 ),
               ],
             ),
@@ -2023,7 +2351,7 @@ class _AllProductsPage extends ConsumerWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
                     ),
                   ),
                 ],
@@ -2052,7 +2380,7 @@ class _AllProductsPage extends ConsumerWidget {
                           behavior: SnackBarBehavior.floating,
                           duration: const Duration(milliseconds: 1100),
                           content: Text(l.addedToCart,
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                              style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                         ));
                     },
                     onFav: () => ref.read(shopFavoritesProvider.notifier).toggle(idx),
@@ -2149,7 +2477,7 @@ class ProductDetailPage extends ConsumerWidget {
                         children: [
                           Text(
                             '${shopMoney(product.price)} $unit',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
                               color: discount > 0 ? const Color(0xFFEF4444) : p.text,
@@ -2161,7 +2489,7 @@ class ProductDetailPage extends ConsumerWidget {
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
                                 '${shopMoney(product.oldPrice)} $unit',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 15,
                                   color: p.muted,
                                   decoration: TextDecoration.lineThrough,
@@ -2177,7 +2505,7 @@ class ProductDetailPage extends ConsumerWidget {
                               ),
                               child: Text(
                                 '-$discount%',
-                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                               ),
                             ),
                           ],
@@ -2197,19 +2525,19 @@ class ProductDetailPage extends ConsumerWidget {
                             const SizedBox(width: 5),
                             Text(
                               product.rating.toStringAsFixed(1),
-                              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                              style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               '${product.ratingsCount} ${l.ratingsWord}',
-                              style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                              style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                             ),
                             const Spacer(),
                             const Icon(LucideIcons.package_check, size: 16, color: brandGreen),
                             const SizedBox(width: 5),
                             Text(
                               '${product.orders} ${l.ordersWord}',
-                              style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
+                              style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
                             ),
                           ],
                         ),
@@ -2228,22 +2556,22 @@ class ProductDetailPage extends ConsumerWidget {
                       const SizedBox(height: 20),
                       Text(
                         product.name(locale),
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text, height: 1.25),
+                        style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text, height: 1.25),
                       ),
                       const SizedBox(height: 14),
                       Text(
                         l.aboutProduct,
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: p.text),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         product.desc(locale),
-                        style: GoogleFonts.inter(fontSize: 13.5, color: p.muted, height: 1.5),
+                        style: GoogleFonts.manrope(fontSize: 13.5, color: p.muted, height: 1.5),
                       ),
                       const SizedBox(height: 22),
                       Text(
                         l.similarTitle,
-                        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800, color: p.text),
                       ),
                     ],
                   ),
@@ -2292,12 +2620,13 @@ class ProductDetailPage extends ConsumerWidget {
                             ),
                             child: Text(
                               isRental ? l.rentBuyNow : l.buyNow,
-                              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
+                              style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800),
                             ),
                           ),
                         ),
                       ),
-                      if (!isRental) ...[
+                      // В корзину — и для покупки, и для аренды.
+                      ...[
                       const SizedBox(width: 12),
                       Expanded(
                         child: SizedBox(
@@ -2307,10 +2636,10 @@ class ProductDetailPage extends ConsumerWidget {
                             icon: const Icon(LucideIcons.shopping_cart, size: 18),
                             label: Text(
                               l.addToCartBtn,
-                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800),
+                              style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: brandGreen,
+                              backgroundColor: isRental ? const Color(0xFF1D243D) : brandGreen,
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -2339,7 +2668,7 @@ class ProductDetailPage extends ConsumerWidget {
         children: [
           Icon(icon, size: 14, color: brandGreen),
           const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.text)),
+          Text(label, style: GoogleFonts.manrope(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.text)),
         ],
       ),
     );
@@ -2420,8 +2749,8 @@ class _DetailHeader extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  Text('-$discount%', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
-                  Text(l.warranty, style: GoogleFonts.inter(fontSize: 8.5, fontWeight: FontWeight.w600, color: Colors.white)),
+                  Text('-$discount%', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+                  Text(l.warranty, style: GoogleFonts.manrope(fontSize: 8.5, fontWeight: FontWeight.w600, color: Colors.white)),
                 ],
               ),
             ),
@@ -2438,7 +2767,7 @@ class _DetailHeader extends ConsumerWidget {
               ),
               child: Text(
                 product.badge == ProductBadge.hit ? l.badgeHit : l.badgeNew,
-                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
+                style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
               ),
             ),
           ),
@@ -2474,7 +2803,9 @@ class _SimilarCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HoverLift(radius: 16, scale: 1.02, child: _buildCard(context));
+
+  Widget _buildCard(BuildContext context) {
     return GestureDetector(
       onTap: onOpen,
       child: Container(
@@ -2506,13 +2837,13 @@ class _SimilarCard extends StatelessWidget {
                       prod.name(locale),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
+                      style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: p.text, height: 1.2),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${shopMoney(prod.price)} ${l.priceUnit}',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: prod.oldPrice > 0 ? const Color(0xFFEF4444) : p.text,
@@ -2534,18 +2865,38 @@ class ShopFavoritesPage extends ConsumerWidget {
     required this.l,
     required this.locale,
     required this.onOpen,
+    this.onOpenRental,
+    this.onAdd,
+    this.onAddRental,
   });
 
   final ShopL10n l;
   final AppLocale locale;
   final ValueChanged<ShopProduct> onOpen;
+  final ValueChanged<ShopProduct>? onOpenRental;
+  final ValueChanged<int>? onAdd;
+  final ValueChanged<int>? onAddRental;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = HomePalette.of(context);
     final fav = ref.watch(shopFavoritesProvider);
+    final rentFav = ref.watch(rentalFavoritesProvider);
     final catalog = ref.watch(shopCatalogProvider);
-    final products = [for (final i in fav) if (i >= 0 && i < catalog.length) catalog[i]];
+    final products = [for (final i in fav) if (i >= 0 && i < catalog.length) i];
+    final rentals = [for (final i in rentFav) if (i >= 0 && i < rentalProducts.length) i];
+    final empty = products.isEmpty && rentals.isEmpty;
+
+    Widget title(IconData icon, String text) => Padding(
+          padding: const EdgeInsets.fromLTRB(2, 4, 2, 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 15, color: brandGreen),
+              const SizedBox(width: 6),
+              Text(text, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: p.text)),
+            ],
+          ),
+        );
 
     return Scaffold(
       backgroundColor: p.pageBg,
@@ -2571,35 +2922,54 @@ class ShopFavoritesPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(l.favoritesTitle, style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
+                  Text(l.favoritesTitle, style: GoogleFonts.manrope(fontSize: 19, fontWeight: FontWeight.w800, color: p.text)),
                 ],
               ),
             ),
             Expanded(
-              child: products.isEmpty
+              child: empty
                   ? Center(
-                      child: Text(l.favoritesEmpty, style: GoogleFonts.inter(color: p.muted)),
+                      child: Text(l.favoritesEmpty, style: GoogleFonts.manrope(color: p.muted)),
                     )
-                  : ListView.separated(
+                  : ListView(
                       padding: const EdgeInsets.all(16),
-                      itemCount: products.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) {
-                        final prod = products[i];
-                        final idx = catalog.indexOf(prod);
-                        return _ProductTile(
-                          prod: prod,
-                          l: l,
-                          p: p,
-                          locale: locale,
-                          isFav: true,
-                          onAdd: () {},
-                          onFav: () {
-                            ref.read(shopFavoritesProvider.notifier).remove(idx);
-                          },
-                          onOpen: () => onOpen(prod),
-                        );
-                      },
+                      children: [
+                        if (products.isNotEmpty) ...[
+                          if (rentals.isNotEmpty) title(LucideIcons.shopping_bag, 'Товары'),
+                          for (final idx in products)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _ProductTile(
+                                prod: catalog[idx],
+                                l: l,
+                                p: p,
+                                locale: locale,
+                                isFav: true,
+                                onAdd: () => onAdd?.call(idx),
+                                onFav: () => ref.read(shopFavoritesProvider.notifier).remove(idx),
+                                onOpen: () => onOpen(catalog[idx]),
+                              ),
+                            ),
+                        ],
+                        if (rentals.isNotEmpty) ...[
+                          title(LucideIcons.hammer, l.navRent),
+                          for (final idx in rentals)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _ProductTile(
+                                prod: rentalProducts[idx],
+                                l: l,
+                                p: p,
+                                locale: locale,
+                                priceUnit: l.rentPriceUnit,
+                                isFav: true,
+                                onAdd: () => onAddRental?.call(idx),
+                                onFav: () => ref.read(rentalFavoritesProvider.notifier).toggle(idx),
+                                onOpen: () => onOpenRental?.call(rentalProducts[idx]),
+                              ),
+                            ),
+                        ],
+                      ],
                     ),
             ),
           ],

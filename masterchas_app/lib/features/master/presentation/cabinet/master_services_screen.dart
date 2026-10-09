@@ -49,7 +49,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Услуги сохранены', style: GoogleFonts.inter()),
+            content: Text('Услуги сохранены', style: GoogleFonts.manrope()),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -106,7 +106,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     'Добавить услугу',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: masterNavy,
@@ -124,7 +124,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                         leading: Icon(category.icon, color: category.color),
                         title: Text(
                           category.name(locale),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
@@ -135,11 +135,11 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                           return ListTile(
                             title: Text(
                               service.name(locale),
-                              style: GoogleFonts.inter(fontSize: 14),
+                              style: GoogleFonts.manrope(fontSize: 14),
                             ),
                             subtitle: Text(
                               'от ${service.priceAvg} с.',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 12,
                                 color: const Color(0xFF6B7280),
                               ),
@@ -187,7 +187,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
           onPressed: _saving ? null : _save,
           child: Text(
             _saving ? '...' : 'Сохранить',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               color: masterNavy,
               fontWeight: FontWeight.w700,
             ),
@@ -205,7 +205,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Услуг пока нет',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: masterNavy,
@@ -215,7 +215,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                     Text(
                       'Добавьте услуги, которые вы выполняете, и укажите цены',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         color: const Color(0xFF6B7280),
                       ),
@@ -263,7 +263,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                           Expanded(
                             child: Text(
                               name,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: masterNavy,
@@ -283,7 +283,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                       if (found != null)
                         Text(
                           found.category.name(locale),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             color: const Color(0xFF6B7280),
                           ),
@@ -301,7 +301,7 @@ class _MasterServicesScreenState extends ConsumerState<MasterServicesScreen> {
                               ],
                               onChanged: (v) => _updatePrice(key, v),
                               onFieldSubmitted: (_) => _save(),
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),

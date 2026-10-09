@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_design.dart';
 import '../../masters/data/masters_data.dart';
 import '../../masters/presentation/master_detail_page.dart';
+import '../../../core/widgets/motion.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════════
 /// SOS — Экстренный вызов мастера
@@ -74,7 +75,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Сначала выберите тип проблемы',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
           backgroundColor: AppDesign.accentRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -153,7 +154,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
               const SizedBox(height: 16),
               Text(
                 'Выберите мастера',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -162,7 +163,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
               const SizedBox(height: 4),
               Text(
                 'Срочный вызов — мастер приедет в ближайшее время',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   color: Colors.white60,
                 ),
@@ -175,7 +176,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                     onTap: () {
                       Navigator.pop(ctx);
                       Navigator.of(context).push(
-                        MaterialPageRoute<void>(
+                        SmoothRoute<void>(
                           builder: (_) => MasterDetailPage(master: m),
                         ),
                       );
@@ -191,14 +192,14 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                     ),
                     title: Text(
                       m.fullName,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
                     subtitle: Text(
                       '${m.rating} ★ · от ${m.priceMin} сом',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppDesign.brandLight),
+                      style: GoogleFonts.manrope(fontSize: 12, color: AppDesign.brandLight),
                     ),
                     trailing: const Icon(LucideIcons.chevron_right, color: Colors.white54),
                   ),
@@ -239,7 +240,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                   ),
                   Text(
                     'Экстренный вызов',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -267,7 +268,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                         const SizedBox(width: 6),
                         Text(
                           '24/7',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -298,7 +299,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
           const SizedBox(height: 8),
           Text(
             'Что случилось?',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 26,
               fontWeight: FontWeight.w800,
               color: Colors.white,
@@ -307,7 +308,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
           const SizedBox(height: 6),
           Text(
             'Выберите проблему — мы найдём ближайшего мастера за минуты',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.6),
               height: 1.4,
@@ -368,7 +369,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -379,7 +380,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                             sub,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 11,
                               color: Colors.white.withValues(alpha: 0.5),
                             ),
@@ -427,7 +428,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       const SizedBox(height: 8),
                       Text(
                         'SOS',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -436,7 +437,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       ),
                       Text(
                         'Вызвать сейчас',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -452,7 +453,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
           Center(
             child: Text(
               'Первый принявший мастер получает +20% бонус',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 12,
                 color: Colors.white.withValues(alpha: 0.5),
               ),
@@ -510,7 +511,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       ? 'Ищем мастеров рядом...'
                       : 'Мастера откликаются!',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -524,7 +525,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                           ? 'Отправляем сигнал всем ближайшим'
                           : 'Найдено мастеров: $_mastersFound',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.6),
                   ),
@@ -568,7 +569,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                     onPressed: _cancelSearch,
                     child: Text(
                       'Отменить',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -631,7 +632,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                   shortName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -641,7 +642,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                   '${mins[i % mins.length]} мин · рядом',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppDesign.brandLight,
                   ),

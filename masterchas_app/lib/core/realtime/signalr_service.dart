@@ -21,29 +21,83 @@ class SignalRService {
     await _connectOrdersHub();
   }
 
-  Future<void> connectChat() async {
-    if (_chatHub != null) return;
+  /// Обработчики событий звонков (call.incoming, call.answered, call.ice, call.ended).
+  final Map<String, void Function(Map<String, dynamic> payload)> _callHandlers = {};
+  Future<void>? _connecting;
 
-    final token = await _storage.read(key: SecureStorageService.authTokenKey);
-    _chatHub = HubConnectionBuilder()
-        .withUrl(
-          AppConfig.chatHubUrl,
-          options: HttpConnectionOptions(
-            accessTokenFactory: () async => token ?? '',
-          ),
-        )
-        .withAutomaticReconnect()
-        .build();
+  bool get isChatConnected => _chatHub?.state == HubConnectionState.Connected;
 
-    _chatHub!.on('message.received', (args) {
+  /// Подписка на событие хаба чата. Можно вызывать до подключения —
+  /// обработчик подключится, как только появится соединение.
+  void onChatEvent(String event, void Function(Map<String, dynamic> payload) handler) {
+    final isNew = !_callHandlers.containsKey(event);
+    _callHandlers[event] = handler;
+    if (isNew && _chatHub != null) _bindEvent(event);
+  }
+
+  void _bindEvent(String event) {
+    _chatHub!.on(event, (args) {
       if (args == null || args.isEmpty) return;
       final raw = args.first;
       if (raw is Map) {
-        onChatMessage?.call(Map<String, dynamic>.from(raw as Map));
+        _callHandlers[event]?.call(Map<String, dynamic>.from(raw));
       }
     });
+  }
 
-    await _chatHub!.start();
+  Future<void> connectChat() async {
+    if (isChatConnected) return;
+    if (_connecting != null) return _connecting;
+    _connecting = _doConnectChat();
+    try {
+      await _connecting;
+    } finally {
+      _connecting = null;
+    }
+  }
+
+  Future<void> _doConnectChat() async {
+    if (_chatHub == null) {
+      _chatHub = HubConnectionBuilder()
+          .withUrl(
+            AppConfig.chatHubUrl,
+            options: HttpConnectionOptions(
+              // Токен читаем каждый раз заново — после входа/выхода он меняется.
+              accessTokenFactory: () async =>
+                  await _storage.read(key: SecureStorageService.authTokenKey) ?? '',
+            ),
+          )
+          .withAutomaticReconnect()
+          .build();
+
+      _chatHub!.on('message.received', (args) {
+        if (args == null || args.isEmpty) return;
+        final raw = args.first;
+        if (raw is Map) {
+          onChatMessage?.call(Map<String, dynamic>.from(raw as Map));
+        }
+      });
+      for (final event in _callHandlers.keys) {
+        _bindEvent(event);
+      }
+      // Автопереподключение сдалось — пробуем снова через 5 секунд.
+      final hub = _chatHub!;
+      hub.onclose(({error}) {
+        Future<void>.delayed(const Duration(seconds: 5), () {
+          if (identical(_chatHub, hub)) connectChat().catchError((_) {});
+        });
+      });
+    }
+
+    if (_chatHub!.state == HubConnectionState.Disconnected) {
+      await _chatHub!.start();
+    }
+  }
+
+  /// Вызов метода хаба чата (сигналинг звонков).
+  Future<void> invokeChat(String method, List<Object> args) async {
+    await connectChat();
+    await _chatHub!.invoke(method, args: args);
   }
 
   Future<void> joinConversation(String conversationId) async {

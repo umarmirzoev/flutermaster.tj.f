@@ -77,7 +77,7 @@ class _EditNameSheetState extends ConsumerState<EditNameSheet> {
                 const SizedBox(height: 16),
                 Text(
                   'Ваше имя',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: p.text,
@@ -86,7 +86,7 @@ class _EditNameSheetState extends ConsumerState<EditNameSheet> {
                 const SizedBox(height: 6),
                 Text(
                   'Укажите, как к вам обращаться',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: p.muted,
@@ -97,14 +97,14 @@ class _EditNameSheetState extends ConsumerState<EditNameSheet> {
                   controller: _controller,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: p.text,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Пользователь',
-                    hintStyle: GoogleFonts.inter(fontSize: 16, color: p.muted),
+                    hintStyle: GoogleFonts.manrope(fontSize: 16, color: p.muted),
                     filled: true,
                     fillColor: p.cardBg,
                     contentPadding: const EdgeInsets.symmetric(
@@ -135,7 +135,7 @@ class _EditNameSheetState extends ConsumerState<EditNameSheet> {
                     ),
                     child: Text(
                       _isSaving ? 'Сохранение...' : 'Сохранить',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),

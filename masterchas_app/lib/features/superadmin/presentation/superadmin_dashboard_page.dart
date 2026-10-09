@@ -142,8 +142,8 @@ class SuperAdminDashboardPage extends ConsumerWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingTextStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: SuperAdminTheme.muted),
-              dataTextStyle: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.text),
+              headingTextStyle: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: SuperAdminTheme.muted),
+              dataTextStyle: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.text),
               columns: const [
                 DataColumn(label: Text('ID')),
                 DataColumn(label: Text('Клиент')),
@@ -184,11 +184,11 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(p.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(p.category, style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                        Text(p.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(p.category, style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                       ]),
                     ),
-                    Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
+                    Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
                     const SizedBox(width: 8),
                     SaStatusPill(label: p.inStock ? 'В наличии' : 'Нет', color: p.inStock ? SuperAdminTheme.green : SuperAdminTheme.red),
                   ],
@@ -206,15 +206,15 @@ class SuperAdminDashboardPage extends ConsumerWidget {
         children: [
           const SaSectionTitle(title: 'Клиенты'),
           const SizedBox(height: 8),
-          if (users.isEmpty) Text('Нет клиентов', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted)),
+          if (users.isEmpty) Text('Нет клиентов', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted)),
           ...users.take(4).map((u) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
                     CircleAvatar(radius: 16, backgroundImage: AssetImage(u.avatar)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(u.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
-                    Text(u.date, style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                    Expanded(child: Text(u.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                    Text(u.date, style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                     if (u.isNew) ...[const SizedBox(width: 6), const SaStatusPill(label: 'Новый', color: SuperAdminTheme.blue)],
                   ],
                 ),
@@ -237,11 +237,11 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                   children: [
                     CircleAvatar(radius: 16, backgroundImage: m.imageBytes != null ? MemoryImage(m.imageBytes!) : AssetImage(m.avatar) as ImageProvider),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(m.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text(m.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
                     const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107)),
-                    Text(' ${m.rating}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text(' ${m.rating}', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700)),
                     const SizedBox(width: 8),
-                    Text('${m.orders} зак.', style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                    Text('${m.orders} зак.', style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                   ],
                 ),
               )),
@@ -257,18 +257,18 @@ class SuperAdminDashboardPage extends ConsumerWidget {
         children: [
           const SaSectionTitle(title: 'Последние отзывы'),
           const SizedBox(height: 8),
-          if (reviews.isEmpty) Text('Нет отзывов', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted)),
+          if (reviews.isEmpty) Text('Нет отзывов', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted)),
           ...reviews.take(4).map((r) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(radius: 14, backgroundColor: SuperAdminTheme.green.withValues(alpha: 0.12), child: Text(r.avatar, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: SuperAdminTheme.green))),
+                    CircleAvatar(radius: 14, backgroundColor: SuperAdminTheme.green.withValues(alpha: 0.12), child: Text(r.avatar, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: SuperAdminTheme.green))),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [Text(r.author, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)), ...List.generate(r.rating, (_) => const Icon(LucideIcons.star, size: 10, color: Color(0xFFFFC107)))]),
-                        Text(r.text, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Row(children: [Text(r.author, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700)), ...List.generate(r.rating, (_) => const Icon(LucideIcons.star, size: 10, color: Color(0xFFFFC107)))]),
+                        Text(r.text, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
                       ]),
                     ),
                   ],
@@ -286,7 +286,7 @@ class SuperAdminDashboardPage extends ConsumerWidget {
         children: [
           const SaSectionTitle(title: 'Уведомления'),
           const SizedBox(height: 8),
-          if (notifications.isEmpty) Text('Нет уведомлений', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted)),
+          if (notifications.isEmpty) Text('Нет уведомлений', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted)),
           ...notifications.take(4).map((n) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
@@ -294,8 +294,8 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                     Container(width: 32, height: 32, decoration: BoxDecoration(color: n.color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)), child: Icon(n.icon, size: 14, color: n.color)),
                     const SizedBox(width: 8),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(n.title, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600)),
-                      Text(n.time, style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                      Text(n.title, style: GoogleFonts.manrope(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      Text(n.time, style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                     ])),
                   ],
                 ),
@@ -318,12 +318,12 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                   children: [
                     Image.asset(p.image, width: 32, height: 32, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(LucideIcons.package, size: 20)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(p.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
-                    Text(p.category, style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                    Expanded(child: Text(p.name, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                    Text(p.category, style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                     const SizedBox(width: 8),
-                    Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700)),
+                    Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700)),
                     const SizedBox(width: 8),
-                    Text('${p.sold}', style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted)),
+                    Text('${p.sold}', style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted)),
                     const SizedBox(width: 8),
                     Icon(p.inStock ? LucideIcons.circle_check : LucideIcons.circle_x, size: 14, color: p.inStock ? SuperAdminTheme.green : SuperAdminTheme.red),
                   ],
@@ -345,10 +345,10 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    Expanded(child: Text(p.master, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                    Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
+                    Expanded(child: Text(p.master, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600))),
+                    Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
                     const SizedBox(width: 8),
-                    Text(p.method, style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                    Text(p.method, style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                     const SizedBox(width: 8),
                     SaStatusPill(label: p.paid ? 'Выплачено' : 'Ожидает', color: p.paid ? SuperAdminTheme.green : SuperAdminTheme.yellow),
                   ],
@@ -370,10 +370,10 @@ class SuperAdminDashboardPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 5),
                 child: Row(
                   children: [
-                    Expanded(child: Text(s.name, style: GoogleFonts.inter(fontSize: 12))),
+                    Expanded(child: Text(s.name, style: GoogleFonts.manrope(fontSize: 12))),
                     Icon(s.status == 'Работает' ? LucideIcons.circle_check : LucideIcons.circle_alert, size: 14, color: s.status == 'Работает' ? SuperAdminTheme.green : SuperAdminTheme.yellow),
                     const SizedBox(width: 4),
-                    Text(s.status, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.green, fontWeight: FontWeight.w600)),
+                    Text(s.status, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.green, fontWeight: FontWeight.w600)),
                   ],
                 ),
               )),

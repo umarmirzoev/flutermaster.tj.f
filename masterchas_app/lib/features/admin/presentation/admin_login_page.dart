@@ -99,7 +99,7 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
     return Theme(
       data: ThemeData(
         scaffoldBackgroundColor: AdminTheme.pageBg,
-        fontFamily: GoogleFonts.inter().fontFamily,
+        fontFamily: GoogleFonts.manrope().fontFamily,
       ),
       child: Scaffold(
         body: Center(
@@ -132,7 +132,7 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
                               children: [
                                 Text(
                                   'Master Chas Admin',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w800,
                                     color: AdminTheme.text,
@@ -140,7 +140,7 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
                                 ),
                                 Text(
                                   'Вход администратора',
-                                  style: GoogleFonts.inter(fontSize: 13, color: AdminTheme.muted),
+                                  style: GoogleFonts.manrope(fontSize: 13, color: AdminTheme.muted),
                                 ),
                               ],
                             ),
@@ -178,13 +178,13 @@ class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
                       const SizedBox(height: 10),
                       Text(
                         'Пароль из сидера: MasterChas2025!. Пользователь с ролью Admin должен быть создан на сервере.',
-                        style: GoogleFonts.inter(fontSize: 11, color: AdminTheme.muted, height: 1.4),
+                        style: GoogleFonts.manrope(fontSize: 11, color: AdminTheme.muted, height: 1.4),
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
                         Text(
                           _error!,
-                          style: GoogleFonts.inter(fontSize: 13, color: AdminTheme.red),
+                          style: GoogleFonts.manrope(fontSize: 13, color: AdminTheme.red),
                         ),
                       ],
                       const SizedBox(height: 20),

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/superadmin_models.dart';
 import '../../theme/superadmin_theme.dart';
+import '../../../../core/widgets/hover_lift.dart';
 
 class SaCard extends StatelessWidget {
   const SaCard({super.key, required this.child, this.padding = const EdgeInsets.all(16)});
@@ -13,15 +14,27 @@ class SaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: SuperAdminTheme.cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: SuperAdminTheme.border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+    return HoverLift(
+      cursor: SystemMouseCursors.basic,
+      builder: (context, hovering) => AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: padding,
+        transform: Matrix4.translationValues(0, hovering ? -3 : 0, 0),
+        decoration: BoxDecoration(
+          color: SuperAdminTheme.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: hovering ? SuperAdminTheme.sidebarActive.withValues(alpha: 0.35) : SuperAdminTheme.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: hovering ? 0.09 : 0.03),
+              blurRadius: hovering ? 18 : 8,
+              offset: Offset(0, hovering ? 8 : 2),
+            ),
+          ],
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }
@@ -63,14 +76,14 @@ class SaKpiCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(label, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
+                  child: Text(value, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
                 ),
-                Text(change, style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: positive ? SuperAdminTheme.green : SuperAdminTheme.red)),
+                Text(change, style: GoogleFonts.manrope(fontSize: 10.5, fontWeight: FontWeight.w600, color: positive ? SuperAdminTheme.green : SuperAdminTheme.red)),
               ],
             ),
           ),
@@ -91,7 +104,7 @@ class SaStatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Text(label, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
@@ -148,7 +161,7 @@ class SaLineChartCard extends StatelessWidget {
                             getTitlesWidget: (v, _) {
                               final i = v.toInt();
                               if (i < 0 || i >= points.length) return const SizedBox.shrink();
-                              return Text(points[i].label, style: GoogleFonts.inter(fontSize: 9, color: SuperAdminTheme.muted));
+                              return Text(points[i].label, style: GoogleFonts.manrope(fontSize: 9, color: SuperAdminTheme.muted));
                             },
                           ),
                         ),
@@ -166,7 +179,7 @@ class SaLineChartCard extends StatelessWidget {
                       ],
                     ),
                   )
-                : Center(child: Text('Нет данных', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted))),
+                : Center(child: Text('Нет данных', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted))),
           ),
         ],
       ),
@@ -199,7 +212,7 @@ class SaBarChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
+          Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
           const SizedBox(height: 8),
           SizedBox(
             height: 170,
@@ -224,7 +237,7 @@ class SaBarChartCard extends StatelessWidget {
                             getTitlesWidget: (v, _) {
                               final i = v.toInt();
                               if (i < 0 || i >= points.length) return const SizedBox.shrink();
-                              return Text(points[i].label, style: GoogleFonts.inter(fontSize: 9, color: SuperAdminTheme.muted));
+                              return Text(points[i].label, style: GoogleFonts.manrope(fontSize: 9, color: SuperAdminTheme.muted));
                             },
                           ),
                         ),
@@ -236,7 +249,7 @@ class SaBarChartCard extends StatelessWidget {
                       ],
                     ),
                   )
-                : Center(child: Text('Нет данных', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted))),
+                : Center(child: Text('Нет данных', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted))),
           ),
         ],
       ),
@@ -257,7 +270,7 @@ class SaPieChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
+          Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
           const SizedBox(height: 8),
           SizedBox(
             height: 170,
@@ -278,8 +291,8 @@ class SaPieChartCard extends StatelessWidget {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(total, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
-                          Text('всего', style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                          Text(total, style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
+                          Text('всего', style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                         ],
                       ),
                     ],
@@ -296,7 +309,7 @@ class SaPieChartCard extends StatelessWidget {
                           children: [
                             Container(width: 8, height: 8, decoration: BoxDecoration(color: s.color, shape: BoxShape.circle)),
                             const SizedBox(width: 6),
-                            Text('${s.label} ${s.percent}%', style: GoogleFonts.inter(fontSize: 10.5, color: SuperAdminTheme.muted)),
+                            Text('${s.label} ${s.percent}%', style: GoogleFonts.manrope(fontSize: 10.5, color: SuperAdminTheme.muted)),
                           ],
                         ),
                       ),
@@ -315,7 +328,7 @@ Widget _chartHeader(String title, String? period, ValueChanged<String>? onPeriod
   final safePeriod = period != null && options.contains(period) ? period : options.first;
   return Row(
     children: [
-      Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text), maxLines: 1, overflow: TextOverflow.ellipsis)),
+      Expanded(child: Text(title, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: SuperAdminTheme.text), maxLines: 1, overflow: TextOverflow.ellipsis)),
       if (period != null && onPeriod != null)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -325,8 +338,8 @@ Widget _chartHeader(String title, String? period, ValueChanged<String>? onPeriod
               value: safePeriod,
               isDense: true,
               iconSize: 16,
-              style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.text),
-              items: options.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.inter(fontSize: 11)))).toList(),
+              style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.text),
+              items: options.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.manrope(fontSize: 11)))).toList(),
               onChanged: (v) { if (v != null) onPeriod(v); },
             ),
           ),
@@ -346,10 +359,10 @@ class SaSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
+        Text(title, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w700, color: SuperAdminTheme.text)),
         const Spacer(),
         if (action != null)
-          TextButton(onPressed: onAction, child: Text(action!, style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.green, fontWeight: FontWeight.w600))),
+          TextButton(onPressed: onAction, child: Text(action!, style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.green, fontWeight: FontWeight.w600))),
       ],
     );
   }

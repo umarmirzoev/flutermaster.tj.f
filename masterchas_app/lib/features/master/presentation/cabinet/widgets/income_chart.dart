@@ -110,7 +110,7 @@ class IncomeBarChart extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
                                 '${point.amount}',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 8,
                                   fontWeight: FontWeight.w700,
                                   color: masterNavy,
@@ -153,7 +153,7 @@ class IncomeBarChart extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: points.length > 12 ? 8 : 10,
                       color: const Color(0xFF9CA3AF),
                       fontWeight: FontWeight.w600,
@@ -210,7 +210,7 @@ class IncomePeriodTabs extends StatelessWidget {
                 child: Text(
                   _labels[p]!,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: isActive ? Colors.white : const Color(0xFF6B7280),

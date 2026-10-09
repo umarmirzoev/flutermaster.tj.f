@@ -39,7 +39,7 @@ class MasterRatingScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   rating > 0 ? rating.toStringAsFixed(1) : '—',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 42,
                     fontWeight: FontWeight.w800,
                     color: masterNavy,
@@ -47,7 +47,7 @@ class MasterRatingScreen extends ConsumerWidget {
                 ),
                 Text(
                   reviews > 0 ? '$reviews отзывов' : 'Пока нет отзывов',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     color: const Color(0xFF6B7280),
                   ),
@@ -68,7 +68,7 @@ class MasterRatingScreen extends ConsumerWidget {
                   ? 'Рейтинг появится после первых отзывов клиентов. '
                       'Качественная работа поможет быстрее набрать доверие.'
                   : 'Спасибо за отличную работу! Продолжайте получать положительные отзывы.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 14,
                 color: const Color(0xFF6B7280),
                 height: 1.5,

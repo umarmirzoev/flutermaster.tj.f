@@ -4,6 +4,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/widgets/motion.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/master_registration_draft_provider.dart';
@@ -39,6 +40,7 @@ class _MasterRegistrationScreenState
   final _companyController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _hidePassword = true;
 
   bool _isSelfEmployed = true;
   bool _agreedToTerms = false;
@@ -93,7 +95,8 @@ class _MasterRegistrationScreenState
   bool get _canContinue {
     if (_isSubmitting || !_agreedToTerms) return false;
     if (_phoneController.text.trim().length < 9) return false;
-    if (!widget.applicationMode && _passwordController.text.trim().length < 8) {
+    // Пароль нужен всегда: мастер регистрируется на сервере, иначе заказы и чат не работают.
+    if (_passwordController.text.trim().length < 8) {
       return false;
     }
     if (_lastNameController.text.trim().isEmpty) return false;
@@ -112,23 +115,6 @@ class _MasterRegistrationScreenState
     });
 
     try {
-      if (widget.applicationMode) {
-        await ref
-            .read(authProvider.notifier)
-            .signInWithPhone(_phoneController.text.trim());
-
-        ref.read(masterRegistrationDraftProvider.notifier).saveProfile(
-              lastName: _lastNameController.text,
-              firstName: _firstNameController.text,
-              patronymic: _patronymicController.text,
-              isSelfEmployed: _isSelfEmployed,
-              companyName: _isSelfEmployed ? _companyController.text.trim() : null,
-            );
-
-        if (mounted) context.go('/master/skills');
-        return;
-      }
-
       await ref.read(authProvider.notifier).registerWithPassword(
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
@@ -219,12 +205,15 @@ class _MasterRegistrationScreenState
                         gradient: const LinearGradient(colors: [Color(0xFF57B55E), Color(0xFF6DD674)]),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(LucideIcons.hammer, size: 20, color: Colors.white),
+                      child: const FloatY(
+                        amplitude: 2,
+                        child: Icon(LucideIcons.hammer, size: 20, color: Colors.white),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       l.becomeMaster,
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                      style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
                     ),
                   ],
                 ),
@@ -248,9 +237,14 @@ class _MasterRegistrationScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Reveal(
+                    delay: Duration(milliseconds: 60),
+                    child: _BenefitsStrip(),
+                  ),
+                  const SizedBox(height: 20),
                   Text(
                     widget.applicationMode ? l.applicationTitle : l.nameTitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: p.text,
@@ -260,7 +254,7 @@ class _MasterRegistrationScreenState
                   const SizedBox(height: 8),
                   Text(
                     widget.applicationMode ? l.applicationSub : l.nameSub,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: p.muted,
@@ -268,45 +262,62 @@ class _MasterRegistrationScreenState
                     ),
                   ),
                   const SizedBox(height: 22),
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: l.phoneLabel,
+                    Reveal(
+                      delay: const Duration(milliseconds: 140),
+                      child: _NameField(
+                        controller: _phoneController,
+                        hint: l.phoneLabel,
+                        icon: LucideIcons.phone,
                         prefixText: '+992 ',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    if (!widget.applicationMode) ...[
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: l.passwordLabel,
-                          border: OutlineInputBorder(),
-                        ),
+                        keyboardType: TextInputType.phone,
                         onChanged: (_) => setState(() {}),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Reveal(
+                      delay: const Duration(milliseconds: 200),
+                      child: _NameField(
+                        controller: _passwordController,
+                        hint: '${l.passwordLabel} (мин. 8 символов)',
+                        icon: LucideIcons.lock,
+                        obscure: _hidePassword,
+                        onToggleObscure: () => setState(() => _hidePassword = !_hidePassword),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (_passwordController.text.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _PasswordStrength(password: _passwordController.text),
                     ],
                     const SizedBox(height: 12),
-                    _NameField(
-                      controller: _lastNameController,
-                      hint: l.lastName,
-                      onChanged: (_) => setState(() {}),
+                    Reveal(
+                      delay: const Duration(milliseconds: 260),
+                      child: _NameField(
+                        controller: _lastNameController,
+                        hint: l.lastName,
+                        icon: LucideIcons.user,
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    _NameField(
-                      controller: _firstNameController,
-                      hint: l.firstName,
-                      onChanged: (_) => setState(() {}),
+                    Reveal(
+                      delay: const Duration(milliseconds: 320),
+                      child: _NameField(
+                        controller: _firstNameController,
+                        hint: l.firstName,
+                        icon: LucideIcons.user,
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    _NameField(
-                      controller: _patronymicController,
-                      hint: l.patronymic,
-                      onChanged: (_) => setState(() {}),
+                    Reveal(
+                      delay: const Duration(milliseconds: 380),
+                      child: _NameField(
+                        controller: _patronymicController,
+                        hint: l.patronymic,
+                        icon: LucideIcons.user,
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
                     const SizedBox(height: 22),
                     Row(
@@ -315,7 +326,7 @@ class _MasterRegistrationScreenState
                         Expanded(
                           child: Text(
                             l.selfEmployed,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: p.text,
@@ -357,9 +368,15 @@ class _MasterRegistrationScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-              child: GestureDetector(
+              child: HoverLift(
+                radius: 16,
+                scale: _canContinue ? 1.02 : 1.0,
+                lift: _canContinue ? 3 : 0,
+                glowColor: const Color(0xFF3B8F42),
+                child: GestureDetector(
                 onTap: _canContinue ? _onContinue : null,
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   height: 54,
                   decoration: BoxDecoration(
                     gradient: _canContinue
@@ -371,20 +388,31 @@ class _MasterRegistrationScreenState
                         ? [BoxShadow(color: const Color(0xFF3B8F42).withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))]
                         : null,
                   ),
-                  child: Center(
-                    child: Row(
+                  child: ShineSweep(
+                    radius: 16,
+                    delay: const Duration(milliseconds: 1200),
+                    child: Center(
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                          )
+                        : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           l.continueBtn,
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                         const SizedBox(width: 8),
                         const Icon(LucideIcons.arrow_right, size: 18, color: Colors.white),
                       ],
                     ),
                   ),
+                  ),
                 ),
+              ),
               ),
             ),
           ],
@@ -395,7 +423,8 @@ class _MasterRegistrationScreenState
   Widget _stepDot(String num, String label, bool active) {
     return Column(
       children: [
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
           width: 30,
           height: 30,
           decoration: BoxDecoration(
@@ -406,7 +435,7 @@ class _MasterRegistrationScreenState
           alignment: Alignment.center,
           child: Text(
             num,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 13,
               fontWeight: FontWeight.w800,
               color: active ? const Color(0xFF2A4A3A) : Colors.white,
@@ -416,7 +445,7 @@ class _MasterRegistrationScreenState
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.manrope(
             fontSize: 10,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color: Colors.white.withValues(alpha: active ? 1 : 0.7),
@@ -442,11 +471,21 @@ class _NameField extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.onChanged,
+    this.icon,
+    this.prefixText,
+    this.keyboardType,
+    this.obscure = false,
+    this.onToggleObscure,
   });
 
   final TextEditingController controller;
   final String hint;
   final ValueChanged<String> onChanged;
+  final IconData? icon;
+  final String? prefixText;
+  final TextInputType? keyboardType;
+  final bool obscure;
+  final VoidCallback? onToggleObscure;
 
   @override
   Widget build(BuildContext context) {
@@ -454,19 +493,32 @@ class _NameField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      textCapitalization: TextCapitalization.words,
-      style: GoogleFonts.inter(
+      keyboardType: keyboardType,
+      obscureText: obscure,
+      textCapitalization: keyboardType == null && onToggleObscure == null
+          ? TextCapitalization.words
+          : TextCapitalization.none,
+      style: GoogleFonts.manrope(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         color: p.text,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.manrope(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: p.muted,
         ),
+        prefixText: prefixText,
+        prefixStyle: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w600, color: p.text),
+        prefixIcon: icon == null ? null : Icon(icon, size: 19, color: p.muted),
+        suffixIcon: onToggleObscure == null
+            ? null
+            : IconButton(
+                onPressed: onToggleObscure,
+                icon: Icon(obscure ? LucideIcons.eye : LucideIcons.eye_off, size: 19, color: p.muted),
+              ),
         filled: true,
         fillColor: p.inputFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -528,7 +580,7 @@ class _TermsCheckbox extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: RichText(
               text: TextSpan(
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
                   color: p.muted,
@@ -538,7 +590,7 @@ class _TermsCheckbox extends StatelessWidget {
                   TextSpan(text: l.termsPrefix),
                   TextSpan(
                     text: l.termsOfUse,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _linkBlue,
@@ -549,7 +601,7 @@ class _TermsCheckbox extends StatelessWidget {
                           SnackBar(
                             content: Text(
                               l.termsOfUse,
-                              style: GoogleFonts.inter(),
+                              style: GoogleFonts.manrope(),
                             ),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -559,7 +611,7 @@ class _TermsCheckbox extends StatelessWidget {
                   TextSpan(text: l.termsAnd),
                   TextSpan(
                     text: l.privacyPolicy,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _linkBlue,
@@ -570,7 +622,7 @@ class _TermsCheckbox extends StatelessWidget {
                           SnackBar(
                             content: Text(
                               l.privacyPolicy,
-                              style: GoogleFonts.inter(),
+                              style: GoogleFonts.manrope(),
                             ),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -581,6 +633,112 @@ class _TermsCheckbox extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+
+/// Почему стоит стать мастером — три коротких преимущества.
+class _BenefitsStrip extends StatelessWidget {
+  const _BenefitsStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = HomePalette.of(context);
+    const items = [
+      (LucideIcons.briefcase, 'Заказы рядом', Color(0xFF10B981)),
+      (LucideIcons.clock, 'Свой график', Color(0xFF3B82F6)),
+      (LucideIcons.star, 'Рейтинг и отзывы', Color(0xFFF59E0B)),
+    ];
+    return Row(
+      children: [
+        for (final (i, item) in items.indexed) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Reveal(
+              delay: Duration(milliseconds: 80 + i * 90),
+              child: HoverLift(
+                radius: 14,
+                scale: 1.05,
+                glowColor: item.$3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: item.$3.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: item.$3.withValues(alpha: 0.22)),
+                  ),
+                  child: Column(
+                    children: [
+                      FloatY(
+                        amplitude: 2,
+                        phase: i * 0.3,
+                        child: Icon(item.$1, size: 20, color: item.$3),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.$2,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: p.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Индикатор надёжности пароля.
+class _PasswordStrength extends StatelessWidget {
+  const _PasswordStrength({required this.password});
+
+  final String password;
+
+  @override
+  Widget build(BuildContext context) {
+    var score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[A-ZА-Я]').hasMatch(password) && RegExp(r'[a-zа-я]').hasMatch(password)) score++;
+    final (label, color) = switch (score) {
+      0 || 1 => ('Слабый пароль', const Color(0xFFEF4444)),
+      2 => ('Средний пароль', const Color(0xFFF59E0B)),
+      _ => ('Надёжный пароль', const Color(0xFF10B981)),
+    };
+    final value = (score / 4).clamp(0.1, 1.0);
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: value),
+              duration: const Duration(milliseconds: 350),
+              builder: (_, v, __) => LinearProgressIndicator(
+                value: v,
+                minHeight: 6,
+                color: color,
+                backgroundColor: color.withValues(alpha: 0.15),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: color),
         ),
       ],
     );

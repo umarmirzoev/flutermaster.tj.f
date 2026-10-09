@@ -12,6 +12,7 @@ import '../data/superadmin_data.dart';
 import '../models/superadmin_models.dart';
 import '../providers/superadmin_provider.dart';
 import '../theme/superadmin_theme.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class SuperAdminShell extends ConsumerStatefulWidget {
   const SuperAdminShell({super.key, required this.child});
@@ -52,7 +53,7 @@ class _SuperAdminShellState extends ConsumerState<SuperAdminShell> {
     final sidebarW = ui.sidebarCollapsed ? SuperAdminTheme.sidebarCollapsed : SuperAdminTheme.sidebarWidth;
 
     return Theme(
-      data: ThemeData(scaffoldBackgroundColor: SuperAdminTheme.pageBg, fontFamily: GoogleFonts.inter().fontFamily),
+      data: ThemeData(scaffoldBackgroundColor: SuperAdminTheme.pageBg, fontFamily: GoogleFonts.manrope().fontFamily),
       child: Scaffold(
         backgroundColor: SuperAdminTheme.pageBg,
         body: Row(
@@ -147,7 +148,7 @@ class _ApiStatusBar extends StatelessWidget {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
             if (onRetry != null)
@@ -183,7 +184,7 @@ class _Sidebar extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(collapsed ? 14 : 18, 20, collapsed ? 14 : 18, 12),
           child: Row(
             children: [
-              if (!collapsed) Expanded(child: Text('Master Chas', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white))),
+              if (!collapsed) Expanded(child: Text('Master Chas', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white))),
               Icon(LucideIcons.panel_left, size: 18, color: Colors.white54),
             ],
           ),
@@ -198,7 +199,7 @@ class _Sidebar extends StatelessWidget {
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('Быстрые действия', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white38, letterSpacing: 0.5)),
+                  child: Text('Быстрые действия', style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white38, letterSpacing: 0.5)),
                 ),
                 const SizedBox(height: 8),
                 _quickAction(context, LucideIcons.plus, 'Создать заказ', '/superadmin/orders'),
@@ -219,7 +220,7 @@ class _Sidebar extends StatelessWidget {
                   backgroundColor: SuperAdminTheme.green.withValues(alpha: 0.2),
                   child: Text(
                     _userInitial(auth),
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: SuperAdminTheme.green),
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: SuperAdminTheme.green),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -229,11 +230,11 @@ class _Sidebar extends StatelessWidget {
                     children: [
                       Text(
                         _userTitle(auth),
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                        style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                       Text(
                         auth.isAdmin ? 'Супер администратор' : 'Требуется вход',
-                        style: GoogleFonts.inter(fontSize: 10, color: Colors.white54),
+                        style: GoogleFonts.manrope(fontSize: 10, color: Colors.white54),
                       ),
                     ],
                   ),
@@ -249,7 +250,7 @@ class _Sidebar extends StatelessWidget {
               mainAxisAlignment: collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Icon(collapsed ? LucideIcons.panel_left_open : LucideIcons.panel_left_close, size: 16, color: Colors.white54),
-                if (!collapsed) ...[const SizedBox(width: 8), Text('Свернуть', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54))],
+                if (!collapsed) ...[const SizedBox(width: 8), Text('Свернуть', style: GoogleFonts.manrope(fontSize: 12, color: Colors.white54))],
               ],
             ),
           ),
@@ -274,12 +275,12 @@ class _Sidebar extends StatelessWidget {
               Icon(item.icon, size: 17, color: Colors.white),
               if (!collapsed) ...[
                 const SizedBox(width: 10),
-                Expanded(child: Text(item.label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white))),
+                Expanded(child: Text(item.label, style: GoogleFonts.manrope(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white))),
                 if (item.badge != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: item.badgeColor ?? SuperAdminTheme.green, borderRadius: BorderRadius.circular(8)),
-                    child: Text(item.badge!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                    child: Text(item.badge!, style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
                   ),
               ],
             ],
@@ -293,13 +294,14 @@ class _Sidebar extends StatelessWidget {
     return InkWell(
       onTap: () => context.go(route),
       borderRadius: BorderRadius.circular(8),
+      hoverColor: SuperAdminTheme.sidebarHover,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Row(
           children: [
             Icon(icon, size: 14, color: Colors.white54),
             const SizedBox(width: 8),
-            Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 11.5, color: Colors.white70))),
+            Expanded(child: Text(label, style: GoogleFonts.manrope(fontSize: 11.5, color: Colors.white70))),
           ],
         ),
       ),
@@ -340,15 +342,15 @@ class _TopBar extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Панель управления', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
-                  Text('Добро пожаловать обратно, ${_userTitle(auth)}!', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted)),
+                  Text('Панель управления', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: SuperAdminTheme.text)),
+                  Text('Добро пожаловать обратно, ${_userTitle(auth)}!', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted)),
                 ],
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(border: Border.all(color: SuperAdminTheme.border), borderRadius: BorderRadius.circular(8)),
-                child: Row(children: [const Text('🇷🇺', style: TextStyle(fontSize: 14)), const SizedBox(width: 6), Text('Русский', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))]),
+                child: Row(children: [const Text('🇷🇺', style: TextStyle(fontSize: 14)), const SizedBox(width: 6), Text('Русский', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600))]),
               ),
               const SizedBox(width: 10),
               _badgeIcon(LucideIcons.bell, '24'),
@@ -357,13 +359,13 @@ class _TopBar extends ConsumerWidget {
               const SizedBox(width: 10),
               Row(
                 children: [
-                  CircleAvatar(radius: 16, backgroundColor: SuperAdminTheme.green.withValues(alpha: 0.15), child: Text(_userInitial(auth), style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: SuperAdminTheme.green, fontSize: 12))),
+                  CircleAvatar(radius: 16, backgroundColor: SuperAdminTheme.green.withValues(alpha: 0.15), child: Text(_userInitial(auth), style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: SuperAdminTheme.green, fontSize: 12))),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_userTitle(auth), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
-                      Text(auth.isAdmin ? 'Супер администратор' : 'Гость', style: GoogleFonts.inter(fontSize: 10, color: SuperAdminTheme.muted)),
+                      Text(_userTitle(auth), style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text(auth.isAdmin ? 'Супер администратор' : 'Гость', style: GoogleFonts.manrope(fontSize: 10, color: SuperAdminTheme.muted)),
                     ],
                   ),
                 ],
@@ -389,8 +391,11 @@ class _TopBar extends ConsumerWidget {
                         decoration: InputDecoration(
                           isCollapsed: true,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
                           hintText: 'Поиск по заказам, пользователям, товарам...',
-                          hintStyle: GoogleFonts.inter(fontSize: 13, color: SuperAdminTheme.muted),
+                          hintStyle: GoogleFonts.manrope(fontSize: 13, color: SuperAdminTheme.muted),
                         ),
                       ),
                     ),
@@ -415,8 +420,8 @@ class _TopBar extends ConsumerWidget {
                           final r = results[i];
                           return ListTile(
                             dense: true,
-                            title: Text(r['label']!, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
-                            subtitle: Text(r['type']!, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted)),
+                            title: Text(r['label']!, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
+                            subtitle: Text(r['type']!, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted)),
                             onTap: () => onResultTap(r['route']!),
                           );
                         },
@@ -435,7 +440,13 @@ class _TopBar extends ConsumerWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Stack(
+      hoverColor: SuperAdminTheme.pageBg,
+      child: HoverLift(
+        builder: (context, hovering) => AnimatedScale(
+          scale: hovering ? 1.12 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          child: Stack(
         children: [
           Padding(padding: const EdgeInsets.all(8), child: Icon(icon, size: 20, color: SuperAdminTheme.text)),
           Positioned(
@@ -444,10 +455,12 @@ class _TopBar extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: const BoxDecoration(color: SuperAdminTheme.red, borderRadius: BorderRadius.all(Radius.circular(8))),
-              child: Text(count, style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.white)),
+              child: Text(count, style: GoogleFonts.manrope(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

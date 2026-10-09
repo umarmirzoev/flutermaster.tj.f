@@ -13,6 +13,8 @@ class ChatInboxItem {
     this.conversationId,
     this.avatarAsset,
     this.isLocal = false,
+    this.unreadCount = 0,
+    this.peerPhone,
   });
 
   final String orderId;
@@ -26,6 +28,8 @@ class ChatInboxItem {
   final DateTime sortTime;
   final String? avatarAsset;
   final bool isLocal;
+  final int unreadCount;
+  final String? peerPhone;
 
   bool get canOpenChat =>
       conversationId != null && conversationId!.isNotEmpty;
@@ -46,6 +50,8 @@ class ChatInboxItem {
       sortTime: sortTime,
       avatarAsset: avatarAsset,
       isLocal: isLocal ?? this.isLocal,
+      unreadCount: unreadCount,
+      peerPhone: peerPhone,
     );
   }
 }

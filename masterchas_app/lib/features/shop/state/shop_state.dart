@@ -17,6 +17,7 @@ class ShopOrder {
     required this.bonus,
     required this.address,
     this.status = 'Новый',
+    this.paymentMethod = 'Наличными',
   });
 
   final String id;
@@ -27,6 +28,9 @@ class ShopOrder {
   final int bonus;
   final String address;
   final String status;
+
+  /// Способ оплаты: «Наличными» или «Картой •• 1234».
+  final String paymentMethod;
 
   int get count => items.values.fold(0, (a, b) => a + b);
 }
@@ -76,6 +80,9 @@ class ShopAddress {
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
 final shopCartProvider = NotifierProvider<ShopCartNotifier, Map<int, int>>(ShopCartNotifier.new);
+
+/// Корзина аренды: ключ — индекс в rentalProducts, значение — количество суток.
+final rentalCartProvider = NotifierProvider<ShopCartNotifier, Map<int, int>>(ShopCartNotifier.new);
 
 class ShopCartNotifier extends Notifier<Map<int, int>> {
   @override
@@ -251,6 +258,7 @@ class ShopOrdersNotifier extends Notifier<List<ShopOrder>> {
         'bonus': o.bonus,
         'address': o.address,
         'status': o.status,
+        'paymentMethod': o.paymentMethod,
       };
 
   static ShopOrder _orderFromJson(dynamic raw) {
@@ -273,6 +281,7 @@ class ShopOrdersNotifier extends Notifier<List<ShopOrder>> {
       bonus: (json['bonus'] as num?)?.toInt() ?? 0,
       address: json['address'] as String? ?? '',
       status: json['status'] as String? ?? 'Новый',
+      paymentMethod: json['paymentMethod'] as String? ?? 'Наличными',
     );
   }
 
@@ -285,12 +294,60 @@ class ShopOrdersNotifier extends Notifier<List<ShopOrder>> {
 
 final shopCardsProvider = NotifierProvider<ShopCardsNotifier, List<PaymentCard>>(ShopCardsNotifier.new);
 
+/// Сохранённые карты. Полный номер карты НЕ храним: на устройстве остаются только
+/// первая цифра (для логотипа VISA/Mastercard), последние 4 цифры, имя и срок.
 class ShopCardsNotifier extends Notifier<List<PaymentCard>> {
-  @override
-  List<PaymentCard> build() => [];
+  static const _key = 'shop_cards_masked';
 
-  void add(PaymentCard card) => state = [...state, card];
-  void removeAt(int i) => state = [for (var k = 0; k < state.length; k++) if (k != i) state[k]];
+  @override
+  List<PaymentCard> build() {
+    ref.keepAlive();
+    Future.microtask(_load);
+    return [];
+  }
+
+  Future<void> _load() async {
+    try {
+      final raw = await ref.read(secureStorageProvider).readSetting(_key).timeout(const Duration(seconds: 2));
+      if (raw == null || raw.isEmpty) return;
+      final list = jsonDecode(raw) as List<dynamic>;
+      state = [
+        for (final e in list)
+          PaymentCard(
+            number: (e as Map)['number']?.toString() ?? '',
+            holder: e['holder']?.toString() ?? '',
+            expiry: e['expiry']?.toString() ?? '',
+          ),
+      ];
+    } catch (_) {}
+  }
+
+  static String _mask(String number) {
+    final digits = number.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 5) return digits;
+    return '${digits[0]}${'0' * (digits.length - 5)}${digits.substring(digits.length - 4)}';
+  }
+
+  Future<void> _save() async {
+    try {
+      await ref.read(secureStorageProvider).writeSetting(
+            _key,
+            jsonEncode([
+              for (final c in state) {'number': c.number, 'holder': c.holder, 'expiry': c.expiry},
+            ]),
+          );
+    } catch (_) {}
+  }
+
+  void add(PaymentCard card) {
+    state = [...state, PaymentCard(number: _mask(card.number), holder: card.holder, expiry: card.expiry)];
+    _save();
+  }
+
+  void removeAt(int i) {
+    state = [for (var k = 0; k < state.length; k++) if (k != i) state[k]];
+    _save();
+  }
 }
 
 // ─── Addresses ─────────────────────────────────────────────────────────────

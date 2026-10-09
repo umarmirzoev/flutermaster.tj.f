@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/motion.dart';
+
 import '../../../core/l10n/app_locale.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../services/data/service_catalog_keys.dart';
@@ -100,7 +102,7 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                   ),
                   Text(
                     'master.tj',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: p.text,
@@ -114,19 +116,21 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                 children: [
-                  Text(
+                  Reveal(
+                    child: Text(
                     l.skillsTitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: p.text,
                       height: 1.15,
                     ),
                   ),
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     l.skillsSub,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: p.muted,
@@ -142,7 +146,14 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _CategoryCard(
+                      child: Reveal(
+                        delay: Duration(milliseconds: 120 + 50 * (index % 12)),
+                        child: HoverLift(
+                          radius: 16,
+                          scale: 1.012,
+                          lift: 2,
+                          glowColor: category.color,
+                          child: _CategoryCard(
                         category: category,
                         locale: locale,
                         p: p,
@@ -159,6 +170,8 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                               .read(masterRegistrationDraftProvider.notifier)
                               .toggleService(key);
                         },
+                      ),
+                        ),
                       ),
                     );
                   }),
@@ -182,14 +195,21 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (selectedCount > 0)
-                    Text(
+                    TweenAnimationBuilder<double>(
+                      key: ValueKey(selectedCount),
+                      tween: Tween(begin: 1.25, end: 1.0),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutBack,
+                      builder: (_, v, child) => Transform.scale(scale: v, child: child),
+                      child: Text(
                       l.selectedServices(selectedCount),
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _brandGreen,
                       ),
+                    ),
                     ),
                   if (selectedCount > 0) const SizedBox(height: 8),
                   SizedBox(
@@ -206,7 +226,7 @@ class _MasterSkillsScreenState extends ConsumerState<MasterSkillsScreen> {
                       ),
                       child: Text(
                         _isSubmitting ? l.saving : l.skillsContinue,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -296,7 +316,7 @@ class _CategoryCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           category.name(locale),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: p.text,
@@ -317,7 +337,7 @@ class _CategoryCard extends StatelessWidget {
                           ),
                           child: Text(
                             '$selectedInCategory',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                               color: _brandGreen,
@@ -420,7 +440,7 @@ class _ServiceCheckTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: p.text,

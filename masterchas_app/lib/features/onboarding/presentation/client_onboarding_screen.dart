@@ -113,7 +113,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
                         const SizedBox(width: 6),
                         Text(
                           '${_currentPage + 1} из ${_pages.length}',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: _pages[_currentPage].accent,
@@ -128,7 +128,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
                       onPressed: () => context.go('/login'),
                       child: Text(
                         'Пропустить',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: _bodyTextColor,
@@ -210,7 +210,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
                             children: [
                               Text(
                                 isLast ? 'Начать' : 'Далее',
-                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                               ),
                               const SizedBox(width: 8),
                               Icon(
@@ -287,7 +287,7 @@ class _OnboardingPageContent extends StatelessWidget {
           Text(
             data.title,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
@@ -298,7 +298,7 @@ class _OnboardingPageContent extends StatelessWidget {
           Text(
             data.description,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: _bodyTextColor,

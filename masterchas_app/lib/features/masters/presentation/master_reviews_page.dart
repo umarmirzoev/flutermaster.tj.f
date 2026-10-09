@@ -95,12 +95,12 @@ class _MasterReviewsPageState extends ConsumerState<MasterReviewsPage> {
                       const SizedBox(width: 8),
                       Text(
                         stats.averageRating.toStringAsFixed(1),
-                        style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w900, color: p.text),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${stats.count} ${s.reviewsWord}',
-                        style: GoogleFonts.inter(fontSize: 13, color: p.muted),
+                        style: GoogleFonts.manrope(fontSize: 13, color: p.muted),
                       ),
                     ],
                   ),
@@ -110,7 +110,7 @@ class _MasterReviewsPageState extends ConsumerState<MasterReviewsPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Center(
-                      child: Text('Отзывов пока нет', style: GoogleFonts.inter(color: p.muted)),
+                      child: Text('Отзывов пока нет', style: GoogleFonts.manrope(color: p.muted)),
                     ),
                   )
                 else
@@ -132,7 +132,7 @@ class _MasterReviewsPageState extends ConsumerState<MasterReviewsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Добавить отзыв', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: p.text)),
+                  Text('Добавить отзыв', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: p.text)),
                   const SizedBox(height: 8),
                   Row(
                     children: List.generate(5, (i) {
@@ -154,7 +154,7 @@ class _MasterReviewsPageState extends ConsumerState<MasterReviewsPage> {
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: 'Расскажите о работе мастера…',
-                      hintStyle: GoogleFonts.inter(color: p.muted, fontSize: 13),
+                      hintStyle: GoogleFonts.manrope(color: p.muted, fontSize: 13),
                       filled: true,
                       fillColor: p.pageBg,
                       border: OutlineInputBorder(
@@ -180,7 +180,7 @@ class _MasterReviewsPageState extends ConsumerState<MasterReviewsPage> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : Text('Отправить', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+                          : Text('Отправить', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -206,7 +206,7 @@ class AllReviewsPage extends ConsumerWidget {
     return ProfileSubPage(
       title: s.allReviews,
       body: reviews.isEmpty
-          ? Center(child: Text('Отзывов пока нет', style: GoogleFonts.inter(color: p.muted)))
+          ? Center(child: Text('Отзывов пока нет', style: GoogleFonts.manrope(color: p.muted)))
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: reviews.length,
@@ -245,15 +245,15 @@ class _ReviewTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   review.authorName,
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: p.text),
+                  style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: p.text),
                 ),
               ),
-              Text(review.dateLabel, style: GoogleFonts.inter(fontSize: 11, color: p.muted)),
+              Text(review.dateLabel, style: GoogleFonts.manrope(fontSize: 11, color: p.muted)),
             ],
           ),
           if (showMaster) ...[
             const SizedBox(height: 2),
-            Text(review.masterKey, style: GoogleFonts.inter(fontSize: 11, color: brandGreen, fontWeight: FontWeight.w600)),
+            Text(review.masterKey, style: GoogleFonts.manrope(fontSize: 11, color: brandGreen, fontWeight: FontWeight.w600)),
           ],
           const SizedBox(height: 6),
           Row(
@@ -267,7 +267,7 @@ class _ReviewTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(review.body, style: GoogleFonts.inter(fontSize: 13, color: p.text, height: 1.45)),
+          Text(review.body, style: GoogleFonts.manrope(fontSize: 13, color: p.text, height: 1.45)),
         ],
       ),
     );

@@ -427,6 +427,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (c, s) => _adminPage(state: s, child: const AdminOrdersPage()),
           ),
           GoRoute(
+            path: '/admin/orders/sos',
+            pageBuilder: (c, s) => _adminPage(state: s, child: const AdminOrdersPage(sosOnly: true)),
+          ),
+          GoRoute(
             path: '/admin/orders/new',
             pageBuilder: (c, s) => _adminPage(state: s, child: const AdminOrdersPage(statusFilter: AdminOrderStatus.newOrder)),
           ),
@@ -559,15 +563,29 @@ CustomTransitionPage<void> _fadePage({
   return CustomTransitionPage<void>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 550),
-    reverseTransitionDuration: const Duration(milliseconds: 550),
+    transitionDuration: const Duration(milliseconds: 480),
+    reverseTransitionDuration: const Duration(milliseconds: 380),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Новая страница: проявляется, чуть поднимается и «приближается».
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      // Старая страница: слегка отъезжает назад.
+      final behind = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic);
       return FadeTransition(
-        opacity: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOut,
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(curved),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.97, end: 1).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 1, end: 0.96).animate(behind),
+              child: child,
+            ),
+          ),
         ),
-        child: child,
       );
     },
   );

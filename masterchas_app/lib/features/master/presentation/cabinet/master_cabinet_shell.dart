@@ -31,7 +31,7 @@ class MasterCabinetShell extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.w800,
             color: masterNavy,

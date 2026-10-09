@@ -118,7 +118,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
           ),
           Text(
             'Аукцион мастеров',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 18,
               fontWeight: FontWeight.w800,
               color: p.text,
@@ -138,7 +138,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                 const SizedBox(width: 4),
                 Text(
                   'Новинка',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -172,7 +172,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Пусть мастера борются\nза ваш заказ',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -182,7 +182,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Опишите задачу — мастера предложат свои цены за 30 секунд. Выбирайте лучшую!',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.9),
                     height: 1.4,
@@ -194,7 +194,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
           const SizedBox(height: 24),
           Text(
             'Опишите задачу',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: p.text,
@@ -213,13 +213,16 @@ class _AuctionScreenState extends State<AuctionScreen> {
               maxLines: 4,
               onChanged: (_) => setState(() {}),
               cursorColor: AppDesign.brand,
-              style: GoogleFonts.inter(fontSize: 14, color: p.text, height: 1.4),
+              style: GoogleFonts.manrope(fontSize: 14, color: p.text, height: 1.4),
               decoration: InputDecoration(
                 isCollapsed: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
                 hintText: 'Например: нужно установить 3 розетки и повесить люстру в зале...',
-                hintStyle: GoogleFonts.inter(fontSize: 14, color: p.muted, height: 1.4),
+                hintStyle: GoogleFonts.manrope(fontSize: 14, color: p.muted, height: 1.4),
               ),
             ),
           ),
@@ -259,7 +262,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: p.text),
+            style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w500, color: p.text),
           ),
         ),
       ],
@@ -291,7 +294,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                   children: [
                     Text(
                       done ? 'Аукцион завершён' : 'Идёт аукцион',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -301,7 +304,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                       done
                           ? 'Выберите лучшее предложение'
                           : 'Осталось $_secondsLeft секунд',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
@@ -312,7 +315,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
               if (!done)
                 Text(
                   '$_secondsLeft',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -328,7 +331,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
             children: [
               Text(
                 'Предложения',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: p.text,
@@ -343,7 +346,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                 ),
                 child: Text(
                   '${_bids.length}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: AppDesign.brand,
@@ -354,7 +357,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
               if (_bids.isNotEmpty)
                 Text(
                   'сортировка: цена ↑',
-                  style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                  style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                 ),
             ],
           ),
@@ -377,7 +380,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Мастера изучают ваш заказ...',
-                        style: GoogleFonts.inter(fontSize: 14, color: p.muted),
+                        style: GoogleFonts.manrope(fontSize: 14, color: p.muted),
                       ),
                     ],
                   ),
@@ -430,7 +433,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                             child: Text(
                               bid.name,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
                                 color: p.text,
@@ -448,14 +451,14 @@ class _AuctionScreenState extends State<AuctionScreen> {
                           const SizedBox(width: 3),
                           Text(
                             '${bid.rating} (${bid.reviews})',
-                            style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                            style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                           ),
                           const SizedBox(width: 10),
                           Icon(LucideIcons.briefcase, size: 12, color: p.muted),
                           const SizedBox(width: 3),
                           Text(
                             '${bid.experience} лет',
-                            style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                            style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                           ),
                         ],
                       ),
@@ -475,7 +478,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                         ),
                         child: Text(
                           'ЛУЧШАЯ ЦЕНА',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -484,7 +487,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                       ),
                     Text(
                       '${bid.price} с.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                         color: isBest ? AppDesign.brand : p.text,
@@ -492,7 +495,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                     ),
                     Text(
                       'приедет ~${bid.eta} мин',
-                      style: GoogleFonts.inter(fontSize: 11, color: p.muted),
+                      style: GoogleFonts.manrope(fontSize: 11, color: p.muted),
                     ),
                   ],
                 ),
@@ -518,7 +521,7 @@ class _AuctionScreenState extends State<AuctionScreen> {
                         behavior: SnackBarBehavior.floating,
                         content: Text(
                           'Мастер ${bid.name} выбран! Заказ оформлен.',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                          style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ),
                     );

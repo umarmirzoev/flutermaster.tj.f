@@ -66,7 +66,7 @@ class ProfileSubPage extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
+                        style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: p.text),
                       ),
                     ),
                   ],
@@ -94,7 +94,7 @@ Widget profileField({
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: p.muted)),
+      Text(label, style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600, color: p.muted)),
       const SizedBox(height: 6),
       TextField(
         controller: controller,
@@ -103,7 +103,7 @@ Widget profileField({
         maxLength: maxLength,
         obscureText: obscure,
         inputFormatters: formatters,
-        style: GoogleFonts.inter(fontSize: 14, color: p.text),
+        style: GoogleFonts.manrope(fontSize: 14, color: p.text),
         decoration: InputDecoration(
           filled: true,
           fillColor: p.cardBg,

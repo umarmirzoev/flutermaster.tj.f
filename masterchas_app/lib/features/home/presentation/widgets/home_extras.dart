@@ -109,7 +109,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner>
                         ),
                         child: Text(
                           widget.s.activeOrderOnWay,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: AppDesign.brandLight,
@@ -119,7 +119,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner>
                       const SizedBox(width: 8),
                       Text(
                         '~15 ${widget.s.minShort}',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.white.withValues(alpha: 0.8),
@@ -132,7 +132,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner>
                     widget.masterName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -142,7 +142,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner>
                     service,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.7),
                     ),
@@ -234,7 +234,7 @@ class _UrgentRequestsFeedState extends ConsumerState<UrgentRequestsFeed> {
           const SizedBox(width: 8),
           Text(
             s.urgentNearbyTitle,
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: p.muted),
+            style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: p.muted),
           ),
           const Spacer(),
           Expanded(
@@ -256,13 +256,13 @@ class _UrgentRequestsFeedState extends ConsumerState<UrgentRequestsFeed> {
                       r.text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: p.text),
+                      style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: p.text),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     '· ${r.distance}',
-                    style: GoogleFonts.inter(fontSize: 12, color: p.muted),
+                    style: GoogleFonts.manrope(fontSize: 12, color: p.muted),
                   ),
                 ],
               ),
@@ -354,7 +354,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                 children: [
                   Text(
                     s.dailyBonusWaitingTitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -362,7 +362,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
                   ),
                   Text(
                     s.dailyBonusWaitingSub,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
@@ -378,7 +378,7 @@ class _DailyBonusCardState extends ConsumerState<DailyBonusCard>
               ),
               child: Text(
                 s.spinBtn,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: AppDesign.accentOrange,

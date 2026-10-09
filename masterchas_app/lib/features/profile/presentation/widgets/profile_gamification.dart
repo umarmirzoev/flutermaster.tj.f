@@ -80,7 +80,7 @@ class LevelProgressCard extends StatelessWidget {
                   children: [
                     Text(
                       l.levelLine(level.tier),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -90,7 +90,7 @@ class LevelProgressCard extends StatelessWidget {
                       level.nextTier != null
                           ? l.pointsToNextLine(level.nextTier!, level.pointsToNext)
                           : l.maxLevel,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
@@ -139,7 +139,7 @@ class LevelProgressCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     '${(value * 100).round()}%',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.9),
@@ -195,7 +195,7 @@ class ReferralCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       l.referFriend,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -206,7 +206,7 @@ class ReferralCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   l.referBonus,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.9),
                     height: 1.3,
@@ -221,7 +221,7 @@ class ReferralCard extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           l.promoCopied(code),
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
                         ),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -238,7 +238,7 @@ class ReferralCard extends StatelessWidget {
                       children: [
                         Text(
                           code,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: AppDesign.accentPurple,
@@ -330,12 +330,12 @@ class DailyQuestsCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 l.dailyQuests,
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
+                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800, color: p.text),
               ),
               const Spacer(),
               Text(
                 l.bonusesReward(quests.where((q) => !q.done).fold(0, (s, q) => s + q.reward)),
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppDesign.brand),
+                style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w700, color: AppDesign.brand),
               ),
             ],
           ),
@@ -363,7 +363,7 @@ class DailyQuestsCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         q.label,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: q.done ? p.muted : p.text,
@@ -381,7 +381,7 @@ class DailyQuestsCard extends StatelessWidget {
                       ),
                       child: Text(
                         q.done ? '✓' : '+${q.reward}',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           color: q.done ? p.muted : AppDesign.accentOrange,

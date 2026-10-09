@@ -49,7 +49,7 @@ class _MasterScheduleScreenState extends ConsumerState<MasterScheduleScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('График сохранён', style: GoogleFonts.inter()),
+          content: Text('График сохранён', style: GoogleFonts.manrope()),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -65,7 +65,7 @@ class _MasterScheduleScreenState extends ConsumerState<MasterScheduleScreen> {
         children: [
           Text(
             'Рабочие дни',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: masterNavy,
@@ -90,7 +90,7 @@ class _MasterScheduleScreenState extends ConsumerState<MasterScheduleScreen> {
                 }),
                 selectedColor: masterNavy.withValues(alpha: 0.15),
                 checkmarkColor: masterNavy,
-                labelStyle: GoogleFonts.inter(
+                labelStyle: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   color: selected ? masterNavy : const Color(0xFF6B7280),
                 ),
@@ -103,7 +103,7 @@ class _MasterScheduleScreenState extends ConsumerState<MasterScheduleScreen> {
           const SizedBox(height: 24),
           Text(
             'Часы работы: ${_hours.start.round()}:00 — ${_hours.end.round()}:00',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: masterNavy,
@@ -131,7 +131,7 @@ class _MasterScheduleScreenState extends ConsumerState<MasterScheduleScreen> {
               ),
               child: Text(
                 _saving ? 'Сохранение...' : 'Сохранить график',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

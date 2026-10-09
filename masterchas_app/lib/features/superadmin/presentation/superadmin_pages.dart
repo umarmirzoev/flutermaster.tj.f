@@ -10,6 +10,7 @@ import '../providers/superadmin_provider.dart';
 import '../theme/superadmin_theme.dart';
 import 'widgets/superadmin_forms.dart';
 import 'widgets/superadmin_widgets.dart';
+import '../../../core/widgets/hover_lift.dart';
 
 class SaListPage extends ConsumerWidget {
   const SaListPage({super.key, required this.title, required this.builder, this.action});
@@ -27,7 +28,7 @@ class SaListPage extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: SuperAdminTheme.text))),
+              Expanded(child: Text(title, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, color: SuperAdminTheme.text))),
               if (action != null) action!,
             ],
           ),
@@ -44,6 +45,19 @@ Widget _addBtn(String label, VoidCallback onTap) => ElevatedButton.icon(
       icon: const Icon(LucideIcons.plus, size: 16),
       label: Text(label),
       style: ElevatedButton.styleFrom(backgroundColor: SuperAdminTheme.green, foregroundColor: Colors.white),
+    );
+
+Widget _hoverTile(Widget child) => HoverLift(
+      cursor: SystemMouseCursors.basic,
+      builder: (context, hovering) => AnimatedContainer(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: hovering ? SuperAdminTheme.pageBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: child,
+      ),
     );
 
 Future<String?> _prompt(BuildContext context, String title, {String hint = '', String initial = ''}) async {
@@ -118,10 +132,10 @@ class _SaFundPageState extends ConsumerState<SaFundPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Фонд помощи', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
+                          Text('Фонд помощи', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800)),
                           Text(
                             '$charityFundPercent% от выручки платформы идёт на ремонт и замену сломанного в детских центрах-сиротах и домах престарелых.',
-                            style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted, height: 1.4),
+                            style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted, height: 1.4),
                           ),
                         ],
                       ),
@@ -151,9 +165,9 @@ class _SaFundPageState extends ConsumerState<SaFundPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Сообщить о поломке', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                Text('Сообщить о поломке', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text('Опишите, что сломано — мастера платформы помогут починить за счёт фонда.', style: GoogleFonts.inter(fontSize: 12, color: SuperAdminTheme.muted)),
+                Text('Опишите, что сломано — мастера платформы помогут починить за счёт фонда.', style: GoogleFonts.manrope(fontSize: 12, color: SuperAdminTheme.muted)),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   value: _orgType,
@@ -191,7 +205,7 @@ class _SaFundPageState extends ConsumerState<SaFundPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Заявки на ремонт (${data.charityCases.length})', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+          Text('Заявки на ремонт (${data.charityCases.length})', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           if (data.charityCases.isEmpty)
             const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Заявок пока нет. Добавьте первую — когда появятся выполненные заказы, фонд начнёт наполняться.')))
@@ -202,7 +216,7 @@ class _SaFundPageState extends ConsumerState<SaFundPage> {
                   final statusColor = c.status == 'Исправлено' ? SuperAdminTheme.green : c.status == 'В работе' ? SuperAdminTheme.yellow : SuperAdminTheme.blue;
                   return ListTile(
                     leading: Icon(c.organizationType == 'Детский центр' ? LucideIcons.baby : LucideIcons.house, color: SuperAdminTheme.purple),
-                    title: Text(c.organizationName, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                    title: Text(c.organizationName, style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
                     subtitle: Text('${c.organizationType} · ${c.problem}\n${formatSaMoney(c.estimatedCost)} с. · ${c.date}', maxLines: 3),
                     isThreeLine: true,
                     trailing: PopupMenuButton<String>(
@@ -244,8 +258,8 @@ class SaOrdersPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Заказов пока нет. Нажмите «Добавить заказ».')))
           : SaCard(
               child: Column(
-                children: orders.map((o) => ListTile(
-                  title: Text('${o.id} — ${o.client}', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                children: orders.map((o) => _hoverTile(ListTile(
+                  title: Text('${o.id} — ${o.client}', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
                   subtitle: Text('${o.service} · ${o.master} · ${o.date}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -259,7 +273,7 @@ class SaOrdersPage extends ConsumerWidget {
                       IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeOrder(o.id)),
                     ],
                   ),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -280,16 +294,16 @@ class SaMastersPage extends ConsumerWidget {
       action: _addBtn('Добавить мастера', () => showAddMasterSheet(context, ref)),
       builder: (_, __) => SaCard(
         child: Column(
-          children: masters.map((m) => ListTile(
+          children: masters.map((m) => _hoverTile(ListTile(
             leading: SaMasterAvatar(master: m),
-            title: Text(m.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            title: Text(m.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
             subtitle: Text('${m.specialization} · ${m.phone} · ${m.orders} заказов'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               const Icon(LucideIcons.star, size: 14, color: Color(0xFFFFC107)),
               Text(' ${m.rating}'),
               IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeMaster(m.id)),
             ]),
-          )).toList(),
+          ))).toList(),
         ),
       ),
     );
@@ -314,7 +328,7 @@ class SaClientsPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Клиентов пока нет.')))
           : SaCard(
               child: Column(
-                children: clients.map((u) => ListTile(
+                children: clients.map((u) => _hoverTile(ListTile(
                   leading: CircleAvatar(backgroundImage: AssetImage(u.avatar)),
                   title: Text(u.name),
                   subtitle: Text('${u.phone} · Регистрация: ${u.date}'),
@@ -323,7 +337,7 @@ class SaClientsPage extends ConsumerWidget {
                     if (u.isNew) const SaStatusPill(label: 'Новый', color: SuperAdminTheme.blue),
                     IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeClient(u.id)),
                   ]),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -350,9 +364,9 @@ class SaShopPage extends ConsumerWidget {
               children: [
                 Center(child: SaProductImage(product: p, size: 80)),
                 const SizedBox(height: 8),
-                Text(p.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13), maxLines: 2),
-                if (p.description.isNotEmpty) Text(p.description, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
-                Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: SuperAdminTheme.green)),
+                Text(p.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 13), maxLines: 2),
+                if (p.description.isNotEmpty) Text(p.description, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text('${formatSaMoney(p.price)} с.', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w800, color: SuperAdminTheme.green)),
                 SaStatusPill(label: p.inStock ? 'В наличии' : 'Нет', color: p.inStock ? SuperAdminTheme.green : SuperAdminTheme.red),
               ],
             ),
@@ -375,15 +389,15 @@ class SaProductsPage extends ConsumerWidget {
       action: _addBtn('Добавить товар', () => showAddProductSheet(context, ref)),
       builder: (_, __) => SaCard(
         child: Column(
-          children: products.map((p) => ListTile(
+          children: products.map((p) => _hoverTile(ListTile(
             leading: SaProductImage(product: p, size: 40),
-            title: Text(p.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            title: Text(p.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
             subtitle: Text('${p.category} · ${p.description.isNotEmpty ? p.description : 'Продано: ${p.sold}'}'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: p.inStock, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.toggleProductStock(p.id)),
               IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeProduct(p.id)),
             ]),
-          )).toList(),
+          ))).toList(),
         ),
       ),
     );
@@ -409,7 +423,7 @@ class SaCategoriesPage extends ConsumerWidget {
         child: Column(
           children: cats.map((c) => ListTile(
             leading: Icon(LucideIcons.layers, size: 18, color: SuperAdminTheme.green),
-            title: Text(c.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            title: Text(c.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
             subtitle: Text('${c.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCategory(c.id, active: v)),
@@ -439,7 +453,7 @@ class SaBrandsPage extends ConsumerWidget {
         child: Column(
           children: brands.map((b) => ListTile(
             leading: const Icon(LucideIcons.tag, size: 18, color: SuperAdminTheme.green),
-            title: Text(b.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            title: Text(b.name, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
             subtitle: Text('${b.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: b.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateBrand(b.id, active: v)),
@@ -485,7 +499,7 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Создать промокод', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                Text('Создать промокод', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _codeCtrl,
@@ -498,7 +512,7 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
                   decoration: const InputDecoration(labelText: 'Описание (необязательно)', border: OutlineInputBorder(), hintText: 'Скидка на первый заказ'),
                 ),
                 const SizedBox(height: 14),
-                Text('Скидка', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('Скидка', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Row(
                   children: [5, 10, 20].map((pct) {
@@ -509,7 +523,7 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
                         label: Text('$pct%'),
                         selected: on,
                         selectedColor: SuperAdminTheme.green.withValues(alpha: 0.2),
-                        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, color: on ? SuperAdminTheme.green : SuperAdminTheme.text),
+                        labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: on ? SuperAdminTheme.green : SuperAdminTheme.text),
                         onSelected: (_) => setState(() => _discount = pct),
                       ),
                     );
@@ -546,9 +560,9 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
                   leading: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(color: SuperAdminTheme.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                    child: Text('−${c.discountPercent}%', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: SuperAdminTheme.green, fontSize: 13)),
+                    child: Text('−${c.discountPercent}%', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: SuperAdminTheme.green, fontSize: 13)),
                   ),
-                  title: Text(c.code, style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+                  title: Text(c.code, style: GoogleFonts.manrope(fontWeight: FontWeight.w800)),
                   subtitle: Text(c.description.isNotEmpty ? c.description : 'Скидка ${c.discountPercent}%'),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCoupon(c.id, active: v)),
@@ -625,7 +639,7 @@ class _SaChatsPageState extends ConsumerState<SaChatsPage> {
                             leading: CircleAvatar(child: Text(c.avatar)),
                             title: Text(c.name),
                             subtitle: Text(c.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
-                            trailing: c.unread > 0 ? SaStatusPill(label: '${c.unread}', color: SuperAdminTheme.red) : Text(c.time, style: GoogleFonts.inter(fontSize: 11, color: SuperAdminTheme.muted)),
+                            trailing: c.unread > 0 ? SaStatusPill(label: '${c.unread}', color: SuperAdminTheme.red) : Text(c.time, style: GoogleFonts.manrope(fontSize: 11, color: SuperAdminTheme.muted)),
                           );
                         }).toList(),
                       ),
@@ -641,7 +655,7 @@ class _SaChatsPageState extends ConsumerState<SaChatsPage> {
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Text('Чат с ${thread.name}', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+                                Text('Чат с ${thread.name}', style: GoogleFonts.manrope(fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 12),
                                 Expanded(
                                   child: ListView(
@@ -704,7 +718,7 @@ class SaReviewsPage extends ConsumerWidget {
           ? const SaCard(child: Padding(padding: EdgeInsets.all(24), child: Text('Отзывов нет.')))
           : SaCard(
               child: Column(
-                children: reviews.map((r) => ListTile(
+                children: reviews.map((r) => _hoverTile(ListTile(
                   leading: CircleAvatar(child: Text(r.avatar)),
                   title: Text('${r.author} → ${r.master}'),
                   subtitle: Text(r.text),
@@ -713,7 +727,7 @@ class SaReviewsPage extends ConsumerWidget {
                     IconButton(icon: Icon(r.hidden ? LucideIcons.eye : LucideIcons.eye_off, size: 16), onPressed: () => store.toggleReviewHidden(r.id)),
                     IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeReview(r.id)),
                   ]),
-                )).toList(),
+                ))).toList(),
               ),
             ),
     );
@@ -754,7 +768,7 @@ class SaFinancePage extends ConsumerWidget {
                       title: Text(p.master),
                       subtitle: Text('${p.method} · ${p.date}'),
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
+                        Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
                         Switch(value: p.paid, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.togglePayoutPaid(p.id)),
                         IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removePayout(p.id)),
                       ]),
@@ -825,7 +839,7 @@ class _SaMarketingPageState extends ConsumerState<SaMarketingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Рассылка ($recipients получателей)', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                Text('Рассылка ($recipients получателей)', style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 TextField(controller: _msgCtrl, maxLines: 4, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Текст рассылки...')),
                 const SizedBox(height: 12),
@@ -875,7 +889,7 @@ class SaPagesPage extends ConsumerWidget {
         child: Column(
           children: pages.map((p) => ListTile(
             leading: const Icon(LucideIcons.file_text, size: 18, color: SuperAdminTheme.green),
-            title: Text(p.title, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            title: Text(p.title, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
             subtitle: Text(p.status),
             trailing: PopupMenuButton<String>(
               onSelected: (v) => store.updateCmsPage(p.id, status: v),
@@ -933,7 +947,7 @@ class SaSupportPage extends ConsumerWidget {
           : SaCard(
               child: Column(
                 children: tickets.map((t) => ListTile(
-                  title: Text(t.id, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  title: Text(t.id, style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
                   subtitle: Text('${t.title}\n${t.description}', maxLines: 2),
                   trailing: PopupMenuButton<String>(
                     onSelected: (v) => store.updateTicketStatus(t.id, v),
@@ -997,7 +1011,7 @@ class SaSystemPage extends ConsumerWidget {
                 leading: Icon(s.status == 'Работает' ? LucideIcons.circle_check : LucideIcons.circle_alert, color: s.status == 'Работает' ? SuperAdminTheme.green : SuperAdminTheme.yellow),
                 title: Text(s.name),
                 subtitle: Text(s.detail),
-                trailing: Text(s.status, style: GoogleFonts.inter(color: SuperAdminTheme.green, fontWeight: FontWeight.w600)),
+                trailing: Text(s.status, style: GoogleFonts.manrope(color: SuperAdminTheme.green, fontWeight: FontWeight.w600)),
                 onTap: () => store.updateSystemService(s.name, s.status == 'Работает' ? 'Проверка' : 'Работает', s.detail),
               ),
           ],

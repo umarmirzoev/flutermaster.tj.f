@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/master_palette.dart';
+import '../../../core/widgets/motion.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/master_registration_draft_provider.dart';
 import '../data/master_avatar_presets.dart';
@@ -35,6 +36,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
     if (file == null || !mounted) return;
 
     final bytes = await file.readAsBytes();
+    if (!mounted) return;
     setState(() {
       _galleryBase64 = base64Encode(bytes);
       _selectedAsset = null;
@@ -63,8 +65,18 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
             avatarAsset: skipPhoto ? null : _selectedAsset,
             avatarGalleryBase64: skipPhoto ? null : _galleryBase64,
           );
+      if (!mounted) return;
       ref.read(masterRegistrationDraftProvider.notifier).reset();
       if (mounted) context.go('/master/submitted');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Не удалось отправить заявку: ${e.toString().replaceFirst('Exception: ', '')}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -90,7 +102,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                   ),
                   Text(
                     'master.tj',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: masterNavy,
@@ -101,7 +113,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                     onPressed: _isSubmitting ? null : () => _submit(skipPhoto: true),
                     child: Text(
                       'Пропустить',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: masterNavy,
@@ -119,7 +131,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                   children: [
                     Text(
                       'Фото профиля',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
                         color: masterNavy,
@@ -128,7 +140,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                     const SizedBox(height: 10),
                     Text(
                       'Выберите фото из предложенных или загрузите своё из галереи.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         color: const Color(0xFF6B7280),
                         height: 1.45,
@@ -140,8 +152,17 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                       runSpacing: 14,
                       alignment: WrapAlignment.center,
                       children: [
-                        for (final asset in masterAvatarPresets)
-                          GestureDetector(
+                        for (final (i, asset) in masterAvatarPresets.indexed)
+                          Reveal(
+                            delay: Duration(milliseconds: 120 + i * 60),
+                            child: HoverLift(
+                            radius: 44,
+                            scale: 1.08,
+                            child: AnimatedScale(
+                            scale: _selectedAsset == asset ? 1.08 : 1.0,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutBack,
+                            child: GestureDetector(
                             onTap: _isSubmitting
                                 ? null
                                 : () => setState(() {
@@ -152,6 +173,9 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                               asset,
                               size: 88,
                               selected: _selectedAsset == asset,
+                            ),
+                          ),
+                            ),
                             ),
                           ),
                         if (_galleryBase64 != null)
@@ -177,12 +201,15 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    OutlinedButton.icon(
+                    HoverLift(
+                      radius: 14,
+                      scale: 1.02,
+                      child: OutlinedButton.icon(
                       onPressed: _isSubmitting ? null : _pickFromGallery,
                       icon: const Icon(LucideIcons.image, size: 20),
                       label: Text(
                         'Выбрать из галереи',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: masterNavy,
@@ -192,6 +219,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
+                    ),
                     ),
                   ],
                 ),
@@ -214,7 +242,7 @@ class _MasterPhotoScreenState extends ConsumerState<MasterPhotoScreen> {
                   ),
                   child: Text(
                     _isSubmitting ? 'Отправка...' : 'Далее',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
