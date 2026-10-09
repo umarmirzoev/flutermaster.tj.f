@@ -270,7 +270,7 @@ class SaOrdersPage extends ConsumerWidget {
                         onSelected: (s) => store.updateOrderStatus(o.id, s),
                         itemBuilder: (_) => SaOrderStatus.values.map((s) => PopupMenuItem(value: s, child: Text(saOrderStatusLabel(s)))).toList(),
                       ),
-                      IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeOrder(o.id)),
+                      IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeOrder(o.id)),
                     ],
                   ),
                 ))).toList(),
@@ -301,7 +301,7 @@ class SaMastersPage extends ConsumerWidget {
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               const Icon(LucideIcons.star, size: 14, color: Color(0xFFFFC107)),
               Text(' ${m.rating}'),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeMaster(m.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeMaster(m.id)),
             ]),
           ))).toList(),
         ),
@@ -335,7 +335,7 @@ class SaClientsPage extends ConsumerWidget {
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     if (u.isVip) const SaStatusPill(label: 'VIP', color: SuperAdminTheme.yellow),
                     if (u.isNew) const SaStatusPill(label: 'Новый', color: SuperAdminTheme.blue),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeClient(u.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeClient(u.id)),
                   ]),
                 ))).toList(),
               ),
@@ -395,7 +395,7 @@ class SaProductsPage extends ConsumerWidget {
             subtitle: Text('${p.category} · ${p.description.isNotEmpty ? p.description : 'Продано: ${p.sold}'}'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: p.inStock, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.toggleProductStock(p.id)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeProduct(p.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeProduct(p.id)),
             ]),
           ))).toList(),
         ),
@@ -427,7 +427,7 @@ class SaCategoriesPage extends ConsumerWidget {
             subtitle: Text('${c.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCategory(c.id, active: v)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCategory(c.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCategory(c.id)),
             ]),
           )).toList(),
         ),
@@ -457,7 +457,7 @@ class SaBrandsPage extends ConsumerWidget {
             subtitle: Text('${b.productCount} товаров'),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Switch(value: b.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateBrand(b.id, active: v)),
-              IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeBrand(b.id)),
+              IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeBrand(b.id)),
             ]),
           )).toList(),
         ),
@@ -566,7 +566,7 @@ class _SaCouponsPageState extends ConsumerState<SaCouponsPage> {
                   subtitle: Text(c.description.isNotEmpty ? c.description : 'Скидка ${c.discountPercent}%'),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     Switch(value: c.active, activeThumbColor: SuperAdminTheme.green, onChanged: (v) => store.updateCoupon(c.id, active: v)),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCoupon(c.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeCoupon(c.id)),
                   ]),
                 )).toList(),
               ),
@@ -725,7 +725,7 @@ class SaReviewsPage extends ConsumerWidget {
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     ...List.generate(r.rating, (_) => const Icon(LucideIcons.star, size: 12, color: Color(0xFFFFC107))),
                     IconButton(icon: Icon(r.hidden ? LucideIcons.eye : LucideIcons.eye_off, size: 16), onPressed: () => store.toggleReviewHidden(r.id)),
-                    IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeReview(r.id)),
+                    IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removeReview(r.id)),
                   ]),
                 ))).toList(),
               ),
@@ -770,7 +770,7 @@ class SaFinancePage extends ConsumerWidget {
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                         Text('${formatSaMoney(p.amount)} с.', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: SuperAdminTheme.green)),
                         Switch(value: p.paid, activeThumbColor: SuperAdminTheme.green, onChanged: (_) => store.togglePayoutPaid(p.id)),
-                        IconButton(icon: const Icon(LucideIcons.trash_2, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removePayout(p.id)),
+                        IconButton(icon: const Icon(LucideIcons.trash, size: 16, color: SuperAdminTheme.red), onPressed: () => store.removePayout(p.id)),
                       ]),
                     )).toList(),
                   ),
