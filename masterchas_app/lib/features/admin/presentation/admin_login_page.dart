@@ -20,7 +20,7 @@ class AdminLoginPage extends ConsumerStatefulWidget {
 
 class _AdminLoginPageState extends ConsumerState<AdminLoginPage> {
   final _phoneController = TextEditingController(text: '900000099');
-  final _passwordController = TextEditingController(text: adminSeedPassword);
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
   String? _error;
