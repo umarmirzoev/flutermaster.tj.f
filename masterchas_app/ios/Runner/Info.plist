@@ -79,10 +79,6 @@
 		<string>tel</string>
 		<string>https</string>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Микрофон нужен для голосовых сообщений и звонков мастеру в приложении.</string>
 </dict>
